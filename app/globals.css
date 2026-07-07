@@ -1,0 +1,777 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,400;0,14..32,500;0,14..32,600;0,14..32,700;0,14..32,800;0,14..32,900&display=swap');
+@import "tailwindcss";
+
+/* ============================================================
+   ADNTC CX PLATFORM — PREMIUM ENTERPRISE DESIGN SYSTEM v3
+   ============================================================ */
+:root {
+  /* ── Brand ── */
+  --primary:        #0B4A8B;
+  --primary-dark:   #06386F;
+  --primary-deeper: #042a57;
+  --primary-light:  #EFF6FF;
+  --emerald:        #17A673;
+  --emerald-dark:   #0F6866;
+  --emerald-light:  #ECFDF5;
+
+  /* ── Surface ── */
+  --bg:             #F4F7FB;
+  --bg-subtle:      #EBF0F7;
+  --card:           #FFFFFF;
+  --sidebar-w:      260px;
+
+  /* ── Border ── */
+  --border:         #E2E8F3;
+  --border-strong:  #C8D4E3;
+
+  /* ── Text ── */
+  --text:           #0D1B2E;
+  --text-secondary: #4A5568;
+  --text-light:     #8FA0B5;
+  --text-muted:     #B0BDCC;
+
+  /* ── Semantic ── */
+  --red:            #E5484D;
+  --amber:          #F59E0B;
+  --info:           #3B82F6;
+
+  /* ── Radius ── */
+  --radius-2xl: 28px;
+  --radius-xl:  22px;
+  --radius-lg:  18px;
+  --radius-md:  13px;
+  --radius-sm:  9px;
+  --radius-xs:  6px;
+  --radius: var(--radius-md);
+
+  /* ── Shadows (layered, soft, aesthetic) ── */
+  --shadow-xs:  0 1px 2px rgba(0,0,0,0.04), 0 1px 3px rgba(0,0,0,0.02);
+  --shadow:     0 2px 10px rgba(0,0,0,0.05), 0 1px 4px rgba(0,0,0,0.02);
+  --shadow-md:  0 8px 24px rgba(0,0,0,0.06), 0 3px 10px rgba(0,0,0,0.03);
+  --shadow-lg:  0 16px 48px rgba(0,0,0,0.08), 0 4px 16px rgba(0,0,0,0.04);
+  --shadow-xl:  0 32px 80px rgba(0,0,0,0.10), 0 8px 32px rgba(0,0,0,0.05);
+  --shadow-card: var(--shadow);
+
+  /* ── Tints ── */
+  --tint-blue:        #EFF6FF;
+  --tint-blue-fg:     #0B4A8B;
+  --tint-emerald:     #ECFDF5;
+  --tint-emerald-fg:  #17A673;
+  --tint-amber:       #FFFBEB;
+  --tint-amber-fg:    #D97706;
+  --tint-red:         #FEF2F2;
+  --tint-red-fg:      #E5484D;
+  --tint-purple:      #F5F3FF;
+  --tint-purple-fg:   #7C3AED;
+
+  /* ── Gradients ── */
+  --sidebar-bg:  linear-gradient(175deg, #07396e 0%, #052d58 50%, #041f40 100%);
+  --login-bg:    linear-gradient(165deg, #0B4A8B 0%, #06386F 60%, #04254e 100%);
+  --hero-bg:     linear-gradient(135deg, #0B4A8B 0%, #083a70 60%, #052d58 100%);
+
+  /* compat */
+  --primary-fg:   #fff;
+  --text-primary: var(--text);
+  --accent:       var(--primary);
+  --accent-soft:  rgba(11,74,139,0.08);
+}
+
+@layer base {
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  
+  /* Global micro-interactions for a premium feel */
+  button, a {
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  
+  input, select, textarea {
+    transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+  }
+}
+html, body {
+  width: 100%;
+  min-height: 100%;
+  background: var(--bg);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  color: var(--text);
+  font-size: 14px;
+  line-height: 1.6; /* bumped from 1.55 to prevent compressed text */
+  letter-spacing: -0.012em;
+  font-feature-settings: "cv11","ss01","ss03","cv02","cv03","cv04";
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+h1 { font-size: 28px; font-weight: 800; letter-spacing: -0.03em; line-height: 1.15; }
+h2 { font-size: 20px; font-weight: 700; letter-spacing: -0.02em; line-height: 1.22; }
+h3 { font-size: 15px; font-weight: 700; letter-spacing: -0.015em; line-height: 1.3; }
+h4 { font-size: 13px; font-weight: 700; letter-spacing: -0.005em; line-height: 1.4; }
+
+.tabular { font-variant-numeric: tabular-nums; }
+a { text-decoration: none; color: inherit; }
+ul, ol { list-style: none; }
+
+/* Scoped in @layer base so Tailwind utility classes (e.g. bg-[#0B4A8B])
+   in @layer utilities correctly win the cascade without needing `!important`.
+   Left unlayered, this reset previously beat every unmodified bg-* / border-*
+   utility class in the app regardless of specificity (Tailwind v4 cascade
+   layers: unlayered normal rules outrank @layer utilities), which is what
+   made the Submit Response button (and other plain buttons) render with no
+   background/border. */
+@layer base {
+  button { font-family: inherit; cursor: pointer; border: none; background: none; }
+}
+
+/* ── Scrollbar ── */
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #C8D4E3; border-radius: 99px; border: 2px solid transparent; background-clip: content-box; }
+::-webkit-scrollbar-thumb:hover { background: #8FA0B5; background-clip: content-box; border: 2px solid transparent; }
+::selection { background: rgba(11,74,139,0.14); color: var(--primary-dark); }
+
+/* ── Premium focus-visible ring (keyboard accessibility) ── */
+*:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+/* Remove default outline only when focus is visible (mouse click keeps it clean) */
+*:focus:not(:focus-visible) { outline: none; }
+
+/* ============================================================
+   LAYOUT UTILITIES
+   ============================================================ */
+
+/* Card — standard white surface */
+.card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow);
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
+}
+.card-hover:hover {
+  box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
+}
+
+/* Panel — larger containers (charts, tables) */
+.panel {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow);
+}
+
+/* Glass (login) */
+.glass {
+  background: rgba(255,255,255,0.09);
+  backdrop-filter: blur(22px);
+  -webkit-backdrop-filter: blur(22px);
+  border: 1px solid rgba(255,255,255,0.17);
+}
+
+/* ============================================================
+   SIDEBAR NAVIGATION
+   ============================================================ */
+
+.nav-section-label {
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.3);
+  padding: 18px 14px 5px;
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 8px 11px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 500;
+  color: rgba(255,255,255,0.58);
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  letter-spacing: -0.01em;
+  position: relative;
+}
+.nav-item svg {
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.nav-item:hover {
+  background: rgba(255,255,255,0.07);
+  color: rgba(255,255,255,0.92);
+  transform: translateX(4px);
+}
+.nav-item:hover svg {
+  transform: scale(1.15) rotate(-2deg);
+}
+.nav-item:active {
+  transform: scale(0.96);
+}
+.nav-item.active {
+  /* background handled by framer-motion layoutId="sidebar-active-pill" */
+  background: transparent;
+  color: #fff;
+  font-weight: 600;
+}
+/* ::before bar handled by framer-motion layoutId="sidebar-active-bar" */
+
+/* ============================================================
+   TABLE DEFAULTS
+   ============================================================ */
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+th {
+  text-align: left;
+  color: var(--text-light);
+  font-weight: 700;
+  font-size: 10.5px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  background: var(--bg-subtle);
+  white-space: nowrap;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+td { padding: 16px 18px; border-bottom: 1px solid var(--border); color: var(--text); vertical-align: middle; }
+tbody tr { transition: background-color 0.12s ease; }
+tbody tr:hover td { background: var(--bg-subtle); }
+tbody tr:last-child td { border-bottom: none; }
+
+/* ── Trends ── */
+.trend-up   { color: var(--emerald); font-weight: 700; }
+.trend-down { color: var(--red); font-weight: 700; }
+
+/* ── Badges ── */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  border-radius: var(--radius-xs);
+  padding: 2px 8px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+.badge-promoter  { background: var(--tint-emerald); color: var(--tint-emerald-fg); }
+.badge-passive   { background: var(--tint-amber);   color: var(--tint-amber-fg);   }
+.badge-detractor { background: var(--tint-red);     color: var(--tint-red-fg);     }
+.badge-blue      { background: var(--tint-blue);    color: var(--tint-blue-fg);    }
+
+/* ── Icon button ── */
+.icon-btn {
+  position: relative;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-secondary);
+  box-shadow: var(--shadow-xs);
+  transition: box-shadow 0.18s cubic-bezier(0.16,1,0.3,1), border-color 0.18s ease, color 0.18s ease, transform 0.18s cubic-bezier(0.16,1,0.3,1);
+  flex-shrink: 0;
+}
+.icon-btn:hover {
+  box-shadow: var(--shadow);
+  border-color: var(--border-strong);
+  color: var(--text);
+  transform: translateY(-1px);
+}
+.icon-btn:active {
+  transform: translateY(0);
+}
+
+/* ── Login pattern ── */
+.pattern-skyline {
+  background-image:
+    radial-gradient(circle at 20% 80%, rgba(255,255,255,0.06) 0, transparent 40%),
+    repeating-linear-gradient( 45deg, rgba(255,255,255,0.025) 0 1.5px, transparent 1.5px 48px),
+    repeating-linear-gradient(-45deg, rgba(255,255,255,0.025) 0 1.5px, transparent 1.5px 48px);
+}
+
+/* ── Skeleton ── */
+@keyframes shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position:  200% 0; }
+}
+.shimmer {
+  background: linear-gradient(90deg, #EDF1F7 25%, #F5F8FC 50%, #EDF1F7 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s ease-in-out infinite;
+}
+
+/* ── Entrance animations ── */
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.animate-fade-up { animation: fade-up 0.42s cubic-bezier(0.16,1,0.3,1) both; }
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+.animate-fade-in { animation: fade-in 0.3s ease both; }
+
+/* ── Section label inside sidebar ── */
+.section-label {
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.3);
+  padding: 16px 14px 5px;
+}
+
+/* ============================================================
+   RESPONSIVE LAYOUT — Mobile / Tablet / Desktop
+   ============================================================
+   Breakpoints:
+     Desktop:  ≥1024px (lg)  — static sidebar, full layout
+     Tablet:   768–1024px    — collapsible sidebar (off-canvas drawer)
+     Mobile:   <768px (md)   — off-canvas drawer, single-column, reduced spacing
+   ============================================================ */
+
+/* ── Sidebar: off-canvas drawer on tablet/mobile ── */
+.sidebar-aside {
+  transition: transform 0.55s cubic-bezier(0.2, 0.8, 0.2, 1), 
+              opacity 0.55s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+/* Close button — hidden on desktop, visible on mobile/tablet */
+.sidebar-close-btn {
+  display: none;
+}
+
+/* On screens < 1024px, sidebar becomes a fixed off-canvas drawer */
+@media (max-width: 1023px) {
+  .sidebar-aside {
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    z-index: 70;
+    width: 85vw !important;
+    min-width: 0 !important;
+    max-width: 320px;
+    transform: translateX(-100%);
+    box-shadow: 16px 0 48px rgba(0, 0, 0, 0.3);
+  }
+  .sidebar-aside.drawer-open {
+    transform: translateX(0);
+  }
+  .sidebar-close-btn {
+    display: flex;
+  }
+}
+
+/* ── Main Layout Offset (Desktop) ── */
+@media (min-width: 1024px) {
+  .desktop-sidebar-offset {
+    /* Add a 24px (~1cm) gap between the sidebar and the main content area */
+    padding-left: calc(var(--sidebar-w) + 24px);
+    transition: padding-left 0.55s cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+
+  /* When sidebar is collapsed, reclaim full width */
+  .desktop-sidebar-offset.sidebar-collapsed {
+    padding-left: 24px;
+  }
+
+  /* Slide sidebar off-screen on desktop when collapsed */
+  .sidebar-aside.desktop-collapsed {
+    transform: translateX(calc(-100% - 20px)) scale(0.95);
+    opacity: 0;
+    pointer-events: none;
+  }
+}
+
+/* ── Sidebar collapse toggle (hidden on mobile) ── */
+.sidebar-collapse-toggle {
+  display: none;
+}
+@media (min-width: 1024px) {
+  .sidebar-collapse-toggle {
+    display: flex;
+  }
+}
+
+/* ── Floating expand button (appears when sidebar is collapsed) ── */
+.sidebar-expand-fab {
+  position: fixed;
+  left: 16px;
+  top: 50%;
+  transform: translateY(-50%) translateX(-80px) scale(0.8) rotate(-15deg);
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border: none;
+  border-radius: 14px;
+  background: var(--sidebar-bg);
+  color: #fff;
+  cursor: pointer;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(255,255,255,0.1);
+  opacity: 0;
+  pointer-events: none;
+  transition: transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1),
+              opacity 0.4s ease-out,
+              background 0.2s ease,
+              box-shadow 0.2s ease;
+}
+.sidebar-expand-fab.visible {
+  transform: translateY(-50%) translateX(0) scale(1) rotate(0deg);
+  opacity: 1;
+  pointer-events: auto;
+}
+.sidebar-expand-fab:hover {
+  background: linear-gradient(135deg, #0B4A8B, #07396e);
+  box-shadow: 0 12px 36px rgba(11, 74, 139, 0.5), 0 0 0 1px rgba(255,255,255,0.15);
+}
+
+/* Hide the floating FAB on mobile (sidebar uses drawer there) */
+@media (max-width: 1023px) {
+  .sidebar-expand-fab {
+    display: none !important;
+  }
+}
+
+/* ── Navbar: explicit height on desktop for consistent layout ── */
+.navbar-header {
+  height: 60px;
+}
+
+/* ── Navbar: reduced height on mobile ── */
+@media (max-width: 767px) {
+  .navbar-header {
+    height: 54px;
+  }
+}
+
+/* ── Global responsive table scrolling ── */
+/* Tables reduce padding on mobile; containers with overflow-x-auto scroll */
+@media (max-width: 767px) {
+  table {
+    font-size: 12px;
+  }
+  th {
+    padding: 10px 12px;
+    font-size: 10px;
+  }
+  td {
+    padding: 10px 12px;
+  }
+}
+
+/* ── Responsive grid utilities ── */
+/* Note: most grids already use Tailwind responsive classes (sm:grid-cols-2 etc.)
+   This only catches bare grid-cols-N without responsive variants. */
+@media (max-width: 640px) {
+  .grid-cols-4:not(.grid-cols-1):not(.sm\:grid-cols-2):not(.sm\:grid-cols-4) {
+    grid-template-columns: 1fr !important;
+  }
+  .grid-cols-3:not(.grid-cols-1):not(.sm\:grid-cols-2):not(.sm\:grid-cols-3) {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* ── Responsive page padding ── */
+@media (max-width: 767px) {
+  .px-7 {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+  .p-7 {
+    padding: 1rem;
+  }
+  .py-6 {
+    padding-top: 1rem;
+    padding-bottom: 1rem;
+  }
+}
+
+/* ── Responsive typography ── */
+@media (max-width: 767px) {
+  h1 { font-size: 22px; }
+  h2 { font-size: 18px; }
+  h3 { font-size: 14px; }
+  h4 { font-size: 12px; }
+}
+
+/* ── Responsive icon button ── */
+@media (max-width: 767px) {
+  .icon-btn {
+    width: 32px;
+    height: 32px;
+  }
+}
+
+/* ── Responsive nav-item (sidebar) ── */
+@media (max-width: 1023px) {
+  .nav-item {
+    font-size: 14px;
+    padding: 10px 12px;
+  }
+  .section-label {
+    font-size: 10.5px;
+    padding: 18px 14px 6px;
+  }
+}
+
+/* ── Prevent horizontal overflow globally ── */
+html, body {
+  overflow-x: clip;
+}
+
+/* NOTE: The previous global `.flex-1 { min-width: 0 }` override has been
+   removed because it was collapsing the natural width of EVERY flex-1
+   child across the app, which caused text wrapping inside cards, tables,
+   and chart containers to look compressed. Children that genuinely need
+   `min-width: 0` (e.g. to truncate long content) should use Tailwind's
+   `min-w-0` utility directly on the element. */
+
+/* ── Chart minimum heights ──
+   Desktop baseline so charts never collapse below a usable size. */
+.recharts-responsive-container {
+  min-height: 260px !important;
+}
+
+/* ── Responsive chart height on mobile ── */
+@media (max-width: 767px) {
+  .recharts-responsive-container {
+    min-height: 220px !important;
+  }
+}
+
+/* ── Responsive buttons: full-width on mobile where appropriate ── */
+@media (max-width: 640px) {
+  .button-full-mobile {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+/* ── Responsive page headers: wrap title + action buttons on mobile ── */
+@media (max-width: 640px) {
+  .animate-fade-up.flex.items-start.justify-between,
+  .animate-fade-up.flex.items-center.justify-between {
+    flex-wrap: wrap;
+    gap: 0.75rem;
+  }
+}
+
+/* ── Ensure select elements don't overflow on mobile ── */
+@media (max-width: 767px) {
+  select {
+    max-width: 100%;
+  }
+}
+
+/* ── Responsive page padding for all dashboard pages ── */
+@media (max-width: 767px) {
+  .p-7 {
+    padding: 1rem;
+  }
+  .px-7 {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+  .py-6 {
+    padding-top: 1rem;
+    padding-bottom: 1rem;
+  }
+  /* Reduce gap between page sections on mobile */
+  .gap-5 {
+    gap: 1rem;
+  }
+  .gap-4 {
+    gap: 0.875rem;
+  }
+}
+
+/* ── Responsive chart container height on mobile ── */
+@media (max-width: 767px) {
+  .recharts-responsive-container {
+    min-height: 220px !important;
+  }
+  /* Chart containers in analytics builder tab */
+  .grid-cols-1.gap-3.lg\:grid-cols-2 > div {
+    min-height: auto;
+  }
+}
+
+/* ── Responsive table: smaller text + tighter padding ── */
+@media (max-width: 767px) {
+  table {
+    font-size: 12px;
+  }
+  th {
+    padding: 8px 10px;
+    font-size: 9.5px;
+  }
+  td {
+    padding: 8px 10px;
+  }
+}
+
+/* ── Responsive drawer width: full-width on mobile ── */
+@media (max-width: 767px) {
+  .fixed.right-0.top-0[class*="max-w-"] {
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+}
+
+/* ── Responsive modal: full-width on mobile ── */
+@media (max-width: 640px) {
+  .fixed[class*="max-w-"]:not([class*="max-w-\[320px\]"]) {
+    max-width: calc(100vw - 2rem) !important;
+  }
+}
+
+/* ── Responsive KPI card: smaller text on mobile ── */
+@media (max-width: 640px) {
+  .text-\[30px\] {
+    font-size: 24px;
+  }
+  .text-\[20px\] {
+    font-size: 17px;
+  }
+  .text-\[15px\] {
+    font-size: 14px;
+  }
+}
+
+/* ── Responsive form inputs: full width, no overflow ── */
+@media (max-width: 767px) {
+  input[type="text"],
+  input[type="email"],
+  input[type="password"],
+  input[type="number"],
+  input[type="date"],
+  input[type="search"],
+  textarea,
+  select {
+    width: 100%;
+    max-width: 100%;
+  }
+}
+
+/* ── Responsive heading sizes on mobile ── */
+@media (max-width: 767px) {
+  h1 { font-size: 20px; line-height: 1.25; }
+  h2 { font-size: 17px; line-height: 1.3; }
+  h3 { font-size: 14px; line-height: 1.35; }
+  h4 { font-size: 12.5px; line-height: 1.4; }
+}
+
+/* ── Responsive page hero headers (settings, reports, etc.) ── */
+@media (max-width: 767px) {
+  .relative.flex.flex-col.gap-4.rounded-\[22px\] {
+    border-radius: 16px;
+    padding: 1rem 1.25rem;
+  }
+}
+
+/* ── Mobile: keep .truncate working (do NOT override it) ──
+   The previous override disabled truncation on mobile, which caused text
+   to overflow its container instead of being clipped. We now use
+   line-clamp-2 for multi-line contexts and keep .truncate for genuine
+   single-line contexts (sidebar labels, navbar titles, etc.). */
+
+/* ── Responsive sidebar drawer width on mobile ── */
+@media (max-width: 1023px) {
+  .sidebar-aside {
+    width: 85vw !important;
+    min-width: 0 !important;
+    max-width: 320px;
+  }
+}
+
+/* ── Mobile: reduce header height ── */
+@media (max-width: 767px) {
+  .navbar-header {
+    height: 54px;
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+}
+
+/* ── Mobile: make icon buttons slightly smaller ── */
+@media (max-width: 640px) {
+  .icon-btn {
+    width: 34px;
+    height: 34px;
+  }
+}
+
+/* ── Mobile: ensure flex containers wrap properly ── */
+@media (max-width: 640px) {
+  .flex.items-center.justify-between {
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+}
+
+/* ── Mobile: survey builder three-column → single column ── */
+@media (max-width: 1023px) {
+  .flex.flex-1.overflow-hidden > .hidden.w-\[320px\],
+  .flex.flex-1.overflow-hidden > .hidden.flex-1 {
+    display: none !important;
+  }
+}
+
+/* ── Mobile: prevent horizontal scroll from framer-motion transforms ── */
+@media (max-width: 767px) {
+  .motion-div[class*="flex flex-col gap-5 p-7"] {
+    padding: 1rem;
+  }
+}
+
+/* ── Mobile: settings page left rail → stacked ── */
+@media (max-width: 1023px) {
+  .flex.flex-col.gap-5.lg\:flex-row > aside {
+    width: 100% !important;
+  }
+  .flex.flex-col.gap-5.lg\:flex-row > aside > div {
+    position: static !important;
+  }
+}
+
+/* ============================================================
+   PRINT STYLES (for PDF export)
+   ============================================================ */
+@media print {
+  .sidebar-aside, .navbar-header, .fixed.inset-0.z-50 {
+    display: none !important;
+  }
+  .desktop-sidebar-offset {
+    padding-left: 0 !important;
+  }
+  body {
+    background: white !important;
+  }
+  /* Force background colors and images to print */
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+}

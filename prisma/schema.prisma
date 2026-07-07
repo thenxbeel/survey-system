@@ -1,0 +1,343 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  // SQLite for local dev / sandbox. Switch to "mysql" for production.
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── Enums ──────────────────────────────────────────────────────────────────
+
+enum SurveyStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+enum SurveyLifecycleStatus {
+  DRAFT
+  SCHEDULED
+  ACTIVE
+  EXPIRED
+  CLOSED
+  ARCHIVED
+}
+
+enum SurveyVisibility {
+  PUBLIC
+  PRIVATE
+}
+
+enum DistributionChannel {
+  EMAIL
+  SMS
+  WHATSAPP
+  QR_CODE
+  DIRECT_LINK
+  WEB
+}
+
+// ─── Organization ───────────────────────────────────────────────────────────
+
+model Role {
+  id           Int     @id @default(autoincrement())
+  name         String  @unique
+  description  String?
+  allowedPages String? // JSON array of page keys e.g. '["dashboard","surveys","responses"]'
+  users        User[]
+}
+
+model Branch {
+  id          Int          @id @default(autoincrement())
+  name        String       @unique
+  location    String?
+  departments Department[]
+  users       User[]
+}
+
+model Department {
+  id          Int      @id @default(autoincrement())
+  name        String   @unique
+  description String?
+  // onDelete: Restrict — deleting a Branch that has Departments is blocked.
+  // The API layer (/api/branches/[id] DELETE) performs an explicit dependency
+  // check and returns a 409 with a meaningful message before any DB operation.
+  // This also makes Prisma Studio refuse deletion when dependents exist.
+  branchId    Int?
+  branch      Branch?  @relation(fields: [branchId], references: [id], onDelete: Restrict)
+  users       User[]
+}
+
+// ─── Touchpoints ────────────────────────────────────────────────────────────
+//
+// Touchpoints are first-class entities (Create / Edit / Delete / View).
+// The Survey.touchpoint String column is preserved for backward compatibility
+// — it stores the touchpoint NAME. A check constraint could enforce that the
+// name exists in this table, but to avoid migration risk we keep the String
+// column as-is and rely on the UI to populate dropdowns from this table.
+//
+// Deleting a Touchpoint that is referenced by any Survey is blocked at the
+// API layer (returns 409 with a meaningful message). The Survey.touchpoint
+// column is NOT a foreign key (it's a free-text String) so the DB itself
+// cannot enforce referential integrity — the API performs the check.
+
+model Touchpoint {
+  id          Int       @id @default(autoincrement())
+  name        String    @unique
+  description String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model User {
+  id            Int            @id @default(autoincrement())
+  employeeId    String         @unique
+  name          String
+  email         String         @unique
+  password      String
+  phone         String?
+  avatar        String?
+  isActive      Boolean        @default(true)
+  lastLogin     DateTime?
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  // Nullable JSON column for per-user UI preferences (theme, accent, density,
+  // font size, typography). Backward-compatible: existing rows default to null
+  // and the application falls back to defaults when null. Works on SQLite
+  // (stored as TEXT) and MySQL (native JSON).
+  preferences   Json?
+  roleId        Int
+  role          Role           @relation(fields: [roleId], references: [id])
+  // onDelete: Restrict — deleting a Department/Branch that has Users is blocked.
+  // The API layer performs an explicit dependency check and returns a 409 with
+  // a meaningful message before any DB operation. This also makes Prisma Studio
+  // refuse deletion when dependents exist.
+  departmentId  Int?
+  department    Department?    @relation(fields: [departmentId], references: [id], onDelete: Restrict)
+  branchId      Int?
+  branch        Branch?        @relation(fields: [branchId], references: [id], onDelete: Restrict)
+  surveys       Survey[]
+  modifiedSurveys Survey[]     @relation("ModifiedSurveys")
+  campaigns     Campaign[]
+  notifications Notification[]
+  activityLogs  ActivityLog[]
+  auditLogs     SurveyAuditLog[]
+  assignedResponses Response[]   @relation("AssignedResponses")
+  savedReports  SavedReport[]  @relation("SavedReports")
+  scheduledReports ScheduledReport[] @relation("ScheduledReports")
+}
+
+// ─── Survey Management ──────────────────────────────────────────────────────
+
+model Survey {
+  id              Int                   @id @default(autoincrement())
+  title           String
+  description     String?
+  touchpoint      String
+  department      String?
+  branch          String?
+  category        String?
+  status          SurveyStatus          @default(DRAFT)
+  lifecycleStatus SurveyLifecycleStatus @default(ACTIVE)
+  visibility      SurveyVisibility      @default(PRIVATE)
+  isTemplate      Boolean               @default(false)
+  isAnonymous     Boolean               @default(true)
+  version         Int                   @default(1)
+
+  // ── Public URL / QR / Ownership ──
+  slug            String?               @unique
+  publicUrl       String?
+  qrCode          String? // base64-encoded PNG data URL
+  surveyCode      String?               @unique
+
+  // ── Availability ──
+  activationDate  DateTime?
+  expirationDate  DateTime?
+  closedAt        DateTime?
+
+  expiryDate      DateTime? // legacy field
+  createdAt       DateTime              @default(now())
+  updatedAt       DateTime              @updatedAt
+
+  // ── Ownership ──
+  createdById     Int
+  createdBy       User                  @relation(fields: [createdById], references: [id])
+  lastModifiedById Int?
+  lastModifiedBy  User?                 @relation("ModifiedSurveys", fields: [lastModifiedById], references: [id])
+
+  // ── Campaign ──
+  campaignId      Int?
+  campaign        Campaign?             @relation(fields: [campaignId], references: [id])
+
+  questions       Question[]
+  responses       Response[]
+  auditLogs       SurveyAuditLog[]
+}
+
+model Question {
+  id           Int      @id @default(autoincrement())
+  question     String
+  type         String
+  required     Boolean  @default(false)
+  displayOrder Int      @default(0)
+  surveyId     Int
+  survey       Survey   @relation(fields: [surveyId], references: [id], onDelete: Cascade)
+  options      Option[]
+  answers      Answer[]
+}
+
+model Option {
+  id         Int      @id @default(autoincrement())
+  value      String
+  questionId Int
+  question   Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+}
+
+// ─── Campaign ───────────────────────────────────────────────────────────────
+
+model Campaign {
+  id          Int        @id @default(autoincrement())
+  name        String
+  code        String     @unique
+  description String?
+  ownerId     Int
+  owner       User       @relation(fields: [ownerId], references: [id])
+  channel     DistributionChannel @default(DIRECT_LINK)
+  startDate   DateTime?
+  endDate     DateTime?
+  isActive    Boolean    @default(true)
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  surveys     Survey[]
+  responses   Response[]
+}
+
+// ─── Responses ──────────────────────────────────────────────────────────────
+//
+// Every survey submission creates ONE Response record. Optional respondent
+// info (name, email, phone) is stored directly on the Response — there is
+// no Customer table and no follow-up workflow.
+
+model Response {
+  id            Int        @id @default(autoincrement())
+  // ── Optional respondent info (stored on the response, NOT in a customer table) ──
+  respondentName  String?
+  respondentEmail String?
+  respondentPhone String?
+
+  npsScore      Int?
+  csatScore     Int?
+  cesScore      Int?
+  feedback      String?
+  channel       String?
+  distributionChannel DistributionChannel @default(WEB)
+  campaignId    Int?
+  campaign      Campaign?  @relation(fields: [campaignId], references: [id], onDelete: SetNull)
+  deviceType    String?
+  browser       String?
+  operatingSystem String?
+  ipAddress     String?
+  country       String?
+  city          String?
+  status        String     @default("new")
+  submittedAt   DateTime   @default(now())
+
+  // Assignment / Ticketing
+  assignedToId  Int?
+  assignedTo    User?      @relation("AssignedResponses", fields: [assignedToId], references: [id])
+  assignedAt    DateTime?
+
+  surveyId      Int
+  survey        Survey     @relation(fields: [surveyId], references: [id], onDelete: Cascade)
+  answers       Answer[]
+}
+
+model Answer {
+  id         Int      @id @default(autoincrement())
+  answer     String
+  responseId Int
+  response   Response @relation(fields: [responseId], references: [id], onDelete: Cascade)
+  questionId Int
+  question   Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+}
+
+// ─── Notifications & Activity ───────────────────────────────────────────────
+
+model Notification {
+  id        Int      @id @default(autoincrement())
+  title     String
+  message   String
+  category  String   @default("system")
+  link      String?
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id])
+}
+
+model ActivityLog {
+  id        Int      @id @default(autoincrement())
+  action    String
+  entity    String?
+  entityId  Int?
+  details   String?
+  createdAt DateTime @default(now())
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id])
+}
+
+// ─── Survey Audit Log ──────────────────────────────────────────────────────
+
+model SurveyAuditLog {
+  id          Int      @id @default(autoincrement())
+  surveyId    Int
+  survey      Survey   @relation(fields: [surveyId], references: [id], onDelete: Cascade)
+  action      String
+  details     String?
+  metadata    String?
+  ipAddress   String?
+  userAgent   String?
+  createdAt   DateTime @default(now())
+  actorId     Int?
+  actor       User?    @relation(fields: [actorId], references: [id], onDelete: SetNull)
+
+  @@index([surveyId, createdAt])
+  @@index([action])
+}
+
+// ─── Reports ───────────────────────────────────────────────────────────────
+
+model SavedReport {
+  id          Int      @id @default(autoincrement())
+  publicId    String   @unique
+  name        String
+  type        String
+  format      String
+  size        String   @default("—")
+  status      String   @default("ready")
+  generatedAt DateTime @default(now())
+  period      String
+  parameters  String   @default("[]") // JSON string of parameters
+  description String?
+  
+  createdById Int
+  createdBy   User     @relation("SavedReports", fields: [createdById], references: [id], onDelete: Cascade)
+}
+
+model ScheduledReport {
+  id          Int      @id @default(autoincrement())
+  publicId    String   @unique
+  name        String
+  type        String
+  frequency   String
+  nextRunAt   DateTime
+  lastRunAt   DateTime?
+  recipients  String   @default("[]") // JSON string of emails
+  format      String
+  status      String   @default("active")
+  
+  createdById Int
+  createdBy   User     @relation("ScheduledReports", fields: [createdById], references: [id], onDelete: Cascade)
+}
