@@ -50,6 +50,7 @@ export async function GET(req: NextRequest) {
         employeeId: user.employeeId,
         name: user.name,
         email: user.email,
+        phone: user.phone,
         role: user.role.name,
         department: user.department?.name,
         branch: user.branch?.name,

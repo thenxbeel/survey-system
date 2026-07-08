@@ -95,6 +95,8 @@ export function SecuritySection({ delay = 0 }: Props) {
         }
       >
         <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+          {/* Hidden username field to trap browser autofill so it doesn't fill the global search bar */}
+          <input type="text" autoComplete="username" className="hidden" aria-hidden="true" readOnly />
           <Field label="Current Password">
             <div className="relative">
               <TextInput

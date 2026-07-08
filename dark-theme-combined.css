@@ -1,0 +1,122 @@
+/* ============================================================
+   DARK MODE - PREMIUM MIDNIGHT BLUE
+   ============================================================ */
+
+[data-theme="dark"] {
+  --bg:             #040B16;
+  --bg-subtle:      #081629;
+  --card:           #0C1E36;
+  --border:         #1A3252;
+  --border-strong:  #26456E;
+  --text:           #FFFFFF;
+  --text-secondary: #9CA8BA;
+  --text-light:     #6F839E;
+  --text-muted:     #4A5F7A;
+  
+  --shadow-xs:  0 1px 2px rgba(0,0,0,0.6), 0 1px 3px rgba(0,0,0,0.4);
+  --shadow:     0 2px 10px rgba(0,0,0,0.6), 0 1px 4px rgba(0,0,0,0.4);
+  --shadow-md:  0 8px 24px rgba(0,0,0,0.6), 0 3px 10px rgba(0,0,0,0.4);
+  --shadow-lg:  0 16px 48px rgba(0,0,0,0.6), 0 4px 16px rgba(0,0,0,0.4);
+  --shadow-xl:  0 32px 80px rgba(0,0,0,0.6), 0 8px 32px rgba(0,0,0,0.4);
+
+  --tint-blue:      #0B2B54;
+  --tint-blue-fg:   #93C5FD;
+  --tint-emerald:   #043A2B;
+  --tint-emerald-fg:#6EE7B7;
+  --tint-amber:     #572A05;
+  --tint-amber-fg:  #FCD34D;
+  --tint-red:       #5C1318;
+  --tint-red-fg:    #FCA5A5;
+  --tint-purple:    #351470;
+  --tint-purple-fg: #D8B4FE;
+}
+
+@media (prefers-color-scheme: dark) {
+  [data-theme="system"] {
+    --bg:             #040B16;
+    --bg-subtle:      #081629;
+    --card:           #0C1E36;
+    --border:         #1A3252;
+    --border-strong:  #26456E;
+    --text:           #FFFFFF;
+    --text-secondary: #9CA8BA;
+    --text-light:     #6F839E;
+    --text-muted:     #4A5F7A;
+    
+    --shadow-xs:  0 1px 2px rgba(0,0,0,0.6), 0 1px 3px rgba(0,0,0,0.4);
+    --shadow:     0 2px 10px rgba(0,0,0,0.6), 0 1px 4px rgba(0,0,0,0.4);
+    --shadow-md:  0 8px 24px rgba(0,0,0,0.6), 0 3px 10px rgba(0,0,0,0.4);
+    --shadow-lg:  0 16px 48px rgba(0,0,0,0.6), 0 4px 16px rgba(0,0,0,0.4);
+    --shadow-xl:  0 32px 80px rgba(0,0,0,0.6), 0 8px 32px rgba(0,0,0,0.4);
+
+    --tint-blue:      #0B2B54;
+    --tint-blue-fg:   #93C5FD;
+    --tint-emerald:   #043A2B;
+    --tint-emerald-fg:#6EE7B7;
+    --tint-amber:     #572A05;
+    --tint-amber-fg:  #FCD34D;
+    --tint-red:       #5C1318;
+    --tint-red-fg:    #FCA5A5;
+    --tint-purple:    #351470;
+    --tint-purple-fg: #D8B4FE;
+  }
+}
+
+@layer utilities {
+  [data-theme="dark"] .bg-white { background-color: var(--card) !important; }
+  @media (prefers-color-scheme: dark) { [data-theme="system"] .bg-white { background-color: var(--card) !important; } }
+  
+  [data-theme="dark"] .text-\[\#333333\],
+  [data-theme="dark"] .text-\[\#1E293B\],
+  [data-theme="dark"] .text-\[\#0D1B2E\],
+  [data-theme="dark"] .text-\[\#0F172A\],
+  [data-theme="dark"] .text-gray-900,
+  [data-theme="dark"] .text-gray-800,
+  [data-theme="dark"] .text-gray-700 { color: var(--text) !important; }
+
+  @media (prefers-color-scheme: dark) {
+    [data-theme="system"] .text-\[\#333333\],
+    [data-theme="system"] .text-\[\#1E293B\],
+    [data-theme="system"] .text-\[\#0D1B2E\],
+    [data-theme="system"] .text-\[\#0F172A\],
+    [data-theme="system"] .text-gray-900,
+    [data-theme="system"] .text-gray-800,
+    [data-theme="system"] .text-gray-700 { color: var(--text) !important; }
+  }
+
+  [data-theme="dark"] .text-\[\#475569\],
+  [data-theme="dark"] .text-\[\#4A5568\] { color: var(--text-secondary) !important; }
+  @media (prefers-color-scheme: dark) {
+    [data-theme="system"] .text-\[\#475569\],
+    [data-theme="system"] .text-\[\#4A5568\] { color: var(--text-secondary) !important; }
+  }
+
+  [data-theme="dark"] .text-\[\#8A94A6\],
+  [data-theme="dark"] .text-\[\#8FA0B5\],
+  [data-theme="dark"] .text-\[\#6B7A90\] { color: var(--text-light) !important; }
+  
+  @media (prefers-color-scheme: dark) {
+    [data-theme="system"] .text-\[\#8A94A6\],
+    [data-theme="system"] .text-\[\#8FA0B5\],
+    [data-theme="system"] .text-\[\#6B7A90\] { color: var(--text-light) !important; }
+  }
+
+  [data-theme="dark"] .text-\[\#B0B8C4\] { color: var(--text-muted) !important; }
+  @media (prefers-color-scheme: dark) {
+    [data-theme="system"] .text-\[\#B0B8C4\] { color: var(--text-muted) !important; }
+  }
+
+  [data-theme="dark"] .bg-\[\#F5F7FA\],
+  [data-theme="dark"] .bg-\[\#F8FAFD\] { background-color: var(--bg-subtle) !important; }
+  @media (prefers-color-scheme: dark) {
+    [data-theme="system"] .bg-\[\#F5F7FA\],
+    [data-theme="system"] .bg-\[\#F8FAFD\] { background-color: var(--bg-subtle) !important; }
+  }
+
+  [data-theme="dark"] .border-\[\#E6EDF3\],
+  [data-theme="dark"] .border-\[\#E2E8F3\] { border-color: var(--border) !important; }
+  @media (prefers-color-scheme: dark) {
+    [data-theme="system"] .border-\[\#E6EDF3\],
+    [data-theme="system"] .border-\[\#E2E8F3\] { border-color: var(--border) !important; }
+  }
+}

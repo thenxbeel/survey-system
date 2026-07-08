@@ -124,8 +124,6 @@ export function OrganizationSection({ delay = 0 }: Props) {
                 className={selectCls}
               >
                 <option>English</option>
-                <option>Arabic</option>
-                <option>Bilingual (EN/AR)</option>
               </select>
             </div>
           </Field>

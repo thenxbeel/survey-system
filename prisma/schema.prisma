@@ -144,6 +144,7 @@ model Survey {
   visibility      SurveyVisibility      @default(PRIVATE)
   isTemplate      Boolean               @default(false)
   isAnonymous     Boolean               @default(true)
+  requireContactInfo Boolean            @default(false)
   version         Int                   @default(1)
 
   // ── Public URL / QR / Ownership ──

@@ -195,7 +195,7 @@ export function ExecutiveAnalyticsDashboard() {
 
         // ── Build priority cases from live detractor responses ──
         const liveCases: PriorityCase[] = (detractors?.data ?? [])
-          .filter((r: any) => r.status !== 'resolved' && r.status !== 'closed' && r.status !== 'actioned')
+          .filter((r: any) => r.status !== 'resolved' && r.status !== 'closed' && r.status !== 'actioned' && !r.assignedToId)
           .slice(0, 6)
           .map((r: any, i: number) => ({
           id: r.id,
@@ -206,7 +206,7 @@ export function ExecutiveAnalyticsDashboard() {
           npsScore: r.npsScore ?? 0,
           daysOpen: Math.max(0, Math.floor((Date.now() - new Date(r.submittedAt).getTime()) / 86400000)),
           priority: (r.npsScore ?? 0) <= 3 ? 'critical' as const : 'high' as const,
-          assignedTo: r.createdByName ?? undefined,
+          assignedTo: r.assignedToName ?? undefined,
         }))
         setPriorityCases(liveCases)
 

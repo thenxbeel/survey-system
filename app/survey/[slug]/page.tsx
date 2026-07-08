@@ -28,6 +28,7 @@ interface PublicSurvey {
   touchpoint: string
   category: string | null
   isAnonymous: boolean
+  requireContactInfo: boolean
   activationDate: string | null
   expirationDate: string | null
   lifecycleStatus: string
@@ -152,6 +153,10 @@ export default function PublicSurveyPage() {
     // All required questions must be answered
     const missingRequired = questions.some(q => q.required && !answers[q.id]?.trim())
     if (missingRequired) return false
+    // If identified AND requireContactInfo, at least one contact method must be present
+    if (!survey.isAnonymous && survey.requireContactInfo) {
+      if (!contactInfo.email && !contactInfo.phone) return false
+    }
     return true
   }
 
@@ -159,6 +164,39 @@ export default function PublicSurveyPage() {
     if (!survey || !canSubmit()) return
     setSubmitting(true)
     setSubmitError(null)
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    const phoneRegex = /^\d+$/
+    const isEmailInvalid = contactInfo.email && !emailRegex.test(contactInfo.email)
+    const isPhoneInvalid = contactInfo.phone && !phoneRegex.test(contactInfo.phone)
+
+    if (isEmailInvalid && isPhoneInvalid) {
+      setSubmitError('Email and phone invalid')
+      setSubmitting(false)
+      return
+    } else if (isEmailInvalid) {
+      setSubmitError('Invalid email address')
+      setSubmitting(false)
+      return
+    } else if (isPhoneInvalid) {
+      setSubmitError('Invalid phone number')
+      setSubmitting(false)
+      return
+    }
+
+    // Identified + requireContactInfo: name + at least one contact method required
+    if (!survey.isAnonymous && survey.requireContactInfo) {
+      if (!contactInfo.name && !contactInfo.email && !contactInfo.phone) {
+        setSubmitError('Please provide at least one contact method (Name, Email, or Phone).')
+        setSubmitting(false)
+        return
+      }
+      if (!contactInfo.email && !contactInfo.phone) {
+        setSubmitError('Please provide at least one contact method (Email or Phone).')
+        setSubmitting(false)
+        return
+      }
+    }
 
     try {
       const payload: Record<string, unknown> = {
@@ -298,20 +336,27 @@ export default function PublicSurveyPage() {
         />
       ))}
 
-      {/* Optional contact info section — after all questions */}
+      {/* Contact info section — after all questions */}
       <div id="contact-info" className="rounded-[20px] border border-[#E2E8F3] bg-white p-6 shadow-[0_4px_24px_rgba(13,27,46,0.04)] sm:p-8">
         <div className="mb-3 flex items-center gap-2.5">
           <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[#ECFDF5]">
             <ShieldCheck className="h-4 w-4 text-[#17A673]" />
           </span>
-          <h3 className="text-[14px] font-bold text-[#0D1B2E]">Optional Contact Info</h3>
-          <span className="ml-1 rounded-full bg-[#F4F7FB] px-2.5 py-1 text-[9.5px] font-bold uppercase tracking-wider text-[#6B7A90]">
-            Optional
+          <h3 className="text-[14px] font-bold text-[#0D1B2E]">
+            {!survey.isAnonymous && survey.requireContactInfo ? 'Contact Info' : 'Optional Contact Info'}
+          </h3>
+          <span className={`ml-1 rounded-full px-2.5 py-1 text-[9.5px] font-bold uppercase tracking-wider ${
+            !survey.isAnonymous && survey.requireContactInfo
+              ? 'bg-[#EBF5FF] text-[#0B4A8B]'
+              : 'bg-[#F4F7FB] text-[#6B7A90]'
+          }`}>
+            {!survey.isAnonymous && survey.requireContactInfo ? 'Required' : 'Optional'}
           </span>
         </div>
         <p className="mb-6 pl-9 text-[13px] leading-relaxed text-[#6B7A90]">
-          Share your contact details if you'd like us to follow up. Your information is kept
-          confidential and stored only with this response.
+          {!survey.isAnonymous && survey.requireContactInfo
+            ? "Please provide your contact details so we can follow up with you. Your information is kept confidential."
+            : "Share your contact details if you'd like us to follow up. Your information is kept confidential and stored only with this response."}
         </p>
         <div className="grid grid-cols-1 gap-4 pl-0 sm:grid-cols-3 sm:pl-9">
           <CustomerInput label="Full Name" value={contactInfo.name}

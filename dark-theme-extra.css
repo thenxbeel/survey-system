@@ -1,0 +1,50 @@
+
+@layer utilities {
+  [data-theme="dark"] .text-\[\#333333\],
+  [data-theme="dark"] .text-\[\#1E293B\],
+  [data-theme="dark"] .text-\[\#0D1B2E\],
+  [data-theme="dark"] .text-\[\#0F172A\] { color: var(--text) !important; }
+
+  @media (prefers-color-scheme: dark) {
+    [data-theme="system"] .text-\[\#333333\],
+    [data-theme="system"] .text-\[\#1E293B\],
+    [data-theme="system"] .text-\[\#0D1B2E\],
+    [data-theme="system"] .text-\[\#0F172A\] { color: var(--text) !important; }
+  }
+
+  [data-theme="dark"] .text-\[\#475569\],
+  [data-theme="dark"] .text-\[\#4A5568\] { color: var(--text-secondary) !important; }
+  @media (prefers-color-scheme: dark) {
+    [data-theme="system"] .text-\[\#475569\],
+    [data-theme="system"] .text-\[\#4A5568\] { color: var(--text-secondary) !important; }
+  }
+
+  [data-theme="dark"] .text-\[\#8A94A6\],
+  [data-theme="dark"] .text-\[\#8FA0B5\],
+  [data-theme="dark"] .text-\[\#6B7A90\] { color: var(--text-light) !important; }
+  
+  @media (prefers-color-scheme: dark) {
+    [data-theme="system"] .text-\[\#8A94A6\],
+    [data-theme="system"] .text-\[\#8FA0B5\],
+    [data-theme="system"] .text-\[\#6B7A90\] { color: var(--text-light) !important; }
+  }
+
+  [data-theme="dark"] .text-\[\#B0B8C4\] { color: var(--text-muted) !important; }
+  @media (prefers-color-scheme: dark) {
+    [data-theme="system"] .text-\[\#B0B8C4\] { color: var(--text-muted) !important; }
+  }
+
+  [data-theme="dark"] .bg-\[\#F5F7FA\],
+  [data-theme="dark"] .bg-\[\#F8FAFD\] { background-color: var(--bg-subtle) !important; }
+  @media (prefers-color-scheme: dark) {
+    [data-theme="system"] .bg-\[\#F5F7FA\],
+    [data-theme="system"] .bg-\[\#F8FAFD\] { background-color: var(--bg-subtle) !important; }
+  }
+
+  [data-theme="dark"] .border-\[\#E6EDF3\],
+  [data-theme="dark"] .border-\[\#E2E8F3\] { border-color: var(--border) !important; }
+  @media (prefers-color-scheme: dark) {
+    [data-theme="system"] .border-\[\#E6EDF3\],
+    [data-theme="system"] .border-\[\#E2E8F3\] { border-color: var(--border) !important; }
+  }
+}

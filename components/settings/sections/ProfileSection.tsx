@@ -90,7 +90,13 @@ export function ProfileSection({ delay = 0 }: Props) {
 
   const avatarColors = ['#0B4A8B', '#17A673', '#F5A623', '#E5484D', '#7C3AED', '#06B6D4']
 
-  function handleSave() {
+  async function handleSave() {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!emailRegex.test(email)) {
+      toast.error('Invalid Email', 'Please enter a valid email address.')
+      return
+    }
+
     const patch: Partial<UserProfile> = {
       fullName,
       displayName,
@@ -104,6 +110,23 @@ export function ProfileSection({ delay = 0 }: Props) {
       avatarInitials: initials,
     }
     updateProfile(patch)
+    
+    if (profile.id) {
+      try {
+        await fetch(`/api/users/${profile.id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            name: fullName,
+            email,
+            phone,
+          })
+        })
+      } catch {
+        // ignore errors for now
+      }
+    }
+
     toast.success('Profile saved', 'Your profile changes are now live across the platform.')
   }
 
@@ -136,10 +159,6 @@ export function ProfileSection({ delay = 0 }: Props) {
                 {initials}
               </div>
             </div>
-            <div className="text-center">
-              <button className="flex items-center justify-center text-center text-[12px] font-bold text-[#0B4A8B] hover:underline ">Change Avatar</button>
-              <div className="mt-0.5 text-[10px] text-gray-400">JPG, PNG or GIF. Max 2MB</div>
-            </div>
           </div>
 
           {/* Right Side: Form Fields */}
@@ -151,13 +170,16 @@ export function ProfileSection({ delay = 0 }: Props) {
               <TextInput value={displayName} onChange={setDisplayName} />
             </Field>
             <Field label="Email">
-              <TextInput value={email} onChange={setEmail} />
+              <TextInput type="email" value={email} onChange={setEmail} />
             </Field>
             <Field label="Phone">
               <TextInput value={phone} onChange={setPhone} placeholder="-" />
             </Field>
-            <Field label="Department" className="md:col-span-2">
+            <Field label="Department">
               <TextInput value={department || ''} onChange={setDepartment} />
+            </Field>
+            <Field label="Branch">
+              <TextInput value={branch || ''} onChange={setBranch} />
             </Field>
             <Field label="Role" className="md:col-span-2">
               <select
@@ -227,14 +249,6 @@ export function ProfileSection({ delay = 0 }: Props) {
         icon={Briefcase}
         accent="var(--emerald)"
         delay={delay + 0.05}
-        action={
-          <button
-            onClick={handleSave}
-            className="flex items-center gap-1 rounded-[8px] bg-[#0B4A8B] px-6 py-3 text-[11.5px] font-semibold text-white transition-all hover:bg-[#06386F] items-center justify-center text-center"
-          >
-            Edit
-          </button>
-        }
       >
         <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
           <div>

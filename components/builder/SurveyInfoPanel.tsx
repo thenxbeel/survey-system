@@ -138,6 +138,8 @@ export default function SurveyInfoPanel({ draft, onChange }: Props) {
           />
         </div>
       </div>
+
+
       
       {/* Spacer to push completion list down if needed */}
       <div className="mt-8"></div>

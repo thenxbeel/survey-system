@@ -142,8 +142,8 @@ export function Modal({
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.96 }}
             transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
-            className={`relative flex max-h-[90vh] w-full ${SIZE_WIDTHS[size]} flex-col overflow-hidden rounded-[18px] bg-white ${className}`}
-            style={{ border: "1px solid var(--border)", boxShadow: "var(--shadow-xl)" }}
+            className={`relative flex max-h-[90vh] w-full ${SIZE_WIDTHS[size]} flex-col overflow-hidden rounded-[18px] ${className}`}
+            style={{ border: "1px solid var(--border)", boxShadow: "var(--shadow-xl)", background: "var(--card)", color: "var(--text)" }}
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header */}

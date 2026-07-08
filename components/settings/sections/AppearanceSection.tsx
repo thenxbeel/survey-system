@@ -101,8 +101,8 @@ export function AppearanceSection({ delay = 0 }: Props) {
                 onClick={() => handleThemeChange(t.id)}
                 className="flex flex-col items-start gap-2 rounded-[12px] border p-4 text-left transition-all"
                 style={active
-                  ? { background: 'var(--tint-blue)', borderColor: 'rgba(11,74,139,0.3)' }
-                  : { background: 'white', borderColor: 'var(--border)' }
+                  ? { background: 'var(--tint-blue)', borderColor: 'var(--primary)' }
+                  : { background: 'var(--card)', borderColor: 'var(--border)' }
                 }
                 onMouseEnter={(e) => {
                   if (!active) e.currentTarget.style.borderColor = 'var(--border-strong)'
@@ -170,7 +170,7 @@ export function AppearanceSection({ delay = 0 }: Props) {
                 className="flex flex-col items-center gap-2 rounded-[10px] border p-3 transition-all"
                 style={active
                   ? { background: `${c.hex}0D`, borderColor: `${c.hex}80` }
-                  : { background: 'white', borderColor: 'var(--border)' }
+                  : { background: 'var(--card)', borderColor: 'var(--border)' }
                 }
                 onMouseEnter={(e) => {
                   if (!active) e.currentTarget.style.borderColor = 'var(--border-strong)'

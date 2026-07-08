@@ -16,7 +16,7 @@ import { PreferencesSection }     from '@/components/settings/sections/Preferenc
 import { useSettings } from '@/lib/stores/SettingsStore'
 import { useToast }    from '@/lib/stores/ToastStore'
 
-type SectionId = 'profile' | 'security' | 'notifications' | 'appearance' | 'preferences' | 'integrations'
+type SectionId = 'profile' | 'security' | 'notifications' | 'appearance' | 'preferences'
 
 const NAV_ITEMS: { id: SectionId; label: string; description: string; icon: typeof Cog }[] = [
   { id: 'profile',       label: 'Profile',         description: 'Personal info & settings',       icon: User    },
@@ -24,7 +24,6 @@ const NAV_ITEMS: { id: SectionId; label: string; description: string; icon: type
   { id: 'notifications', label: 'Notifications',   description: 'Email & in-app alerts',           icon: Bell    },
   { id: 'appearance',    label: 'Appearance',      description: 'Theme, colors & layout',          icon: Palette },
   { id: 'preferences',   label: 'Preferences',     description: 'Language, timezone & more',       icon: Globe   },
-  { id: 'integrations',  label: 'Integrations',    description: 'Connected apps & services',       icon: Puzzle  },
 ]
 
 interface Toast {
@@ -172,37 +171,7 @@ export default function SettingsPage() {
               ))}
             </nav>
 
-            {/* Help card */}
-            <div
-              className="mt-2 rounded-[10px] p-3"
-              style={{
-                background: 'var(--bg-subtle)',
-                border: '1px solid var(--border)',
-              }}
-            >
-              <div className="flex items-center gap-2">
-                <div
-                  className="flex h-[24px] w-[24px] items-center justify-center rounded-[7px]"
-                  style={{ background: 'var(--tint-blue)', color: 'var(--primary)' }}
-                >
-                  <Info size={12} strokeWidth={2.2} />
-                </div>
-                <div className="text-[11.5px] font-bold" style={{ color: 'var(--text)' }}>Need help with your settings?</div>
-              </div>
-              <p className="mt-1.5 text-[10.5px]" style={{ color: 'var(--text-light)' }}>
-                Visit our documentation for detailed guides and configuration help.
-              </p>
-              <button
-                onClick={() => pushToast('info', 'Support', 'Opening support docs (mock).')}
-                className="mt-2 flex w-full items-center justify-center gap-2.5 rounded-[7px] border bg-white py-1.5 text-[10.5px] font-semibold transition-all"
-                style={{ borderColor: 'var(--border)', color: 'var(--text-secondary)' }}
-                onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'var(--primary)'; e.currentTarget.style.color = 'var(--primary)' }}
-                onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.color = 'var(--text-secondary)' }}
-              >
-                Visit our Documentation
-                <ExternalLink size={11} strokeWidth={2.2} />
-              </button>
-            </div>
+
           </div>
         </aside>
 
@@ -246,7 +215,6 @@ export default function SettingsPage() {
               {activeSection === 'notifications' && <NotificationsSection />}
               {activeSection === 'appearance'    && <AppearanceSection />}
               {activeSection === 'preferences'   && <PreferencesSection />}
-              {activeSection === 'integrations'  && <IntegrationsPlaceholder />}
             </motion.div>
           </AnimatePresence>
         </div>
@@ -294,21 +262,5 @@ export default function SettingsPage() {
         </AnimatePresence>
       </div>
     </motion.div>
-  )
-}
-
-/* ── Placeholder components ─────────────────────────────────────────── */
-
-function IntegrationsPlaceholder() {
-  return (
-    <div
-      className="rounded-[16px] p-6"
-      style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', boxShadow: 'var(--shadow)' }}
-    >
-      <h3 className="text-[14px] font-bold" style={{ color: 'var(--text)' }}>Integrations</h3>
-      <p className="mt-1 text-[12px]" style={{ color: 'var(--text-light)' }}>
-        Connected apps, API keys, and third-party service configurations will appear here.
-      </p>
-    </div>
   )
 }

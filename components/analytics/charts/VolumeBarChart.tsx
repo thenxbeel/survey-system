@@ -5,31 +5,54 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell,
 } from 'recharts'
 import { ChartTooltip } from './ChartTooltip'
+import { useAnalytics } from '../state/useAnalytics'
+import { MetricType, GroupByType, FilterType, AnalyticsFilters } from '@/types/analytics'
+import { ChartProps } from './TrendChart'
 
 const COLORS = ['#0B4A8B', '#1E5FA8', '#17A673', '#F5A623', '#64748B', '#7C3AED']
 
 interface BarPoint { label: string; value: number }
 
-export function VolumeBarChart() {
+export function VolumeBarChart({ metric = 'responses', groupBy = 'survey', filterOverride }: ChartProps) {
+  const { state } = useAnalytics()
   const [data, setData] = useState<BarPoint[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    fetch('/api/analytics/overview?period=1y', { cache: 'no-store' })
+    const f: AnalyticsFilters = { ...state.filters }
+    if (filterOverride && filterOverride !== 'all') {
+      f.branch = filterOverride as any
+    }
+    
+    const params = new URLSearchParams()
+    if (f.period !== '30d') params.set('period', f.period)
+    if (f.branch !== 'all') params.set('branch', f.branch)
+    if (f.department !== 'all') params.set('department', f.department)
+    if (f.touchpoint !== 'all') params.set('touchpoint', f.touchpoint)
+    if (f.npsCategory !== 'all') params.set('npsCategory', f.npsCategory)
+
+    fetch(`/api/analytics/overview?${params.toString()}`, { cache: 'no-store' })
       .then(r => r.ok ? r.json() : null)
       .then(json => {
-        if (!json?.data?.surveyPerformance) return
-        const mapped: BarPoint[] = json.data.surveyPerformance
+        if (!json?.data) return
+        // Pick array based on groupBy
+        let sourceArray = []
+        if (groupBy === 'status' || groupBy === 'category') {
+            sourceArray = json.data.channelPerformance || []
+        } else {
+            sourceArray = json.data.surveyPerformance || []
+        }
+        const mapped: BarPoint[] = sourceArray
           .slice(0, 6)
           .map((s: any) => ({
-            label: s.title?.length > 18 ? s.title.slice(0, 18) + '…' : s.title,
-            value: s.responseCount ?? 0,
+            label: (s.title || s.channel || '').length > 18 ? (s.title || s.channel || '').slice(0, 18) + '…' : (s.title || s.channel || 'Unknown'),
+            value: metric === 'rate' ? (s.nps ?? 0) : (s.responseCount ?? 0),
           }))
         setData(mapped)
       })
       .catch(() => { /* ignore */ })
       .finally(() => setLoading(false))
-  }, [])
+  }, [metric, groupBy, state.filters, filterOverride])
 
   if (loading) return <div className="flex h-full items-center justify-center text-[12px]" style={{ color: 'var(--text-muted)' }}>Loading…</div>
   if (data.length === 0) return <div className="flex h-full items-center justify-center text-[12px]" style={{ color: 'var(--text-muted)' }}>No data available</div>

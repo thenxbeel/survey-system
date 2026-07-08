@@ -21,13 +21,29 @@ function cellLabel(value: number): string {
   const counts = ['No', 'Low', 'Moderate', 'High', 'Peak']
   return `${counts[value] || 'No'} activity`
 }
+import { useAnalytics } from '../state/useAnalytics'
+import { ChartProps } from './TrendChart'
+import { AnalyticsFilters } from '@/types/analytics'
 
-export function ActivityHeatmap() {
+export function ActivityHeatmap({ metric, groupBy, filterOverride }: ChartProps) {
+  const { state } = useAnalytics()
   const [grid, setGrid] = useState<HeatmapEntry[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    fetch('/api/analytics/heatmap', { cache: 'no-store' })
+    const f: AnalyticsFilters = { ...state.filters }
+    if (filterOverride && filterOverride !== 'all') {
+      f.branch = filterOverride as any
+    }
+
+    const params = new URLSearchParams()
+    if (f.period !== '30d') params.set('period', f.period)
+    if (f.branch !== 'all') params.set('branch', f.branch)
+    if (f.department !== 'all') params.set('department', f.department)
+    if (f.touchpoint !== 'all') params.set('touchpoint', f.touchpoint)
+    if (f.npsCategory !== 'all') params.set('npsCategory', f.npsCategory)
+
+    fetch(`/api/analytics/heatmap?${params.toString()}`, { cache: 'no-store' })
       .then(r => r.ok ? r.json() : null)
       .then(json => {
         if (!json?.data) return
@@ -35,7 +51,7 @@ export function ActivityHeatmap() {
       })
       .catch(() => { /* ignore */ })
       .finally(() => setLoading(false))
-  }, [])
+  }, [metric, groupBy, state.filters, filterOverride])
 
   const valueMap = new Map<string, number>()
   for (const entry of grid) {

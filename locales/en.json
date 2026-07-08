@@ -1,0 +1,19 @@
+{
+  "overview": "Overview",
+  "dashboard": "Dashboard",
+  "surveys": "Surveys",
+  "surveyBuilder": "Survey Builder",
+  "responses": "Responses",
+  "analytics": "Analytics",
+  "assignments": "Assignments",
+  "reports": "Reports",
+  "users": "Users",
+  "branches": "Branches",
+  "employeeSurveys": "Employee Surveys",
+  "auditLog": "Audit Log",
+  "myProfile": "My Profile",
+  "settings": "Settings",
+  "liveSystem": "Live System",
+  "collapseSidebar": "Collapse sidebar",
+  "expandSidebar": "Expand sidebar"
+}

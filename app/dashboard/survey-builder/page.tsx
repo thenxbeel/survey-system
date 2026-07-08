@@ -1,8 +1,8 @@
 'use client'
 
-import { Fragment, Suspense, useCallback, useEffect, useRef, useState } from 'react'
+import { Suspense, useCallback, useEffect, useRef, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
-import type { SurveyDraft } from '@/lib/builderTypes'
+import type { QuestionType, SurveyDraft, SurveyQuestion } from '@/lib/builderTypes'
 import { EMPTY_DRAFT } from '@/lib/builderTypes'
 import BuilderToolbar from '@/components/builder/BuilderToolbar'
 import SurveyInfoPanel from '@/components/builder/SurveyInfoPanel'
@@ -18,6 +18,29 @@ interface ExtendedDraft extends SurveyDraft {
   expiresInDays?: number
   campaignId?: number
   distributionChannel?: 'EMAIL' | 'SMS' | 'WHATSAPP' | 'QR_CODE' | 'DIRECT_LINK'
+}
+
+type LoadedSurveyQuestion = {
+  id: string
+  type: SurveyQuestion['type']
+  question: string
+  required: boolean
+  options?: { id: string; value: string }[]
+}
+
+type LoadedSurvey = {
+  numericId: number
+  title?: string | null
+  description?: string | null
+  touchpoint?: string | null
+  department?: string | null
+  branch?: string | null
+  visibility?: 'public' | 'private' | null
+  expiryDate?: string | null
+  expirationDate?: string | null
+  requireContactInfo?: boolean | null
+  isAnonymous?: boolean | null
+  questions?: LoadedSurveyQuestion[] | null
 }
 
 const EXPIRY_PRESETS = [
@@ -51,7 +74,7 @@ function SurveyBuilderContent() {
   const [showPreview, setShowPreview] = useState(true)
   const [activeTab, setActiveTab] = useState<'info' | 'questions' | 'availability'>('info')
   const [loadedSurveyId, setLoadedSurveyId] = useState<number | null>(null)
-  const [loading, setLoading] = useState(false)
+  const [loading, setLoading] = useState(() => Boolean(editId))
   const [templatesModalOpen, setTemplatesModalOpen] = useState(!editId)
   const createdIdRef = useRef<number | null>(null)
 
@@ -64,11 +87,12 @@ function SurveyBuilderContent() {
       branch: 'All Branches',
       visibility: 'public',
       expiryDate: '',
+      requireContactInfo: false,
       isAnonymous: false,
       availabilityMode: 'always',
       questions: template.questions.map((q, idx) => ({
         id: `q_temp_${idx}_${Date.now()}`,
-        type: q.type as any,
+        type: q.type as QuestionType,
         title: q.title,
         helpText: '',
         required: q.required,
@@ -86,12 +110,11 @@ function SurveyBuilderContent() {
   // ── Load existing survey when ?edit=<id> is present ──
   useEffect(() => {
     if (!editId) return
-    setLoading(true)
     fetch(`/api/surveys/${editId}`, { cache: 'no-store' })
       .then(r => r.ok ? r.json() : null)
       .then(json => {
         if (!json?.data) return
-        const s = json.data
+        const s = json.data as LoadedSurvey
         setLoadedSurveyId(s.numericId)
         // Map the DB survey back into a SurveyDraft
         setDraft({
@@ -102,15 +125,16 @@ function SurveyBuilderContent() {
           branch: s.branch ?? 'All Branches',
           visibility: s.visibility === 'public' ? 'public' : 'private',
           expiryDate: s.expiryDate ? s.expiryDate.split('T')[0] : '',
+          requireContactInfo: s.requireContactInfo ?? false,
           isAnonymous: s.isAnonymous ?? false,
           availabilityMode: s.expirationDate ? 'custom' : 'always',
-          questions: (s.questions ?? []).map((q: any) => ({
+          questions: (s.questions ?? []).map((q) => ({
             id: `q_${q.id}`,
             type: q.type,
             title: q.question,
             helpText: '',
             required: q.required,
-            options: (q.options ?? []).map((o: any) => ({ id: `opt_${o.id}`, label: o.value })),
+            options: (q.options ?? []).map((o) => ({ id: `opt_${o.id}`, label: o.value })),
           })),
         })
       })
@@ -397,6 +421,40 @@ function AvailabilityPanel({
         </p>
       </div>
 
+      {/* REQUIRE CONTACT INFO — only visible for identified surveys */}
+      {!draft.isAnonymous && (
+        <div className="mb-2">
+          <label className={labelCls}>Contact Info</label>
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={() => onChange({ requireContactInfo: true })}
+              className="flex-1 rounded-[8px] border py-2 text-[12px] font-semibold transition-all"
+              style={draft.requireContactInfo
+                ? { borderColor: '#EFF6FF', background: '#EFF6FF', color: '#0B4A8B' }
+                : { borderColor: '#E6EDF3', background: 'transparent', color: '#6B7A90' }}
+            >
+              ✅ Required
+            </button>
+            <button
+              type="button"
+              onClick={() => onChange({ requireContactInfo: false })}
+              className="flex-1 rounded-[8px] border py-2 text-[12px] font-semibold transition-all"
+              style={!draft.requireContactInfo
+                ? { borderColor: '#EFF6FF', background: '#EFF6FF', color: '#0B4A8B' }
+                : { borderColor: '#E6EDF3', background: 'transparent', color: '#6B7A90' }}
+            >
+              ⬜ Optional
+            </button>
+          </div>
+          <p className="mt-2 text-[11px] leading-relaxed text-[#8FA0B5]">
+            {draft.requireContactInfo
+              ? 'Respondents must provide at least one contact method (email or phone) to submit.'
+              : 'Contact details are optional — respondents can submit without providing them.'}
+          </p>
+        </div>
+      )}
+
       {/* AVAILABILITY SCHEDULE */}
       <h3 className={sectionHeaderCls}>Availability Schedule</h3>
       <div className="mb-2">
@@ -448,7 +506,7 @@ function AvailabilityPanel({
         <label className={labelCls}>Primary Channel</label>
         <select
           value={draft.distributionChannel ?? 'DIRECT_LINK'}
-          onChange={(e) => onChange({ distributionChannel: e.target.value as any })}
+          onChange={(e) => onChange({ distributionChannel: e.target.value as ExtendedDraft['distributionChannel'] })}
           className="w-full cursor-pointer rounded-[8px] border border-[#E6EDF3] bg-white px-3 py-2 text-[12.5px] font-medium text-[#333333] outline-none transition-all focus:border-[#0B4A8B] focus:ring-2 focus:ring-[#0B4A8B]/10"
         >
           <option value="DIRECT_LINK">Direct Link</option>
@@ -488,6 +546,7 @@ function buildPayload(draft: ExtendedDraft, publish: boolean) {
     branch: draft.branch === 'All Branches' ? undefined : (draft.branch || undefined),
     visibility: draft.visibility === 'public' ? 'PUBLIC' : 'PRIVATE',
     expiryDate: expirationDate,
+    requireContactInfo: draft.requireContactInfo ?? false,
     isAnonymous: draft.isAnonymous ?? false,
     availabilityMode: draft.availabilityMode ?? 'always',
     expiresInDays: draft.expiresInDays,

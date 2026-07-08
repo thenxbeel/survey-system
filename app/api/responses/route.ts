@@ -158,8 +158,8 @@ export async function GET(req: NextRequest) {
   ])
 
   const data = responses.map(r => {
-    const score = r.npsScore ?? 0
-    const category = score >= 9 ? 'promoter' : score >= 7 ? 'passive' : 'detractor'
+    const score = r.npsScore
+    const category = score != null ? (score >= 9 ? 'promoter' : score >= 7 ? 'passive' : 'detractor') : null
     return {
       id: `RSP-${String(r.id).padStart(5, '0')}`,
       numericId: r.id,

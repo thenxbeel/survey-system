@@ -11,7 +11,9 @@ import { AssignModal } from '@/components/responses/AssignModal'
 interface AssignmentRecord {
   id: string
   numericId: number
-  customerName: string
+  respondentName: string
+  respondentEmail: string
+  respondentPhone: string
   surveyTitle: string
   status: string
   npsScore: number | null
@@ -155,7 +157,7 @@ export default function AssignmentsPage() {
                     <div className="text-[11px] text-[#8FA0B5]">{new Date(a.submittedAt).toLocaleDateString()}</div>
                   </td>
                   <td className="px-5 py-4">
-                    <div className="text-[12.5px] font-medium text-[#0D1B2E]">{a.customerName}</div>
+                    <div className="text-[12.5px] font-medium text-[#0D1B2E]">{a.respondentName}</div>
                     <div className="text-[11px] text-[#8FA0B5]">{a.surveyTitle}</div>
                   </td>
                   <td className="px-5 py-4 max-w-[250px]">
@@ -244,7 +246,13 @@ export default function AssignmentsPage() {
                 <div className="space-y-5">
                   <div>
                     <div className="text-[11px] font-bold uppercase tracking-wider text-[#8FA0B5] mb-1">Customer</div>
-                    <div className="text-[14px] font-semibold text-[#0D1B2E]">{selectedAssignment.customerName}</div>
+                    <div className="text-[14px] font-semibold text-[#0D1B2E]">{selectedAssignment.respondentName}</div>
+                    {selectedAssignment.respondentEmail && (
+                      <div className="text-[12px] text-[#4A5568]">{selectedAssignment.respondentEmail}</div>
+                    )}
+                    {selectedAssignment.respondentPhone && (
+                      <div className="text-[12px] text-[#4A5568]">{selectedAssignment.respondentPhone}</div>
+                    )}
                   </div>
                   
                   <div>

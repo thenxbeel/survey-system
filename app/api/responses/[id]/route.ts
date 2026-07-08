@@ -26,8 +26,8 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
   })
   if (!r) return NextResponse.json({ error: 'Response not found' }, { status: 404 })
 
-  const score = r.npsScore ?? 0
-  const category = score >= 9 ? 'promoter' : score >= 7 ? 'passive' : 'detractor'
+  const score = r.npsScore
+  const category = score != null ? (score >= 9 ? 'promoter' : score >= 7 ? 'passive' : 'detractor') : null
 
   return NextResponse.json({
     data: {

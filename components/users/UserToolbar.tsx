@@ -8,6 +8,7 @@ import {
   type UserFilters,
 } from '@/lib/types/user'
 import { useBranches } from '@/lib/hooks/useBranches'
+import { useDepartmentNames } from '@/lib/hooks/useDepartments'
 
 interface Props {
   filters: UserFilters
@@ -54,6 +55,7 @@ function NativeSelect({
 export function UserToolbar({ filters, onChange, onClear, hasActiveFilters, selectedIds, totalItems, onBulkExport, onBulkActivate, availableRoles }: Props) {
   const [showAdvanced, setShowAdvanced] = useState(false)
   const liveBranches = useBranches()
+  const liveDepartments = useDepartmentNames()
   const selCount = selectedIds.size
 
   function patch<K extends keyof UserFilters>(key: K, value: UserFilters[K]) { onChange({ ...filters, [key]: value }) }
@@ -207,7 +209,7 @@ export function UserToolbar({ filters, onChange, onClear, hasActiveFilters, sele
                 <NativeSelect
                   value={filters.department}
                   onChange={v => patch('department', v)}
-                  options={USER_DEPARTMENTS.map(d => ({ value: d, label: d === 'All' ? 'All Departments' : d }))}
+                  options={['All', ...liveDepartments].map(d => ({ value: d, label: d === 'All' ? 'All Departments' : d }))}
                 />
               </Field>
               <Field label="Branch">

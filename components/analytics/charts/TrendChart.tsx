@@ -6,17 +6,40 @@ import {
 } from 'recharts'
 import { ChartTooltip } from './ChartTooltip'
 
+import { useAnalytics } from '../state/useAnalytics'
+import { MetricType, GroupByType, FilterType, AnalyticsFilters } from '@/types/analytics'
+
 type Period = 'Weekly' | 'Monthly' | 'Quarterly'
 
-interface TrendPoint { date: string; responses: number; completions: number }
+interface TrendPoint { date: string; responses: number; completions: number; time?: number; rate?: number }
 
-export function TrendChart() {
+export interface ChartProps {
+  metric?: MetricType
+  groupBy?: GroupByType
+  filterOverride?: FilterType
+}
+
+export function TrendChart({ metric = 'responses', groupBy, filterOverride }: ChartProps) {
+  const { state } = useAnalytics()
   const [period, setPeriod] = useState<Period>('Monthly')
   const [data, setData] = useState<TrendPoint[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    fetch('/api/analytics/trends?period=monthly', { cache: 'no-store' })
+    const f: AnalyticsFilters = { ...state.filters }
+    if (filterOverride && filterOverride !== 'all') {
+      f.branch = filterOverride as any // simplified override
+    }
+    
+    const params = new URLSearchParams()
+    params.set('period', period.toLowerCase())
+    if (f.period !== '30d') params.set('range', f.period)
+    if (f.branch !== 'all') params.set('branch', f.branch)
+    if (f.department !== 'all') params.set('department', f.department)
+    if (f.touchpoint !== 'all') params.set('touchpoint', f.touchpoint)
+    if (f.npsCategory !== 'all') params.set('npsCategory', f.npsCategory)
+
+    fetch(`/api/analytics/trends?${params.toString()}`, { cache: 'no-store' })
       .then(r => r.ok ? r.json() : null)
       .then(json => {
         if (!json?.data) return
@@ -24,12 +47,14 @@ export function TrendChart() {
           date: d.date,
           responses: d.responses ?? 0,
           completions: d.completions ?? d.responses ?? 0,
+          time: d.time ?? 0,
+          rate: d.npsScores?.length ? Math.round((d.npsScores.reduce((a:any, b:any)=>a+b, 0) / d.npsScores.length) * 10) : 0,
         }))
         setData(mapped)
       })
       .catch(() => { /* ignore */ })
       .finally(() => setLoading(false))
-  }, [period])
+  }, [period, state.filters, filterOverride])
 
   const PeriodToggle = (
     <div className="flex gap-0.5 rounded-[6px] border border-[#E6EDF3] bg-[#F5F7FA] p-0.5">
@@ -58,8 +83,7 @@ export function TrendChart() {
               <XAxis dataKey="date" tick={{ fill: '#8A94A6', fontSize: 11 }} axisLine={false} tickLine={false} dy={6} />
               <YAxis orientation="right" tick={{ fill: '#8A94A6', fontSize: 11, fontFamily: 'Inter' }} axisLine={false} tickLine={false} width={42} />
               <Tooltip content={<ChartTooltip />} cursor={{ stroke: 'rgba(138, 148, 166, 0.15)', strokeWidth: 1 }} />
-              <Area type="monotone" dataKey="responses" stroke="#0B4A8B" strokeWidth={2} fill="url(#trend-responses)" dot={{ r: 3, fill: '#0B4A8B', stroke: '#FFFFFF', strokeWidth: 2 }} activeDot={{ r: 5, fill: '#0B4A8B', stroke: '#FFFFFF', strokeWidth: 2 }} />
-              <Area type="monotone" dataKey="completions" stroke="#17A673" strokeWidth={2} fill="url(#trend-completions)" dot={{ r: 3, fill: '#17A673', stroke: '#FFFFFF', strokeWidth: 2 }} activeDot={{ r: 5, fill: '#17A673', stroke: '#FFFFFF', strokeWidth: 2 }} />
+              <Area type="monotone" dataKey={metric} stroke="#0B4A8B" strokeWidth={2} fill="url(#trend-responses)" dot={{ r: 3, fill: '#0B4A8B', stroke: '#FFFFFF', strokeWidth: 2 }} activeDot={{ r: 5, fill: '#0B4A8B', stroke: '#FFFFFF', strokeWidth: 2 }} />
             </AreaChart>
           </ResponsiveContainer>
         )}

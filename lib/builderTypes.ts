@@ -34,6 +34,7 @@ export interface SurveyDraft {
   branch: string
   visibility: 'public' | 'private'
   expiryDate: string
+  requireContactInfo: boolean
   questions: SurveyQuestion[]
 }
 
@@ -100,12 +101,13 @@ export function createQuestion(type: QuestionType): SurveyQuestion {
 }
 
 export const EMPTY_DRAFT: SurveyDraft = {
-  title: '',
+  title: 'Untitled Survey',
   description: '',
-  touchpoint: '',
-  department: '',
+  touchpoint: 'Customer Support',
+  department: 'Customer Experience',
   branch: 'All Branches',
-  visibility: 'public',
+  visibility: 'private',
   expiryDate: '',
-  questions: [],
+  requireContactInfo: false,
+  questions: [createQuestion('nps')],
 }

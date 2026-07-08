@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { SettingsCard, Field } from '../SettingsCard'
 import { Globe, Clock, Check, ChevronDown } from 'lucide-react'
 import { useToast } from '@/lib/stores/ToastStore'
+import { useSettings } from '@/lib/stores/SettingsStore'
 
 interface Props {
   delay?: number
@@ -13,11 +14,14 @@ const selectCls = 'h-[36px] w-full appearance-none rounded-[9px] border border-[
 
 export function PreferencesSection({ delay = 0 }: Props) {
   const toast = useToast()
-  
-  const [language, setLanguage] = useState('en')
+  const { state, setLanguage: setStoreLanguage } = useSettings()
+
+  const [language, setLanguage] = useState(state.language)
   const [timezone, setTimezone] = useState('asia/dubai')
 
   function handleSave() {
+    setStoreLanguage('English')
+    setLanguage('English')
     toast.success('Preferences saved', 'Language and timezone updated.')
   }
 
@@ -47,13 +51,12 @@ export function PreferencesSection({ delay = 0 }: Props) {
                 onChange={e => setLanguage(e.target.value)}
                 className={selectCls}
               >
-                <option value="en">English (US)</option>
-                <option value="en-gb">English (UK)</option>
+                <option value="English">English (US)</option>
               </select>
               <ChevronDown size={14} className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)]" />
             </div>
           </Field>
-          
+
           <Field label="Time Zone" icon={Clock}>
             <div className="relative">
               <select

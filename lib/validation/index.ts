@@ -74,6 +74,7 @@ export const CreateSurveySchema = z.object({
   questions:   z.array(QuestionSchema).optional(),
   // ── New: distribution & lifecycle ──
   isAnonymous:     z.boolean().default(false),
+  requireContactInfo: z.boolean().default(false),
   campaignId:      z.number().int().positive().optional(),
   activationDate:  z.string().optional(),      // ISO datetime
   expirationDate:  z.string().optional(),      // ISO datetime

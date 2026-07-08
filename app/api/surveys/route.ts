@@ -100,11 +100,12 @@ export async function GET(req: NextRequest) {
       lifecycleStatus: derivedLifecycle,
       visibility: s.visibility.toLowerCase(),
       isAnonymous: s.isAnonymous,
+      requireContactInfo: s.requireContactInfo,
       branch: s.branch || 'All Branches',
       department: s.department || null,
       questionCount,
       responseCount,
-      responseRate: responseCount > 0 ? 100 : 0,
+      responseRate: responseCount > 0 ? Math.round(((npsAgg?._count.npsScore ?? 0) / responseCount) * 100) : 0,
       npsScore: npsAgg?._avg.npsScore ? Math.round(npsAgg._avg.npsScore) : null,
       npsResponseCount: npsAgg?._count.npsScore ?? 0,
       // ── Ownership ──
@@ -197,6 +198,13 @@ export async function POST(req: NextRequest) {
     urlBundle = await generateSurveyUrlBundle(surveyData.title)
   }
 
+  // [DEBUG] TODO: Remove after confirming production behavior
+  console.log('[DEBUG] CREATING SURVEY - identity settings:', {
+    isAnonymous,
+    requireContactInfo: surveyData.requireContactInfo,
+    title: surveyData.title,
+  })
+
   const created = await prisma.survey.create({
     data: {
       ...surveyData,
@@ -206,6 +214,7 @@ export async function POST(req: NextRequest) {
       lifecycleStatus,
       visibility: surveyData.visibility as any,
       isAnonymous,
+      requireContactInfo: surveyData.requireContactInfo ?? false,
       campaignId: campaignId ?? null,
       activationDate: computedActivation,
       expirationDate: computedExpiration,
@@ -227,6 +236,14 @@ export async function POST(req: NextRequest) {
       } : undefined,
     },
     include: { questions: { include: { options: true } } },
+  })
+
+  // [DEBUG] TODO: Remove after confirming production behavior
+  console.log('[DEBUG] CREATED SURVEY SETTINGS:', {
+    id: created.id,
+    title: created.title,
+    isAnonymous: created.isAnonymous,
+    requireContactInfo: created.requireContactInfo,
   })
 
   // Audit log

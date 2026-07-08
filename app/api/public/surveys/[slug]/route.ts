@@ -94,6 +94,14 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ slug
     )
   }
 
+  // [DEBUG] TODO: Remove after confirming production behavior
+  console.log('[DEBUG] PUBLIC SURVEY SETTINGS:', {
+    slug: survey.slug,
+    title: survey.title,
+    isAnonymous: survey.isAnonymous,
+    requireContactInfo: survey.requireContactInfo,
+  })
+
   return NextResponse.json({
     data: {
       // ── Public identity ──
@@ -104,6 +112,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ slug
       // ── Branding hint (used by the public page header) ──
       touchpoint: survey.touchpoint,
       category: survey.category,
+      requireContactInfo: survey.requireContactInfo,
       // ── Behavior ──
       isAnonymous: survey.isAnonymous,
       // ── Availability (for the customer-side countdown) ──

@@ -1,6 +1,6 @@
 'use client'
 
-import { CalendarDays, SlidersHorizontal, Download, TrendingUp, ArrowUpRight } from 'lucide-react'
+import { CalendarDays, TrendingUp, ArrowUpRight } from 'lucide-react'
 import { useSettings } from '@/lib/stores/SettingsStore'
 
 function getGreeting() {
@@ -66,12 +66,12 @@ export default function GreetingHero() {
             {greeting}, {profile.displayName} 👋
           </h1>
           <p className="mt-0.5 break-words text-[12.5px]" style={{ color: 'rgba(255,255,255,0.6)' }}>
-            Here is today's customer experience summary.
+            Here is today&apos;s customer experience summary.
           </p>
         </div>
       </div>
 
-      {/* Right: NPS badge + actions */}
+      {/* Right: NPS badge + date */}
       <div className="relative z-[1] flex flex-wrap items-center gap-2">
         {/* NPS pulse */}
         <div
@@ -97,20 +97,6 @@ export default function GreetingHero() {
           <CalendarDays size={13} />
           <span className="hidden sm:inline">{today}</span>
           <span className="sm:hidden">Today</span>
-        </button>
-        <button
-          className="flex items-center rounded-[10px] text-[12px] font-semibold text-white transition-all hover:opacity-80"
-          style={{ background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.15)', padding: '12px 24px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
-        >
-          <SlidersHorizontal size={13} />
-          Filters
-        </button>
-        <button
-          className="flex items-center rounded-[10px] text-[12px] font-semibold transition-all hover:opacity-90 active:scale-95"
-          style={{ background: '#fff', color: '#0B4A8B', boxShadow: '0 4px 12px rgba(0,0,0,0.12)', padding: '12px 24px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
-        >
-          <Download size={13} />
-          Export
         </button>
       </div>
     </div>

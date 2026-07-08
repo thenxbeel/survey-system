@@ -54,7 +54,7 @@ export interface SettingsState {
   density:      DensityMode
   fontSize:     FontSizeMode
   typography:   TypographyMode
-  language:     'English' | 'Arabic' | 'Bilingual (EN/AR)'
+  language:     'English'
   profile:      UserProfile
 }
 
@@ -146,7 +146,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
         // Strip legacy fields that are no longer part of the state shape.
         const { reduceMotion, highContrast, ...rest } = parsed as any
         void reduceMotion; void highContrast
-        dispatch({ type: 'HYDRATE', value: rest })
+        dispatch({ type: 'HYDRATE', value: { ...rest, language: 'English' } })
       }
     } catch { /* noop */ }
   }, [])
@@ -214,6 +214,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
             if (p.density)   serverPatch.density   = p.density as DensityMode
             if (p.fontSize)  serverPatch.fontSize  = p.fontSize as FontSizeMode
             if (p.typography)serverPatch.typography= p.typography as TypographyMode
+            serverPatch.language = 'English'
             if (Object.keys(serverPatch).length > 0) {
               dispatch({ type: 'HYDRATE', value: serverPatch })
             }
@@ -261,12 +262,15 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
       }).catch(() => { /* non-fatal — local state is still persisted */ })
     }, 400)
     return () => clearTimeout(t)
-  }, [state.theme, state.accent, state.density, state.fontSize, state.typography])
+  }, [state.theme, state.accent, state.density, state.fontSize, state.typography, state.language])
 
   // ── 5. Apply CSS variables to <html> so the whole app re-themes instantly ──
   useEffect(() => {
     if (typeof document === 'undefined') return
     const root = document.documentElement
+
+    // English-only layout direction
+    root.dir = 'ltr'
 
     // Accent
     root.style.setProperty('--primary', state.accent)
@@ -306,7 +310,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     // Theme attribute — triggers [data-theme="dark"] or [data-theme="system"]
     // CSS rules in globals.css that override all surface/text/border variables.
     root.setAttribute('data-theme', state.theme)
-  }, [state.accent, state.density, state.fontSize, state.typography, state.theme])
+  }, [state.accent, state.density, state.fontSize, state.typography, state.theme, state.language])
 
   // ── Convenience setters ─────────────────────────────────────────────────
   const setTheme        = useCallback((v: ThemeMode)             => dispatch({ type: 'SET_THEME', value: v }), [])

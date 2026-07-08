@@ -5,33 +5,64 @@ import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts'
 import { ChartTooltip } from './ChartTooltip'
 import { ChartLegend } from './ChartLegend'
 import { safeNumber } from '@/lib/analytics-query'
+import { useAnalytics } from '../state/useAnalytics'
+import { ChartProps } from './TrendChart'
+import { AnalyticsFilters } from '@/types/analytics'
 
 const COLORS = ['#0B4A8B', '#17A673', '#F5A623', '#7C3AED', '#E5484D', '#3B82F6']
 
 interface PiePoint { label: string; value: number; color: string }
 
-export function DistributionPieChart() {
+export function DistributionPieChart({ metric = 'responses', groupBy, filterOverride }: ChartProps) {
+  const { state } = useAnalytics()
   const [data, setData] = useState<PiePoint[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    fetch('/api/analytics/overview?period=1y', { cache: 'no-store' })
-      .then(r => r.ok ? r.json() : null)
-      .then(json => {
-        if (!json?.data?.npsBreakdown) return
-        const b = json.data.npsBreakdown
-        const total = (b.promoters ?? 0) + (b.passives ?? 0) + (b.detractors ?? 0)
-        if (total === 0) return
-        const mapped: PiePoint[] = [
-          { label: 'Promoters', value: b.promoterPct ?? Math.round((b.promoters / total) * 100), color: COLORS[0] },
-          { label: 'Passives',  value: b.passivePct  ?? Math.round((b.passives  / total) * 100), color: COLORS[1] },
-          { label: 'Detractors',value: b.detractorPct?? Math.round((b.detractors/ total) * 100), color: COLORS[2] },
-        ]
-        setData(mapped)
-      })
-      .catch(() => { /* ignore */ })
-      .finally(() => setLoading(false))
-  }, [])
+    const f: AnalyticsFilters = { ...state.filters }
+    if (filterOverride && filterOverride !== 'all') {
+      f.branch = filterOverride as any
+    }
+
+    const params = new URLSearchParams()
+    if (f.period !== '30d') params.set('period', f.period)
+    if (f.branch !== 'all') params.set('branch', f.branch)
+    if (f.department !== 'all') params.set('department', f.department)
+    if (f.touchpoint !== 'all') params.set('touchpoint', f.touchpoint)
+    if (f.npsCategory !== 'all') params.set('npsCategory', f.npsCategory)
+
+    if (groupBy === 'survey' || groupBy === 'category') {
+      fetch(`/api/analytics/branches?${params.toString()}`, { cache: 'no-store' })
+        .then(r => r.ok ? r.json() : null)
+        .then(json => {
+           if (!json?.data?.branches) return
+           const branches = json.data.branches.slice(0, 5)
+           const mapped: PiePoint[] = branches.map((b: any, i: number) => ({
+             label: b.branch,
+             value: metric === 'rate' ? (b.nps ?? 0) : (b.responseCount ?? 0),
+             color: COLORS[i % COLORS.length]
+           }))
+           setData(mapped)
+        }).catch(() => {}).finally(() => setLoading(false))
+    } else {
+      fetch(`/api/analytics/overview?${params.toString()}`, { cache: 'no-store' })
+        .then(r => r.ok ? r.json() : null)
+        .then(json => {
+          if (!json?.data?.npsBreakdown) return
+          const b = json.data.npsBreakdown
+          const total = (b.promoters ?? 0) + (b.passives ?? 0) + (b.detractors ?? 0)
+          if (total === 0) return
+          const mapped: PiePoint[] = [
+            { label: 'Promoters', value: b.promoterPct ?? Math.round((b.promoters / total) * 100), color: COLORS[0] },
+            { label: 'Passives',  value: b.passivePct  ?? Math.round((b.passives  / total) * 100), color: COLORS[1] },
+            { label: 'Detractors',value: b.detractorPct?? Math.round((b.detractors/ total) * 100), color: COLORS[2] },
+          ]
+          setData(mapped)
+        })
+        .catch(() => { /* ignore */ })
+        .finally(() => setLoading(false))
+    }
+  }, [metric, groupBy, state.filters, filterOverride])
 
   if (loading) return <div className="flex h-full items-center justify-center text-[12px]" style={{ color: 'var(--text-muted)' }}>Loading…</div>
   if (data.length === 0) return <div className="flex h-full items-center justify-center text-[12px]" style={{ color: 'var(--text-muted)' }}>No data available</div>

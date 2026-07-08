@@ -5,33 +5,58 @@ import {
   RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, ResponsiveContainer, Tooltip,
 } from 'recharts'
 import { ChartTooltip } from './ChartTooltip'
+import { useAnalytics } from '../state/useAnalytics'
+import { ChartProps } from './TrendChart'
+import { AnalyticsFilters } from '@/types/analytics'
 
 interface RadarPoint { metric: string; value: number }
 
-export function PerformanceRadar() {
+export function PerformanceRadar({ metric = 'rate', groupBy, filterOverride }: ChartProps) {
+  const { state } = useAnalytics()
   const [data, setData] = useState<RadarPoint[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    fetch('/api/analytics/overview?period=1y', { cache: 'no-store' })
+    const f: AnalyticsFilters = { ...state.filters }
+    if (filterOverride && filterOverride !== 'all') {
+      f.branch = filterOverride as any
+    }
+
+    const params = new URLSearchParams()
+    if (f.period !== '30d') params.set('period', f.period)
+    if (f.branch !== 'all') params.set('branch', f.branch)
+    if (f.department !== 'all') params.set('department', f.department)
+    if (f.touchpoint !== 'all') params.set('touchpoint', f.touchpoint)
+    if (f.npsCategory !== 'all') params.set('npsCategory', f.npsCategory)
+
+    fetch(`/api/analytics/overview?${params.toString()}`, { cache: 'no-store' })
       .then(r => r.ok ? r.json() : null)
       .then(json => {
-        if (!json?.data?.kpis) return
-        const k = json.data.kpis
-        // Build radar metrics from live KPIs, normalized to 0-100
-        const mapped: RadarPoint[] = [
-          { metric: 'NPS',       value: Math.max(0, Math.min(100, (k.npsScore ?? 0) + 50)) },
-          { metric: 'Responses', value: Math.min(100, Math.round((k.totalResponses ?? 0) / 10)) },
-          { metric: 'Resp Rate', value: k.responseRate ?? 0 },
-          { metric: 'Active',    value: Math.min(100, (k.activeSurveys ?? 0) * 10) },
-          { metric: 'Surveys',   value: Math.min(100, (k.totalSurveys ?? 0) * 10) },
-          { metric: 'CSAT',      value: k.csatScore ?? 0 },
-        ]
+        if (!json?.data) return
+        
+        let mapped: RadarPoint[] = []
+        if (groupBy === 'survey' || groupBy === 'category' || groupBy === 'status') {
+            const arr = (groupBy === 'survey') ? (json.data.surveyPerformance || []) : (json.data.channelPerformance || [])
+            mapped = arr.slice(0, 6).map((s: any) => ({
+              metric: (s.title || s.channel || '').slice(0, 10),
+              value: metric === 'responses' ? (s.responseCount ?? 0) : Math.max(0, Math.min(100, (s.nps ?? 0) + 50))
+            }))
+        } else {
+            const k = json.data.kpis || {}
+            mapped = [
+              { metric: 'NPS',       value: Math.max(0, Math.min(100, (k.npsScore ?? 0) + 50)) },
+              { metric: 'Responses', value: Math.min(100, Math.round((k.totalResponses ?? 0) / 10)) },
+              { metric: 'Resp Rate', value: k.responseRate ?? 0 },
+              { metric: 'Active',    value: Math.min(100, (k.activeSurveys ?? 0) * 10) },
+              { metric: 'Surveys',   value: Math.min(100, (k.totalSurveys ?? 0) * 10) },
+              { metric: 'CSAT',      value: k.csatScore ?? 0 },
+            ]
+        }
         setData(mapped)
       })
       .catch(() => { /* ignore */ })
       .finally(() => setLoading(false))
-  }, [])
+  }, [metric, groupBy, state.filters, filterOverride])
 
   if (loading) return <div className="flex h-full items-center justify-center text-[12px]" style={{ color: 'var(--text-muted)' }}>Loading…</div>
   if (data.length === 0) return <div className="flex h-full items-center justify-center text-[12px]" style={{ color: 'var(--text-muted)' }}>No data available</div>

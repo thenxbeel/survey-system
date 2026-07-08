@@ -358,8 +358,8 @@ export async function GET(req: NextRequest) {
         payloadCsv = [
           'Response ID,Respondent Name,Respondent Email,Respondent Phone,Survey,Touchpoint,Branch,Department,Survey URL,Campaign,NPS Score,NPS Category,CSAT,CES,Channel,Device,Browser,OS,IP,Country,City,Status,Submitted At',
           ...normalizedResponses.map(r => {
-            const score = r.npsScore ?? 0
-            const category = score >= 9 ? 'promoter' : score >= 7 ? 'passive' : 'detractor'
+            const score = r.npsScore
+            const category = score != null ? (score >= 9 ? 'Promoter' : score >= 7 ? 'Passive' : 'Detractor') : ''
             return [
               `RSP-${String(r.id).padStart(5, '0')}`,
               `"${r.respondentName ?? 'Anonymous'}"`,
@@ -399,8 +399,8 @@ export async function GET(req: NextRequest) {
       <th>Response ID</th><th>Respondent Name</th><th>Respondent Email</th><th>Respondent Phone</th><th>Survey</th><th>Touchpoint</th><th>Branch</th><th>Department</th><th>Survey URL</th><th>Campaign</th><th>NPS Score</th><th>NPS Category</th><th>CSAT</th><th>CES</th><th>Channel</th><th>Device</th><th>Browser</th><th>OS</th><th>IP</th><th>Country</th><th>City</th><th>Status</th><th>Submitted At</th>
     </tr>
     ${normalizedResponses.map(r => {
-      const score = r.npsScore ?? 0
-      const category = score >= 9 ? 'promoter' : score >= 7 ? 'passive' : 'detractor'
+      const score = r.npsScore
+      const category = score != null ? (score >= 9 ? 'Promoter' : score >= 7 ? 'Passive' : 'Detractor') : ''
       return `
         <tr>
           <td>RSP-${String(r.id).padStart(5, '0')}</td>
@@ -489,8 +489,8 @@ export async function GET(req: NextRequest) {
     </thead>
     <tbody>
       ${normalizedResponses.map(r => {
-        const score = r.npsScore ?? 0
-        const category = score >= 9 ? 'promoter' : score >= 7 ? 'passive' : 'detractor'
+        const score = r.npsScore
+        const category = score != null ? (score >= 9 ? 'Promoter' : score >= 7 ? 'Passive' : 'Detractor') : ''
         return `
           <tr>
             <td>RSP-${String(r.id).padStart(5, '0')}</td>

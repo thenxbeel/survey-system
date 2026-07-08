@@ -83,6 +83,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
       visibility: survey.visibility.toLowerCase(),
       isTemplate: survey.isTemplate,
       isAnonymous: survey.isAnonymous,
+      requireContactInfo: survey.requireContactInfo,
       version: survey.version,
       questionCount: survey.questions.length,
       responseCount: survey._count.responses,

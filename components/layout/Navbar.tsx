@@ -44,6 +44,7 @@ export default function Navbar({ onMenuClick, isHidden = false }: NavbarProps = 
   const PageIcon = page.icon
   const [loggingOut, setLoggingOut] = useState(false)
   const [notifOpen, setNotifOpen]   = useState(false)
+  const [profileOpen, setProfileOpen] = useState(false)
   const [searchOpen, setSearchOpen] = useState(false)  // mobile search expand state
   const [searchResults, setSearchResults] = useState<any>(null)
   const [searchLoading, setSearchLoading] = useState(false)
@@ -216,6 +217,9 @@ export default function Navbar({ onMenuClick, isHidden = false }: NavbarProps = 
                 className="flex-1 min-w-0 bg-transparent text-[12.5px] outline-none placeholder:text-white/40"
                 style={{ color: '#FFFFFF' }}
                 aria-label="Global search"
+                autoComplete="off"
+                autoCorrect="off"
+                spellCheck={false}
               />
               {rawQuery && (
                 <button
@@ -350,25 +354,53 @@ export default function Navbar({ onMenuClick, isHidden = false }: NavbarProps = 
             <div className="mx-1 h-[18px] w-px bg-white/20" />
 
             {/* Profile button — reads name + initials + role from SettingsStore */}
-            <button
-              onClick={() => router.push('/dashboard/settings')}
-              className="group flex items-center gap-2 rounded-[10px] px-2.5 py-1.5 transition-all duration-150 border border-transparent hover:bg-white/10 hover:border-white/10"
-              title={`${profile.fullName} — Open Settings`}
-            >
-              <div
-                className="flex h-[30px] w-[30px] flex-shrink-0 items-center justify-center rounded-full text-[11px] font-bold text-white shadow-[inset_0_2px_4px_rgba(255,255,255,0.5)]"
-                style={{ background: profile.avatarColor || 'linear-gradient(135deg, #0B4A8B 0%, #06386F 100%)' }}
+            <div className="relative">
+              <button
+                onClick={() => setProfileOpen(o => !o)}
+                className="group flex items-center gap-2 rounded-[10px] px-2.5 py-1.5 transition-all duration-150 border border-transparent hover:bg-white/10 hover:border-white/10"
+                title={`${profile.fullName} — Profile Menu`}
               >
-                {profile.avatarInitials}
-              </div>
-              <div className="hidden text-left sm:block">
-                <div className="text-[12px] font-semibold leading-tight text-white/90 group-hover:text-white">
-                  {profile.fullName}
+                <div
+                  className="flex h-[30px] w-[30px] flex-shrink-0 items-center justify-center rounded-full text-[11px] font-bold text-white shadow-[inset_0_2px_4px_rgba(255,255,255,0.5)]"
+                  style={{ background: profile.avatarColor || 'linear-gradient(135deg, #0B4A8B 0%, #06386F 100%)' }}
+                >
+                  {profile.avatarInitials}
                 </div>
-                <div className="text-[10.5px] text-white/50 group-hover:text-white/70 transition-colors">{profile.role}</div>
-              </div>
-              <ChevronDown size={12} className="hidden sm:block text-white/50 group-hover:text-white/80 transition-colors" />
-            </button>
+                <div className="hidden text-left sm:block">
+                  <div className="text-[12px] font-semibold leading-tight text-white/90 group-hover:text-white">
+                    {profile.fullName}
+                  </div>
+                  <div className="text-[10.5px] text-white/50 group-hover:text-white/70 transition-colors">{profile.role}</div>
+                </div>
+                <ChevronDown size={12} className="hidden sm:block text-white/50 group-hover:text-white/80 transition-colors" />
+              </button>
+
+              {profileOpen && (
+                <>
+                  <div className="fixed inset-0 z-40" onClick={() => setProfileOpen(false)} />
+                  <div className="absolute right-0 top-[calc(100%+8px)] z-50 w-48 overflow-hidden rounded-[12px] border bg-white shadow-lg" style={{ borderColor: '#E2E8F3', boxShadow: '0 12px 40px rgba(13,27,46,0.12)' }}>
+                    <div className="py-1">
+                      <button
+                        onClick={() => { setProfileOpen(false); router.push('/dashboard/profile'); }}
+                        className="flex w-full items-center gap-2.5 px-4 py-2.5 text-left text-[12px] transition-colors hover:bg-[#F4F7FB]"
+                        style={{ color: '#0D1B2E' }}
+                      >
+                        <User size={14} style={{ color: '#8FA0B5' }} />
+                        My Profile
+                      </button>
+                      <button
+                        onClick={() => { setProfileOpen(false); router.push('/dashboard/settings'); }}
+                        className="flex w-full items-center gap-2.5 px-4 py-2.5 text-left text-[12px] transition-colors hover:bg-[#F4F7FB]"
+                        style={{ color: '#0D1B2E' }}
+                      >
+                        <Settings size={14} style={{ color: '#8FA0B5' }} />
+                        Settings
+                      </button>
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
 
             {/* Logout */}
             <button
@@ -421,6 +453,9 @@ export default function Navbar({ onMenuClick, isHidden = false }: NavbarProps = 
               placeholder="Search…"
               className="flex-1 bg-transparent text-[13px] outline-none"
               style={{ color: 'var(--text)' }}
+              autoComplete="off"
+              autoCorrect="off"
+              spellCheck={false}
             />
             {rawQuery && (
               <button

@@ -4,31 +4,50 @@ import { useEffect, useState } from 'react'
 import {
   ScatterChart, Scatter, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ZAxis, Cell,
 } from 'recharts'
+import { ChartTooltip } from './ChartTooltip'
+import { useAnalytics } from '../state/useAnalytics'
+import { ChartProps } from './TrendChart'
+import { AnalyticsFilters } from '@/types/analytics'
 
 const COLORS = ['#0B4A8B', '#1E5FA8', '#17A673', '#F5A623', '#64748B', '#E5484D', '#7C3AED']
 
 interface ScatterPoint { x: number; y: number; label: string }
 
-export function CompletionScatter() {
+export function CompletionScatter({ metric, groupBy, filterOverride }: ChartProps) {
+  const { state } = useAnalytics()
   const [data, setData] = useState<ScatterPoint[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    fetch('/api/analytics/overview?period=1y', { cache: 'no-store' })
+    const f: AnalyticsFilters = { ...state.filters }
+    if (filterOverride && filterOverride !== 'all') {
+      f.branch = filterOverride as any
+    }
+
+    const params = new URLSearchParams()
+    if (f.period !== '30d') params.set('period', f.period)
+    if (f.branch !== 'all') params.set('branch', f.branch)
+    if (f.department !== 'all') params.set('department', f.department)
+    if (f.touchpoint !== 'all') params.set('touchpoint', f.touchpoint)
+    if (f.npsCategory !== 'all') params.set('npsCategory', f.npsCategory)
+
+    fetch(`/api/analytics/overview?${params.toString()}`, { cache: 'no-store' })
       .then(r => r.ok ? r.json() : null)
       .then(json => {
-        if (!json?.data?.surveyPerformance) return
+        if (!json?.data) return
+        const arr = (groupBy === 'status' || groupBy === 'category') ? (json.data.channelPerformance || []) : (json.data.surveyPerformance || [])
+        
         // Map surveys to scatter points: x = estimated time (based on question count), y = response rate
-        const mapped: ScatterPoint[] = json.data.surveyPerformance.map((s: any, i: number) => ({
-          x: 2 + (i % 8), // estimated minutes (proxy)
-          y: Math.min(100, Math.max(0, s.nps ? s.nps + 50 : 0)), // NPS normalized to 0-100 as completion proxy
-          label: s.title?.slice(0, 20) ?? `Survey ${i + 1}`,
+        const mapped: ScatterPoint[] = arr.map((s: any, i: number) => ({
+          x: 2 + (i % 8), // proxy time
+          y: metric === 'responses' ? (s.responseCount ?? 0) : Math.min(100, Math.max(0, s.nps ? s.nps + 50 : 0)),
+          label: (s.title || s.channel || `Item ${i + 1}`).slice(0, 20),
         }))
         setData(mapped)
       })
       .catch(() => { /* ignore */ })
       .finally(() => setLoading(false))
-  }, [])
+  }, [metric, groupBy, state.filters, filterOverride])
 
   if (loading) return <div className="flex h-full items-center justify-center text-[12px]" style={{ color: 'var(--text-muted)' }}>Loading…</div>
   if (data.length === 0) return <div className="flex h-full items-center justify-center text-[12px]" style={{ color: 'var(--text-muted)' }}>No data available</div>

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { X, Download, FileText, FileSpreadsheet, Loader2 } from 'lucide-react'
 import { useToast } from '@/lib/stores/ToastStore'
@@ -14,22 +14,31 @@ interface Props {
 
 export function ExportModal({ open, onClose, range, branch }: Props) {
   const toast = useToast()
+  const filtersRef = useRef<HTMLDivElement | null>(null)
   const [exporting, setExporting] = useState(false)
-  const [format, setFormat] = useState<'csv' | 'excel'>('csv')
-  const [reportType, setReportType] = useState<'executive' | 'responses' | 'surveys' | 'campaigns'>('executive')
+  const [format, setFormat] = useState<'csv' | 'pdf'>('csv')
+  const [reportType, setReportType] = useState<'executive' | 'responses' | 'surveys'>('executive')
+
+  useEffect(() => {
+    if (open) {
+      window.requestAnimationFrame(() => {
+        filtersRef.current?.scrollIntoView({ block: 'start', behavior: 'smooth' })
+      })
+    }
+  }, [open])
 
   async function handleExport() {
     setExporting(true)
     try {
       const params = new URLSearchParams({
-        format: 'csv',
+        format,
         type: reportType,
         range,
         branch,
       })
       // Trigger download via the existing reports/export API
       window.open(`/api/reports/export?${params.toString()}`, '_blank')
-      toast.success('Export started', `${reportType} report downloading as CSV (${range}).`)
+      toast.success('Export started', `${reportType} report downloading as ${format.toUpperCase()} (${range}).`)
       onClose()
     } catch {
       toast.error('Export failed', 'Could not generate the report.')
@@ -79,6 +88,23 @@ export function ExportModal({ open, onClose, range, branch }: Props) {
             {/* Body */}
             <div className="flex-1 overflow-y-auto p-5">
               <div className="flex flex-col gap-5">
+                {/* Applied filters summary */}
+                <div
+                  ref={filtersRef}
+                  className="rounded-[10px] border p-3"
+                  style={{ borderColor: 'var(--border)', background: 'var(--bg-subtle)' }}
+                >
+                  <p className="mb-1.5 text-[10px] font-bold uppercase tracking-wide" style={{ color: 'var(--text-light)' }}>Applied Filters</p>
+                  <div className="flex flex-wrap gap-2.5">
+                    <span className="rounded-[5px] bg-white px-2 py-0.5 text-[10.5px] font-medium" style={{ color: 'var(--text-secondary)', border: '1px solid var(--border)' }}>
+                      Period: {range}
+                    </span>
+                    <span className="rounded-[5px] bg-white px-2 py-0.5 text-[10.5px] font-medium" style={{ color: 'var(--text-secondary)', border: '1px solid var(--border)' }}>
+                      Branch: {branch === 'all' ? 'All Branches' : branch}
+                    </span>
+                  </div>
+                </div>
+
                 {/* Report type */}
                 <div>
                   <label className={labelCls} style={{ color: 'var(--text-light)' }}>Report Type</label>
@@ -87,7 +113,6 @@ export function ExportModal({ open, onClose, range, branch }: Props) {
                       { value: 'executive', label: 'Executive Summary', icon: '📊' },
                       { value: 'responses', label: 'All Responses', icon: '💬' },
                       { value: 'surveys', label: 'Survey Performance', icon: '📋' },
-                      { value: 'campaigns', label: 'Campaign Report', icon: '📣' },
                     ] as const).map(r => (
                       <button
                         key={r.value}
@@ -121,31 +146,19 @@ export function ExportModal({ open, onClose, range, branch }: Props) {
                       CSV
                     </button>
                     <button
-                      onClick={() => setFormat('excel')}
+                      onClick={() => setFormat('pdf')}
                       className="flex flex-1 items-center gap-2 rounded-[10px] border-2 px-3 py-2.5 text-[12px] font-semibold transition-all"
-                      style={format === 'excel'
+                      style={format === 'pdf'
                         ? { borderColor: 'var(--primary)', background: 'var(--accent-soft)', color: 'var(--primary)' }
                         : { borderColor: 'var(--border)', color: 'var(--text-secondary)' }
                       }
                     >
-                      <FileSpreadsheet size={14} />
-                      Excel (.csv)
+                      <FileText size={14} />
+                      PDF
                     </button>
                   </div>
                 </div>
 
-                {/* Applied filters summary */}
-                <div className="rounded-[10px] border p-3" style={{ borderColor: 'var(--border)', background: 'var(--bg-subtle)' }}>
-                  <p className="mb-1.5 text-[10px] font-bold uppercase tracking-wide" style={{ color: 'var(--text-light)' }}>Applied Filters</p>
-                  <div className="flex flex-wrap gap-2.5">
-                    <span className="rounded-[5px] bg-white px-2 py-0.5 text-[10.5px] font-medium" style={{ color: 'var(--text-secondary)', border: '1px solid var(--border)' }}>
-                      Period: {range}
-                    </span>
-                    <span className="rounded-[5px] bg-white px-2 py-0.5 text-[10.5px] font-medium" style={{ color: 'var(--text-secondary)', border: '1px solid var(--border)' }}>
-                      Branch: {branch === 'all' ? 'All Branches' : branch}
-                    </span>
-                  </div>
-                </div>
               </div>
             </div>
 

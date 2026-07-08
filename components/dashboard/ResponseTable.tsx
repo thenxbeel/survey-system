@@ -1,8 +1,9 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import ExpandableResponseRow, { type ResponseRecord } from './ExpandableResponseRow'
 import { Filter, ArrowUpDown } from 'lucide-react'
+import { useToast } from '@/lib/stores/ToastStore'
 
 type SegmentFilter = 'all' | 'promoter' | 'passive' | 'detractor'
 type SortKey = 'recent' | 'score_high' | 'score_low'
@@ -17,7 +18,7 @@ const SEGMENT_OPTIONS: { value: SegmentFilter; label: string }[] = [
 ]
 
 const SORT_OPTIONS: { value: SortKey; label: string }[] = [
-  { value: 'recent',     label: 'Most Recent'     },
+  { value: 'recent',     label: 'Recent'          },
   { value: 'score_high', label: 'Highest Score'   },
   { value: 'score_low',  label: 'Lowest Score'    },
 ]
@@ -35,18 +36,29 @@ function timeAgo(iso: string): string {
 }
 
 export default function ResponseTable({ range = '30d', branch = 'all' }: { range?: string; branch?: string }) {
+  const toast = useToast()
   const [responses, setResponses] = useState<ResponseRecord[]>([])
   const [loading, setLoading] = useState(true)
   const [segment, setSegment] = useState<SegmentFilter>('all')
   const [sort, setSort] = useState<SortKey>('recent')
   const [expandedId, setExpandedId] = useState<string | null>(null)
+  const [currentUserId, setCurrentUserId] = useState<number | null>(null)
 
   useEffect(() => {
+    fetch('/api/auth/me', { cache: 'no-store' })
+      .then(r => r.ok ? r.json() : null)
+      .then(json => {
+        if (json?.user?.id) setCurrentUserId(json.user.id)
+      })
+      .catch(() => { /* ignore */ })
+  }, [])
+
+  const loadResponses = useCallback(async () => {
     setLoading(true)
 
     // Compute date range
     const now = new Date()
-    let since = new Date()
+    const since = new Date()
     switch (range) {
       case '7d':  since.setDate(now.getDate() - 7); break
       case '30d': since.setDate(now.getDate() - 30); break
@@ -64,11 +76,27 @@ export default function ResponseTable({ range = '30d', branch = 'all' }: { range
       .then(r => r.ok ? r.json() : null)
       .then(json => {
         if (!json?.data) return
-        const mapped: ResponseRecord[] = json.data.map((r: any) => {
+        type ApiResponseRow = {
+          id: string
+          surveyId: number
+          npsScore?: number | null
+          respondentName?: string | null
+          respondentEmail?: string | null
+          feedback?: string | null
+          surveyTitle?: string | null
+          touchpoint?: string | null
+          surveyBranch?: string | null
+          submittedAt: string
+          assignedToId?: number | null
+          assignedToName?: string | null
+          assignedAt?: string | null
+        }
+        const mapped: ResponseRecord[] = (json.data as ApiResponseRow[]).map((r) => {
           const score = r.npsScore ?? 0
           const seg: ResponseRecord['segment'] = score >= 9 ? 'promoter' : score >= 7 ? 'passive' : 'detractor'
           return {
             id: r.id,
+            surveyId: r.surveyId,
             score,
             name: r.respondentName || 'Anonymous',
             company: r.respondentEmail || '—',
@@ -77,6 +105,9 @@ export default function ResponseTable({ range = '30d', branch = 'all' }: { range
             product: r.surveyTitle || r.touchpoint || '—',
             branch: r.surveyBranch || '—',
             date: timeAgo(r.submittedAt),
+            assignedToId: r.assignedToId ?? null,
+            assignedToName: r.assignedToName ?? null,
+            assignedAt: r.assignedAt ?? null,
           }
         })
         setResponses(mapped)
@@ -84,6 +115,59 @@ export default function ResponseTable({ range = '30d', branch = 'all' }: { range
       .catch(() => { /* ignore */ })
       .finally(() => setLoading(false))
   }, [range, branch, segment, sort])
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      void loadResponses()
+    }, 0)
+    return () => window.clearTimeout(timer)
+  }, [loadResponses])
+
+  async function handleAssign(row: ResponseRecord) {
+    if (!currentUserId) {
+      toast.error('Cannot assign', 'Please sign in again and try once more.')
+      return
+    }
+    try {
+      const res = await fetch(`/api/responses/${row.id}/assign`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ assignedToId: currentUserId }),
+      })
+      if (!res.ok) {
+        const json = await res.json().catch(() => null)
+        toast.error('Assign failed', json?.error || 'Could not assign this response.')
+        return
+      }
+      const json = await res.json()
+      setResponses(prev => prev.map(r => r.id === row.id ? {
+        ...r,
+        assignedToId: json.data?.assignedToId ?? currentUserId,
+        assignedToName: json.data?.assignedToName ?? 'You',
+        assignedAt: json.data?.assignedAt ?? new Date().toISOString(),
+      } : r))
+      toast.success('Response assigned', 'The response is now assigned to you.')
+    } catch {
+      toast.error('Assign failed', 'Could not assign this response.')
+    }
+  }
+
+  async function handleArchiveSurvey(row: ResponseRecord) {
+    try {
+      const res = await fetch(`/api/surveys/${row.surveyId}?action=archive`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+      })
+      if (!res.ok) {
+        const json = await res.json().catch(() => null)
+        toast.error('Archive failed', json?.error || 'Could not archive the survey.')
+        return
+      }
+      toast.success('Survey archived', `${row.product} was archived.`)
+    } catch {
+      toast.error('Archive failed', 'Could not archive the survey.')
+    }
+  }
 
   const filtered = responses
 
@@ -159,6 +243,9 @@ export default function ResponseTable({ range = '30d', branch = 'all' }: { range
                   row={r}
                   isExpanded={expandedId === r.id}
                   onToggle={(id) => setExpandedId(prev => prev === id ? null : id)}
+                  currentUserId={currentUserId}
+                  onAssign={handleAssign}
+                  onArchiveSurvey={handleArchiveSurvey}
                 />
               ))
             )}

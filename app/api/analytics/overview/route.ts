@@ -79,9 +79,9 @@ export async function GET(req: NextRequest) {
   ])
 
   // ─── NPS Calculation ──────────────────────────────────────────────
-  const promoters = npsScores.filter(r => (r.npsScore ?? 0) >= 9).length
-  const passives  = npsScores.filter(r => (r.npsScore ?? 0) >= 7 && (r.npsScore ?? 0) <= 8).length
-  const detractors = npsScores.filter(r => (r.npsScore ?? 0) <= 6).length
+  const promoters = npsScores.filter(r => r.npsScore != null && r.npsScore >= 9).length
+  const passives  = npsScores.filter(r => r.npsScore != null && r.npsScore >= 7 && r.npsScore <= 8).length
+  const detractors = npsScores.filter(r => r.npsScore != null && r.npsScore <= 6).length
   const npsScore = npsScores.length > 0
     ? Math.round(((promoters - detractors) / npsScores.length) * 100)
     : 0
@@ -97,7 +97,7 @@ export async function GET(req: NextRequest) {
     : 0
 
   // ─── Response Rate ──────────────────────────────────────────────────
-  const responseRate = totalResponses > 0 ? 100 : 0
+  const responseRate = totalResponses > 0 ? Math.round((npsScores.length / totalResponses) * 100) : 0
 
   // ─── Campaign / channel / employee / lifecycle performance ────────
   const [campaignPerf, channelPerf, employeePerf, surveyLifecycle, activeSurveys, surveyPerf, branchPerf] = await Promise.all([

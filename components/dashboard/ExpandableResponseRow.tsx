@@ -4,6 +4,7 @@ import Badge from '@/components/common/Badge'
 
 export interface ResponseRecord {
   id: string
+  surveyId: number
   score: number
   name: string
   company: string
@@ -12,6 +13,9 @@ export interface ResponseRecord {
   product: string
   branch: string
   date: string
+  assignedToId: number | null
+  assignedToName: string | null
+  assignedAt: string | null
 }
 
 function scoreClass(seg: ResponseRecord['segment']) {
@@ -34,9 +38,13 @@ interface Props {
   row: ResponseRecord
   isExpanded: boolean
   onToggle: (id: string) => void
+  currentUserId?: number | null
+  onAssign: (row: ResponseRecord) => void
+  onArchiveSurvey: (row: ResponseRecord) => void
 }
 
-export default function ExpandableResponseRow({ row, isExpanded, onToggle }: Props) {
+export default function ExpandableResponseRow({ row, isExpanded, onToggle, currentUserId, onAssign, onArchiveSurvey }: Props) {
+  const isAssignedToMe = currentUserId !== null && currentUserId !== undefined && row.assignedToId === currentUserId
   return (
     <>
       <tr
@@ -129,19 +137,48 @@ export default function ExpandableResponseRow({ row, isExpanded, onToggle }: Pro
                 <p className="mt-2 text-[11px]" style={{ color: 'var(--text-light)' }}>
                   Score {row.score} · {row.product} · {row.branch} · {row.date} · {row.company}
                 </p>
+                <div className="mt-3">
+                  <span
+                    className="inline-flex items-center rounded-full border px-2.5 py-1 text-[10.5px] font-semibold uppercase tracking-[0.06em]"
+                    style={
+                      row.assignedToName
+                        ? { borderColor: 'rgba(11,74,139,0.22)', background: 'var(--tint-blue)', color: 'var(--primary)' }
+                        : { borderColor: 'var(--border)', background: 'var(--bg-subtle)', color: 'var(--text-light)' }
+                    }
+                  >
+                    {row.assignedToName
+                      ? (isAssignedToMe ? 'Assigned to you' : `Assigned to ${row.assignedToName}`)
+                      : 'Unassigned'}
+                  </span>
+                </div>
               </div>
-              <div className="flex gap-2">
-                {['Tag', 'Note', 'Archive'].map((action) => (
+              <div className="flex flex-col items-end gap-2">
+                <div className="flex gap-2">
                   <button
-                    key={action}
-                    className="flex items-center justify-center text-center rounded-[7px] border bg-white px-6 py-3 text-[11px] font-semibold transition-all "
+                    className="flex items-center justify-center text-center rounded-[7px] border bg-white px-4 py-2.5 text-[11px] font-semibold transition-all "
                     style={{ borderColor: 'var(--border)', color: 'var(--text-secondary)' }}
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      onAssign(row)
+                    }}
                     onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'var(--border-strong)'; e.currentTarget.style.color = 'var(--text)' }}
                     onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.color = 'var(--text-secondary)' }}
                   >
-                    {action}
+                    {isAssignedToMe ? 'Assigned' : 'Assign'}
                   </button>
-                ))}
+                  <button
+                    className="flex items-center justify-center text-center rounded-[7px] border bg-white px-4 py-2.5 text-[11px] font-semibold transition-all "
+                    style={{ borderColor: 'var(--border)', color: 'var(--text-secondary)' }}
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      onArchiveSurvey(row)
+                    }}
+                    onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'var(--border-strong)'; e.currentTarget.style.color = 'var(--text)' }}
+                    onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.color = 'var(--text-secondary)' }}
+                  >
+                    Archive Survey
+                  </button>
+                </div>
               </div>
             </div>
           </td>

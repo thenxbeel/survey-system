@@ -35,14 +35,14 @@ const GROUPBY_LABELS: Record<GroupByType, string> = {
   status:   'By Touchpoint',
 }
 
-function renderChart(type: WidgetConfig['chartType']) {
-  switch (type) {
-    case 'line':    return <TrendChart />
-    case 'bar':     return <VolumeBarChart />
-    case 'pie':     return <DistributionPieChart />
-    case 'scatter': return <CompletionScatter />
-    case 'radar':   return <PerformanceRadar />
-    case 'heatmap': return <ActivityHeatmap />
+function renderChart(widget: WidgetConfig) {
+  switch (widget.chartType) {
+    case 'line':    return <TrendChart metric={widget.metric} groupBy={widget.groupBy} />
+    case 'bar':     return <VolumeBarChart metric={widget.metric} groupBy={widget.groupBy} />
+    case 'pie':     return <DistributionPieChart metric={widget.metric} groupBy={widget.groupBy} />
+    case 'scatter': return <CompletionScatter metric={widget.metric} groupBy={widget.groupBy} />
+    case 'radar':   return <PerformanceRadar metric={widget.metric} groupBy={widget.groupBy} />
+    case 'heatmap': return <ActivityHeatmap metric={widget.metric} groupBy={widget.groupBy} />
     default:        return null
   }
 }
@@ -127,7 +127,7 @@ export function DashboardWidget({
         description={description}
         className="flex-1 border-0 shadow-none"
       >
-        {renderChart(widget.chartType)}
+        {renderChart(widget)}
       </ChartContainer>
     </div>
   )

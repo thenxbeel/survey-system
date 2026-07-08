@@ -47,14 +47,14 @@ const filterOptions: { value: FilterType; label: string }[] = [
   { value: 'draft',     label: 'Al Ain City' },
 ]
 
-function renderPreview(chartType: ChartType) {
+function renderPreview(chartType: ChartType, config: VisualizationConfig) {
   switch (chartType) {
-    case 'line':    return <TrendChart />
-    case 'bar':     return <VolumeBarChart />
-    case 'pie':     return <DistributionPieChart />
-    case 'scatter': return <CompletionScatter />
-    case 'radar':   return <PerformanceRadar />
-    case 'heatmap': return <ActivityHeatmap />
+    case 'line':    return <TrendChart metric={config.metric} groupBy={config.groupBy} filterOverride={config.filter} />
+    case 'bar':     return <VolumeBarChart metric={config.metric} groupBy={config.groupBy} filterOverride={config.filter} />
+    case 'pie':     return <DistributionPieChart metric={config.metric} groupBy={config.groupBy} filterOverride={config.filter} />
+    case 'scatter': return <CompletionScatter metric={config.metric} groupBy={config.groupBy} filterOverride={config.filter} />
+    case 'radar':   return <PerformanceRadar metric={config.metric} groupBy={config.groupBy} filterOverride={config.filter} />
+    case 'heatmap': return <ActivityHeatmap metric={config.metric} groupBy={config.groupBy} filterOverride={config.filter} />
     default:        return null
   }
 }
@@ -205,7 +205,7 @@ export function VisualizationBuilder() {
                 description={`Filter: ${filterOptions.find(f => f.value === config.filter)?.label}`}
                 className="h-full border-0 shadow-none"
               >
-                {renderPreview(config.chartType)}
+                {renderPreview(config.chartType, config)}
               </ChartContainer>
             </div>
           </div>

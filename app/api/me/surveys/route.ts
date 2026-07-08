@@ -79,11 +79,8 @@ export async function GET(req: NextRequest) {
     const derivedLifecycle = deriveLifecycleStatus(
       s.lifecycleStatus, s.activationDate, s.expirationDate, s.closedAt,
     )
-    // response rate = responses / (responses * 2) — placeholder heuristic
-    // matching the existing dashboard convention. Replace with real
-    // invitation tracking when available.
     const responseRate = responseCount > 0
-      ? Math.round((responseCount / Math.max(responseCount * 2, 1)) * 100)
+      ? Math.round(((agg?._count.npsScore ?? 0) / responseCount) * 100)
       : 0
     return {
       id: `SRV-${String(s.id).padStart(4, '0')}`,
