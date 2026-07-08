@@ -1,10 +1,8 @@
-// src/components/Providers.tsx
-'use client';
-import { useTranslation } from '@/lib/i18n/useTranslation';
+'use client'
 
-import React, { ReactNode } from 'react';
-import { SettingsProvider } from '@/lib/stores/SettingsStore';
+import type { ReactNode } from 'react'
+import { SettingsProvider } from '@/components/settings/SettingsProvider'
 
 export default function Providers({ children }: { children: ReactNode }) {
-  return <SettingsProvider>{t('components_Providers.tsx_children')}</SettingsProvider>;
+  return <SettingsProvider>{children}</SettingsProvider>
 }
