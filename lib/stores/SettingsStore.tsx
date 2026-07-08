@@ -54,7 +54,7 @@ export interface SettingsState {
   density:      DensityMode
   fontSize:     FontSizeMode
   typography:   TypographyMode
-  language:     'English'
+  language:     string
   profile:      UserProfile
 }
 

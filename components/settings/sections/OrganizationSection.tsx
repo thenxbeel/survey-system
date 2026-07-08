@@ -18,7 +18,7 @@ export function OrganizationSection({ delay = 0 }: Props) {
   const [founded, setFounded] = useState('2011')
   const [currency, setCurrency] = useState('AED')
   const [timezone, setTimezone] = useState('Asia/Dubai (GST+4)')
-  const [language, setLanguage] = useState('English')
+  const [language, setLanguage] = useState<string>('English')
 
   const selectCls = 'h-[36px] w-full appearance-none rounded-[9px] border border-[var(--border)] bg-white pl-3 pr-9 text-[12px] font-medium text-[var(--text)] outline-none transition-all hover:border-[var(--border-strong)] focus:border-[var(--primary)] focus:ring-2 focus:ring-[rgba(11,74,139,0.1)] cursor-pointer'
 

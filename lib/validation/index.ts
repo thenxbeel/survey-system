@@ -15,7 +15,7 @@ export const LoginSchema = z.object({
 export const RegisterSchema = z.object({
   employeeId: z.string().min(3, 'Employee ID must be at least 3 characters'),
   name:       z.string().min(3, 'Name must be at least 3 characters'),
-  email:      z.string().email('Invalid email address'),
+  email:      z.string().email({ message: 'Invalid email address' }),
   password:   z.string().min(8, 'Password must be at least 8 characters'),
 })
 

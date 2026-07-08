@@ -48,7 +48,7 @@ export function PreferencesSection({ delay = 0 }: Props) {
             <div className="relative">
               <select
                 value={language}
-                onChange={e => setLanguage(e.target.value)}
+                onChange={e => setLanguage(e.target.value as string)}
                 className={selectCls}
               >
                 <option value="English">English (US)</option>
