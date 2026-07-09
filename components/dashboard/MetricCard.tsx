@@ -137,7 +137,7 @@ export default function MetricCard({ label, value, suffix, sub, icon: Icon, tint
       )}
 
       {/* Sub */}
-      <div className="text-[12px] font-bold text-black">{sub}</div>
+      <div className="text-[12px]" style={{ color: 'var(--text-secondary)' }}>{sub}</div>
     </div>
   )
 }

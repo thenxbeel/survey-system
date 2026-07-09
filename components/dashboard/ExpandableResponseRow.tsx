@@ -39,12 +39,13 @@ interface Props {
   isExpanded: boolean
   onToggle: (id: string) => void
   currentUserId?: number | null
-  onAssign: (row: ResponseRecord) => void
-  onArchiveSurvey: (row: ResponseRecord) => void
+  onAssignClick: (row: ResponseRecord) => void
+  onArchiveResponse: (row: ResponseRecord) => void
 }
 
-export default function ExpandableResponseRow({ row, isExpanded, onToggle, currentUserId, onAssign, onArchiveSurvey }: Props) {
+export default function ExpandableResponseRow({ row, isExpanded, onToggle, currentUserId, onAssignClick, onArchiveResponse }: Props) {
   const isAssignedToMe = currentUserId !== null && currentUserId !== undefined && row.assignedToId === currentUserId
+
   return (
     <>
       <tr
@@ -159,7 +160,7 @@ export default function ExpandableResponseRow({ row, isExpanded, onToggle, curre
                     style={{ borderColor: 'var(--border)', color: 'var(--text-secondary)' }}
                     onClick={(e) => {
                       e.stopPropagation()
-                      onAssign(row)
+                      onAssignClick(row)
                     }}
                     onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'var(--border-strong)'; e.currentTarget.style.color = 'var(--text)' }}
                     onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.color = 'var(--text-secondary)' }}
@@ -171,12 +172,12 @@ export default function ExpandableResponseRow({ row, isExpanded, onToggle, curre
                     style={{ borderColor: 'var(--border)', color: 'var(--text-secondary)' }}
                     onClick={(e) => {
                       e.stopPropagation()
-                      onArchiveSurvey(row)
+                      onArchiveResponse(row)
                     }}
                     onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'var(--border-strong)'; e.currentTarget.style.color = 'var(--text)' }}
                     onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.color = 'var(--text-secondary)' }}
                   >
-                    Archive Survey
+                    Archive
                   </button>
                 </div>
               </div>

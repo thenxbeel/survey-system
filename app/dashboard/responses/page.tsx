@@ -69,7 +69,7 @@ function mapApiResponse(r: ApiResponse): ResponseRecord {
     npsCategory: cat,
     sentiment: sent,
     status: (r.status as ResponseStatus) ?? 'new',
-    assignedTo: r.createdByName ?? null,
+    assignedTo: (r as any).assignedToName ?? null,
     submittedAt: r.submittedAt,
     answers: [],
     comments: r.feedback ?? '',
@@ -122,6 +122,12 @@ export default function ResponsesPage() {
       if (filters.branch !== 'All') params.set('branch', filters.branch)
       // Send department filter
       if (filters.department !== 'All') params.set('department', filters.department)
+      // Send assignment filter
+      if (filters.assignedFilter === 'new') {
+        params.set('status', 'new')
+      } else if (filters.assignedFilter !== 'all') {
+        params.set('assignedToId', filters.assignedFilter)
+      }
 
       const res = await fetch(`/api/responses?${params}`, { cache: 'no-store' })
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
@@ -140,7 +146,7 @@ export default function ResponsesPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page, debouncedSearch, filters.category, filters.status, filters.scoreMin,
       filters.scoreMax, filters.dateFrom, filters.dateTo, filters.survey,
-      filters.touchpoint, filters.branch, filters.department])
+      filters.touchpoint, filters.branch, filters.department, filters.assignedFilter])
 
   useEffect(() => { fetchResponses() }, [fetchResponses])
 
@@ -182,6 +188,7 @@ export default function ResponsesPage() {
     filters.touchpoint !== 'All' ||
     filters.branch !== 'All' ||
     filters.department !== 'All' ||
+    filters.assignedFilter !== 'all' ||
     filters.scoreMin ||
     filters.scoreMax ||
     filters.dateFrom ||
@@ -254,7 +261,7 @@ export default function ResponsesPage() {
   // ── Render ──
 
   return (
-    <div className="flex flex-col gap-6 p-7">
+    <div className="flex flex-col gap-6 p-7 animate-fade-up">
       {/* Page header */}
       <div className="animate-fade-up flex items-start justify-between">
         <div>

@@ -38,8 +38,13 @@ export default function AssignmentsPage() {
   const [selectedAssignment, setSelectedAssignment] = useState<AssignmentRecord | null>(null)
   const [fullDetails, setFullDetails] = useState<any | null>(null)
   const [loadingDetails, setLoadingDetails] = useState(false)
-  
+  const [statusFilter, setStatusFilter] = useState<'all' | 'actioned' | 'solved'>('all')
+
   const isAdminOrManager = user?.role === 'admin' || user?.role === 'manager'
+
+  const filteredAssignments = statusFilter === 'all'
+    ? assignments
+    : assignments.filter(a => a.status === statusFilter)
 
   const fetchAssignments = useCallback(async () => {
     setLoading(true)
@@ -123,19 +128,45 @@ export default function AssignmentsPage() {
         </div>
       </div>
 
+      {/* Status Filter Tabs */}
+      <div className="flex items-center gap-2">
+        {(['all', 'actioned', 'solved'] as const).map(f => {
+          const labels: Record<string, string> = { all: 'All', actioned: 'Assigned', solved: 'Solved' }
+          const active = statusFilter === f
+          return (
+            <button
+              key={f}
+              onClick={() => setStatusFilter(f)}
+              className="px-4 py-1.5 rounded-full text-[12px] font-semibold border transition-all"
+              style={active ? {
+                background: 'var(--primary)',
+                borderColor: 'var(--primary)',
+                color: '#fff',
+              } : {
+                background: '#fff',
+                borderColor: '#E2E8F3',
+                color: '#4A5568',
+              }}
+            >
+              {labels[f]}
+            </button>
+          )
+        })}
+      </div>
+
       {/* Main List */}
       <div className="rounded-[16px] border border-[#E2E8F3] bg-white shadow-sm overflow-hidden">
         {loading ? (
           <div className="flex items-center justify-center py-20 text-[#8FA0B5]">
             <Clock className="animate-spin h-5 w-5 mr-2" /> Loading assignments...
           </div>
-        ) : assignments.length === 0 ? (
+        ) : filteredAssignments.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 text-center">
             <div className="h-12 w-12 rounded-full bg-[#F4F7FB] flex items-center justify-center mb-3">
               <CheckCircle className="h-6 w-6 text-[#17A673]" />
             </div>
-            <h3 className="text-[14px] font-semibold text-[#0D1B2E]">All caught up!</h3>
-            <p className="text-[12px] text-[#8FA0B5] mt-1">There are no responses needing attention right now.</p>
+            <h3 className="text-[14px] font-semibold text-[#0D1B2E]">No results</h3>
+            <p className="text-[12px] text-[#8FA0B5] mt-1">No assignments match the selected filter.</p>
           </div>
         ) : (
           <table className="w-full text-left border-collapse">
@@ -150,7 +181,7 @@ export default function AssignmentsPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-[#E2E8F3]">
-              {assignments.map(a => (
+              {filteredAssignments.map(a => (
                 <tr key={a.id} className="hover:bg-[#F9FAFB] transition-colors">
                   <td className="px-5 py-4">
                     <div className="text-[12px] font-semibold text-[#0D1B2E]">{a.id}</div>
@@ -225,7 +256,7 @@ export default function AssignmentsPage() {
       {/* View Details Modal */}
       {detailsModalOpen && selectedAssignment && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#0D1B2E]/40 backdrop-blur-sm">
-          <div className="w-full max-w-lg rounded-[16px] bg-white shadow-xl flex flex-col max-h-[90vh]">
+          <div className="w-full max-w-sm rounded-[16px] bg-white shadow-xl flex flex-col max-h-[90vh]">
             <div className="flex items-center justify-between border-b border-[#E2E8F3] px-6 py-5">
               <h2 className="text-[16px] font-bold text-[#0D1B2E]">Response Details</h2>
               <button 

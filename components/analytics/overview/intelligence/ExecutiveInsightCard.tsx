@@ -29,8 +29,8 @@ export function ExecutiveInsightCard({ insight, delay = 0 }: { insight: AiInsigh
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.35, delay, ease: [0.16, 1, 0.3, 1] }}
       whileHover={{ y: -2 }}
-      className="group flex flex-col gap-2.5 rounded-[14px] bg-white p-8 transition-shadow duration-200 hover:shadow-[0_8px_24px_rgba(13,27,46,0.08)]"
-      style={{ border: '1px solid var(--border)', boxShadow: 'var(--shadow-xs)' }}
+      className="group flex flex-col gap-2.5 rounded-[18px] bg-white p-8 transition-shadow duration-200 hover:shadow-[0_8px_24px_rgba(13,27,46,0.08)]"
+      style={{ border: '1px solid var(--border)', boxShadow: 'var(--shadow)' }}
     >
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">

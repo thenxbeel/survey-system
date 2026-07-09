@@ -25,7 +25,7 @@ const DEFAULT_FILTERS: SurveyFilters = {
 
 export default function SurveysPage() {
   const router = useRouter()
-  const { state, duplicate, archive, deleteSurvey, bulkArchive, bulkDelete } = useSurveys()
+  const { state, duplicate, archive, unarchive, deleteSurvey, bulkArchive, bulkDelete } = useSurveys()
   const toast = useToast()
 
   const surveys = state.surveys
@@ -154,6 +154,11 @@ export default function SurveysPage() {
     toast.info('Survey archived', `${survey.title} has been archived.`)
   }
 
+  function handleUnarchive(survey: SurveyRecord) {
+    unarchive(survey.id)
+    toast.success('Survey unarchived', `${survey.title} is now active.`)
+  }
+
   async function handleDelete(survey: SurveyRecord) {
     try {
       await deleteSurvey(survey.id)
@@ -235,7 +240,7 @@ export default function SurveysPage() {
   }
 
   return (
-    <div className="flex flex-col gap-6 p-7">
+    <div className="flex flex-col gap-6 p-7 animate-fade-up">
       {/* Page header */}
       <div className="animate-fade-up flex items-center justify-between">
         <div>
@@ -283,6 +288,7 @@ export default function SurveysPage() {
         onEdit={handleEdit}
         onDuplicate={handleDuplicate}
         onArchive={handleArchive}
+        onUnarchive={handleUnarchive}
         onDelete={handleDelete}
         onCopyUrl={handleCopyUrl}
         page={page}
@@ -302,6 +308,7 @@ export default function SurveysPage() {
         onEdit={handleEdit}
         onDuplicate={handleDuplicate}
         onArchive={handleArchive}
+        onUnarchive={handleUnarchive}
         onDelete={handleDelete}
         onCopyUrl={handleCopyUrl}
       />

@@ -4,7 +4,7 @@ import { useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   X, Pencil, Copy, Archive, Trash2, Send, Link2,
-  Users, MessageSquareText, Gauge, Calendar, MapPin, Eye, EyeOff,
+  Users, MessageSquareText, Gauge, Calendar, MapPin, Eye, EyeOff, ArchiveRestore,
 } from 'lucide-react'
 import Button from '@/components/common/Button'
 import SurveyStatusBadge from './SurveyStatusBadge'
@@ -16,6 +16,7 @@ interface SurveyDetailDrawerProps {
   onEdit: (survey: SurveyRecord) => void
   onDuplicate: (survey: SurveyRecord) => void
   onArchive: (survey: SurveyRecord) => void
+  onUnarchive: (survey: SurveyRecord) => void
   onDelete: (survey: SurveyRecord) => void
   onCopyUrl?: (survey: SurveyRecord) => void
 }
@@ -38,7 +39,7 @@ function StatBlock({ icon: Icon, label, value }: { icon: typeof Users; label: st
 }
 
 export default function SurveyDetailDrawer({
-  survey, onClose, onEdit, onDuplicate, onArchive, onDelete, onCopyUrl,
+  survey, onClose, onEdit, onDuplicate, onArchive, onUnarchive, onDelete, onCopyUrl,
 }: SurveyDetailDrawerProps) {
   useEffect(() => {
     function handleKey(e: KeyboardEvent) {
@@ -131,7 +132,7 @@ export default function SurveyDetailDrawer({
                 <Pencil size={12} />
                 Edit Survey
               </Button>
-              {onCopyUrl && (
+              {onCopyUrl && survey.status !== 'draft' && (
                 <Button variant="ghost" onClick={() => onCopyUrl(survey)} aria-label="Copy survey URL" title="Copy Survey URL">
                   <Link2 size={12} />
                 </Button>
@@ -139,9 +140,15 @@ export default function SurveyDetailDrawer({
               <Button variant="ghost" onClick={() => onDuplicate(survey)} aria-label="Duplicate survey">
                 <Copy size={12} />
               </Button>
-              <Button variant="ghost" onClick={() => onArchive(survey)} aria-label="Archive survey">
-                <Archive size={12} />
-              </Button>
+              {survey.status === 'archived' ? (
+                <Button variant="ghost" onClick={() => onUnarchive(survey)} aria-label="Unarchive survey">
+                  <ArchiveRestore size={12} />
+                </Button>
+              ) : (
+                <Button variant="ghost" onClick={() => onArchive(survey)} aria-label="Archive survey">
+                  <Archive size={12} />
+                </Button>
+              )}
               <Button
                 variant="ghost"
                 style={{ borderColor: 'rgba(229,72,77,0.3)', color: 'var(--red)' }}

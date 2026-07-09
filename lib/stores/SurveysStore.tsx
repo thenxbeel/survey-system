@@ -63,6 +63,7 @@ interface SurveysContextValue {
   deleteSurvey:  (id: string) => Promise<void>
   duplicate:     (id: string) => Promise<void>
   archive:       (id: string) => Promise<void>
+  unarchive:     (id: string) => Promise<void>
   bulkArchive:   (ids: string[]) => Promise<void>
   bulkDelete:    (ids: string[]) => Promise<void>
   /** Publish a SurveyDraft from the builder → POST /api/surveys then refresh. */
@@ -140,6 +141,12 @@ export function SurveysProvider({ children }: { children: ReactNode }) {
     await refresh()
   }, [refresh])
 
+  const unarchive = useCallback(async (id: string) => {
+    const numericId = id.replace(/^SRV-/, '')
+    await fetch(`/api/surveys/${numericId}?action=unarchive`, { method: 'PATCH' })
+    await refresh()
+  }, [refresh])
+
   const bulkArchive = useCallback(async (ids: string[]) => {
     await Promise.all(ids.map(id => {
       const numericId = id.replace(/^SRV-/, '')
@@ -214,7 +221,7 @@ export function SurveysProvider({ children }: { children: ReactNode }) {
 
   const value: SurveysContextValue = {
     state, refresh,
-    addSurvey, updateSurvey, deleteSurvey, duplicate, archive, bulkArchive, bulkDelete,
+    addSurvey, updateSurvey, deleteSurvey, duplicate, archive, unarchive, bulkArchive, bulkDelete,
     publishDraft, saveDraft,
   }
 

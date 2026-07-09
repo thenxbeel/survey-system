@@ -80,12 +80,22 @@
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   
   /* Global micro-interactions for a premium feel */
-  button, a {
-    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  button, a, .icon-btn, .btn {
+    transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+  
+  button:active, a:active, .icon-btn:active, .btn:active {
+    transform: scale(0.95);
   }
   
   input, select, textarea {
-    transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+    transition: border-color 0.25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  input:focus, select:focus, textarea:focus {
+    border-color: var(--primary) !important;
+    box-shadow: 0 0 0 3px rgba(11, 74, 139, 0.15) !important;
+    outline: none !important;
   }
 }
 html, body {
@@ -157,11 +167,11 @@ textarea:focus-visible {
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow);
-  transition: box-shadow 0.2s ease, transform 0.2s ease;
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
-.card-hover:hover {
+.card-hover:hover, .card:hover {
   box-shadow: var(--shadow-md);
-  transform: translateY(-2px);
+  transform: translateY(-3px) scale(1.003);
 }
 
 /* Panel — larger containers (charts, tables) */
@@ -170,6 +180,11 @@ textarea:focus-visible {
   border: 1px solid var(--border);
   border-radius: var(--radius-xl);
   box-shadow: var(--shadow);
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.panel:hover {
+  box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
 }
 
 /* Glass (login) */

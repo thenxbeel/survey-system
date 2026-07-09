@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { X, Check } from 'lucide-react'
 import { FEATURED_TEMPLATES } from '@/lib/survey-templates'
 import type { SurveyTemplate } from '@/lib/survey-templates'
@@ -19,7 +19,26 @@ export default function TemplatesModal({
   const [selectedCategory, setSelectedCategory] = useState<'Survey' | 'Invitation' | 'Registration'>('Survey')
   const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(null)
 
-  if (!isOpen) return null
+  // Use local state for smooth mount/unmount animation
+  const [isMounted, setIsMounted] = useState(isOpen)
+  const [isAnimating, setIsAnimating] = useState(false)
+
+  useEffect(() => {
+    if (isOpen) {
+      setIsMounted(true)
+      // Slight delay to allow DOM to render and paint before starting animation
+      const t = setTimeout(() => {
+        setIsAnimating(true)
+      }, 50)
+      return () => clearTimeout(t)
+    } else {
+      setIsAnimating(false)
+      const timeout = setTimeout(() => setIsMounted(false), 300) // Match transition duration
+      return () => clearTimeout(timeout)
+    }
+  }, [isOpen])
+
+  if (!isMounted) return null
 
   const filteredTemplates = FEATURED_TEMPLATES.filter((t) => t.category === selectedCategory)
 
@@ -32,9 +51,15 @@ export default function TemplatesModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm animate-in fade-in duration-200">
+    <div 
+      className={`fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm transition-opacity duration-300 ease-out ${
+        isAnimating ? 'opacity-100' : 'opacity-0 pointer-events-none'
+      }`}
+    >
       <div
-        className="relative flex h-[90vh] max-h-[700px] w-full max-w-[500px] flex-col rounded-[20px] p-6 shadow-2xl animate-in zoom-in-95 duration-200"
+        className={`relative flex h-[90vh] max-h-[700px] w-full max-w-[500px] flex-col rounded-[20px] p-6 shadow-2xl transition-[transform,opacity] duration-400 ease-[cubic-bezier(0.34,1.56,0.64,1)] ${
+          isAnimating ? 'translate-y-0 scale-100 opacity-100' : 'translate-y-4 scale-95 opacity-0'
+        }`}
         style={{
           fontFamily: 'var(--font-sans, sans-serif)',
           background: 'var(--card)',
@@ -88,7 +113,7 @@ export default function TemplatesModal({
                   className="group flex cursor-pointer flex-col gap-2"
                 >
                   <div
-                    className="relative overflow-hidden rounded-[12px] shadow-sm transition-all duration-300 group-hover:-translate-y-0.5 group-hover:shadow-md"
+                    className="relative overflow-hidden rounded-[12px] shadow-sm transition-[transform,box-shadow] duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)] group-hover:-translate-y-1 group-hover:scale-[1.01] group-hover:shadow-md"
                     style={{ border: '1px solid var(--border)' }}
                   >
                     <div className={`relative flex h-[115px] w-full items-end overflow-hidden bg-gradient-to-br ${template.gradient} p-2.5`}>

@@ -83,7 +83,7 @@ function BuilderTab() {
   return (
     <div className="flex flex-col gap-6">
       <div
-        className="rounded-[14px] bg-white p-8"
+        className="rounded-[18px] bg-white p-8"
         style={{ border: '1px solid var(--border)', boxShadow: 'var(--shadow)' }}
       >
         <h2 className="text-[14px] font-bold" style={{ color: 'var(--text)', letterSpacing: '-0.012em' }}>
@@ -158,7 +158,7 @@ function AnalyticsContent() {
   }, [dispatch])
 
   return (
-    <div className="flex flex-col gap-6 p-7">
+    <div className="flex flex-col gap-6 p-7 animate-fade-up">
       <AnalyticsHeader />
       <AnalyticsToolbar />
 

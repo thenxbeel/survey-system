@@ -66,8 +66,8 @@ export default function DashboardPage() {
 
       {/* ─── Dashboard filter bar ─── */}
       <div
-        className="flex flex-wrap items-center gap-4 rounded-[14px] bg-white px-6 py-4"
-        style={{ border: '1px solid var(--border)', boxShadow: 'var(--shadow-xs)' }}
+        className="flex flex-wrap items-center gap-4 rounded-[18px] bg-white px-6 py-4"
+        style={{ border: '1px solid var(--border)', boxShadow: 'var(--shadow)' }}
       >
         {/* Range selector */}
         <div className="flex items-center gap-2">

@@ -1,6 +1,6 @@
 'use client'
 
-import { Eye, Pencil, Copy, Archive, Trash2, MessageSquareText, Link2 } from 'lucide-react'
+import { Eye, Pencil, Copy, Archive, Trash2, MessageSquareText, Link2, ArchiveRestore } from 'lucide-react'
 import SurveyStatusBadge from './SurveyStatusBadge'
 import ActionMenu, { type ActionMenuItem } from './ActionMenu'
 import type { SurveyRecord } from '@/lib/types/survey'
@@ -13,6 +13,7 @@ interface SurveyRowProps {
   onEdit: (survey: SurveyRecord) => void
   onDuplicate: (survey: SurveyRecord) => void
   onArchive: (survey: SurveyRecord) => void
+  onUnarchive: (survey: SurveyRecord) => void
   onDelete: (survey: SurveyRecord) => void
   onCopyUrl: (survey: SurveyRecord) => void
 }
@@ -30,16 +31,27 @@ function npsColor(score: number | null) {
 }
 
 export default function SurveyRow({
-  survey, selected, onToggleSelect, onView, onEdit, onDuplicate, onArchive, onDelete, onCopyUrl,
+  survey, selected, onToggleSelect, onView, onEdit, onDuplicate, onArchive, onUnarchive, onDelete, onCopyUrl,
 }: SurveyRowProps) {
   const menuItems: ActionMenuItem[] = [
     { label: 'View survey', icon: Eye, onSelect: () => onView(survey) },
     { label: 'Edit survey', icon: Pencil, onSelect: () => onEdit(survey) },
     { label: 'Duplicate', icon: Copy, onSelect: () => onDuplicate(survey) },
-    { label: 'Copy Survey URL', icon: Link2, onSelect: () => onCopyUrl(survey), divider: true },
-    { label: 'Archive', icon: Archive, onSelect: () => onArchive(survey), divider: true },
-    { label: 'Delete', icon: Trash2, onSelect: () => onDelete(survey), danger: true },
   ]
+
+  if (survey.status !== 'draft') {
+    menuItems.push({ label: 'Copy Survey URL', icon: Link2, onSelect: () => onCopyUrl(survey), divider: true })
+  }
+
+  if (survey.status === 'archived') {
+    menuItems.push({ label: 'Unarchive', icon: ArchiveRestore, onSelect: () => onUnarchive(survey), divider: survey.status === 'draft' })
+  } else {
+    menuItems.push({ label: 'Archive', icon: Archive, onSelect: () => onArchive(survey), divider: survey.status === 'draft' })
+  }
+
+  menuItems.push(
+    { label: 'Delete', icon: Trash2, onSelect: () => onDelete(survey), danger: true }
+  )
 
   return (
     <tr

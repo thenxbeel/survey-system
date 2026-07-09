@@ -367,7 +367,14 @@ export default function ResponseTable({
 
                     {/* Status */}
                     <td className="px-5 py-3.5">
-                      <ResponseStatusBadge status={r.status} />
+                      <div className="flex flex-col items-center gap-0.5">
+                        <ResponseStatusBadge status={r.status} />
+                        {(r.status === 'actioned' || r.status === 'solved') && r.assignedTo && (
+                          <span className="text-[10.5px] font-medium text-center" style={{ color: 'var(--text-light)' }}>
+                            {r.assignedTo}
+                          </span>
+                        )}
+                      </div>
                     </td>
 
                     {/* Date */}

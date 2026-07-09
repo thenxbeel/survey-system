@@ -54,6 +54,12 @@ export async function POST(req: NextRequest) {
       role: user.role.name,
     })
 
+    // Update lastLogin
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { lastLogin: new Date() }
+    })
+
     const userPayload = {
       id: user.id,
       employeeId: user.employeeId,

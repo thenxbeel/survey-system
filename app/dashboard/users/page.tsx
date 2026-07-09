@@ -232,9 +232,9 @@ export default function UsersPage() {
 
   return (
     <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ duration: 0.3 }}
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.42, ease: [0.16, 1, 0.3, 1] }}
       className="flex flex-col gap-6 p-7"
     >
       {/* Header */}

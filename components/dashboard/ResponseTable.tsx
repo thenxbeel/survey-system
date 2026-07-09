@@ -2,11 +2,14 @@
 
 import { useCallback, useEffect, useState } from 'react'
 import ExpandableResponseRow, { type ResponseRecord } from './ExpandableResponseRow'
-import { Filter, ArrowUpDown } from 'lucide-react'
+import { Filter, ArrowUpDown, Building2 } from 'lucide-react'
 import { useToast } from '@/lib/stores/ToastStore'
+import { useBranchOptions } from '@/lib/hooks/useBranches'
+import { AssignResponseModal } from './AssignResponseModal'
 
 type SegmentFilter = 'all' | 'promoter' | 'passive' | 'detractor'
 type SortKey = 'recent' | 'score_high' | 'score_low'
+type AssignedFilter = 'all' | 'assigned' | 'unassigned'
 
 const COLS = ['Score', 'Respondent', 'Comment', 'Segment', 'Survey', 'Channel', 'Date']
 
@@ -37,14 +40,26 @@ function timeAgo(iso: string): string {
 
 export default function ResponseTable({ range = '30d', branch = 'all' }: { range?: string; branch?: string }) {
   const toast = useToast()
+  const branchOptions = useBranchOptions()
   const [responses, setResponses] = useState<ResponseRecord[]>([])
   const [loading, setLoading] = useState(true)
   const [segment, setSegment] = useState<SegmentFilter>('all')
   const [sort, setSort] = useState<SortKey>('recent')
+  const [localBranch, setLocalBranch] = useState<string>('all')
   const [expandedId, setExpandedId] = useState<string | null>(null)
   const [currentUserId, setCurrentUserId] = useState<number | null>(null)
+  
+  // Modal state
+  const [assignModalRow, setAssignModalRow] = useState<ResponseRecord | null>(null)
+  const [assignedFilter, setAssignedFilter] = useState<AssignedFilter>('all')
+
+  // Sync localBranch if global branch changes
+  useEffect(() => {
+    setLocalBranch(branch)
+  }, [branch])
 
   useEffect(() => {
+    // Fetch current user
     fetch('/api/auth/me', { cache: 'no-store' })
       .then(r => r.ok ? r.json() : null)
       .then(json => {
@@ -67,7 +82,8 @@ export default function ResponseTable({ range = '30d', branch = 'all' }: { range
     }
     const dateFrom = since.toISOString().split('T')[0]
 
-    let url = `/api/responses?pageSize=8&branch=${encodeURIComponent(branch)}&dateFrom=${dateFrom}`
+    const effectiveBranch = localBranch === 'all' ? branch : localBranch
+    let url = `/api/responses?pageSize=8&branch=${encodeURIComponent(effectiveBranch)}&dateFrom=${dateFrom}`
     if (segment !== 'all') url += `&npsCategory=${segment}`
     if (sort === 'score_high') url += '&sort=npsScore&sortDir=desc'
     if (sort === 'score_low') url += '&sort=npsScore&sortDir=asc'
@@ -114,7 +130,7 @@ export default function ResponseTable({ range = '30d', branch = 'all' }: { range
       })
       .catch(() => { /* ignore */ })
       .finally(() => setLoading(false))
-  }, [range, branch, segment, sort])
+  }, [range, branch, localBranch, segment, sort])
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -123,16 +139,17 @@ export default function ResponseTable({ range = '30d', branch = 'all' }: { range
     return () => window.clearTimeout(timer)
   }, [loadResponses])
 
-  async function handleAssign(row: ResponseRecord) {
-    if (!currentUserId) {
+  async function handleAssign(assignToUserId: number) {
+    if (!currentUserId || !assignModalRow) {
       toast.error('Cannot assign', 'Please sign in again and try once more.')
       return
     }
+    const row = assignModalRow
     try {
       const res = await fetch(`/api/responses/${row.id}/assign`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ assignedToId: currentUserId }),
+        body: JSON.stringify({ assignedToId: assignToUserId }),
       })
       if (!res.ok) {
         const json = await res.json().catch(() => null)
@@ -142,34 +159,40 @@ export default function ResponseTable({ range = '30d', branch = 'all' }: { range
       const json = await res.json()
       setResponses(prev => prev.map(r => r.id === row.id ? {
         ...r,
-        assignedToId: json.data?.assignedToId ?? currentUserId,
-        assignedToName: json.data?.assignedToName ?? 'You',
+        assignedToId: json.data?.assignedToId ?? assignToUserId,
+        assignedToName: json.data?.assignedToName ?? 'Assigned User',
         assignedAt: json.data?.assignedAt ?? new Date().toISOString(),
       } : r))
-      toast.success('Response assigned', 'The response is now assigned to you.')
+      toast.success('Response assigned', 'The response has been assigned.')
+      setAssignModalRow(null)
     } catch {
       toast.error('Assign failed', 'Could not assign this response.')
     }
   }
 
-  async function handleArchiveSurvey(row: ResponseRecord) {
+  async function handleArchiveResponse(row: ResponseRecord) {
     try {
-      const res = await fetch(`/api/surveys/${row.surveyId}?action=archive`, {
+      const res = await fetch(`/api/responses/${row.id}/archive`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
       })
       if (!res.ok) {
         const json = await res.json().catch(() => null)
-        toast.error('Archive failed', json?.error || 'Could not archive the survey.')
+        toast.error('Archive failed', json?.error || 'Could not archive the response.')
         return
       }
-      toast.success('Survey archived', `${row.product} was archived.`)
+      setResponses(prev => prev.filter(r => r.id !== row.id))
+      toast.success('Response archived', `The response was archived.`)
     } catch {
-      toast.error('Archive failed', 'Could not archive the survey.')
+      toast.error('Archive failed', 'Could not archive the response.')
     }
   }
 
-  const filtered = responses
+  const filtered = responses.filter(r => {
+    if (assignedFilter === 'assigned')   return r.assignedToId !== null
+    if (assignedFilter === 'unassigned') return r.assignedToId === null
+    return true
+  })
 
   return (
     <div className="card p-6">
@@ -178,11 +201,25 @@ export default function ResponseTable({ range = '30d', branch = 'all' }: { range
         <div>
           <p className="font-700 text-base" style={{ fontWeight: 700, color: 'var(--text-primary)' }}>Recent Responses</p>
           <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
-            {loading ? 'Loading…' : `${filtered.length} recent responses`}
+            {loading ? 'Loading…' : `${filtered.length} response${filtered.length !== 1 ? 's' : ''}`}
           </p>
         </div>
 
         <div className="flex items-center gap-2">
+          {/* Branch filter */}
+          <div className="relative">
+            <Building2 size={12} className="absolute left-2.5 top-1/2 -translate-y-1/2" style={{ color: 'var(--text-muted)' }} />
+            <select
+              value={localBranch}
+              onChange={(e) => setLocalBranch(e.target.value)}
+              className="appearance-none rounded-[8px] border bg-white py-1.5 pl-7 pr-8 text-xs font-medium outline-none"
+              style={{ borderColor: 'var(--border)', color: 'var(--text-primary)' }}
+            >
+              <option value="all">All Branches</option>
+              {branchOptions.filter(b => b.value !== 'all').map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+            </select>
+          </div>
+
           {/* Segment filter */}
           <div className="relative">
             <Filter size={12} className="absolute left-2.5 top-1/2 -translate-y-1/2" style={{ color: 'var(--text-muted)' }} />
@@ -208,6 +245,27 @@ export default function ResponseTable({ range = '30d', branch = 'all' }: { range
               {SORT_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
             </select>
           </div>
+        </div>
+
+        {/* Assignment filter pills */}
+        <div className="flex items-center gap-1.5">
+          {(['all', 'assigned', 'unassigned'] as AssignedFilter[]).map(v => (
+            <button
+              key={v}
+              onClick={() => setAssignedFilter(v)}
+              className="rounded-full px-3 py-1 text-[11px] font-semibold capitalize transition-all"
+              style={assignedFilter === v ? {
+                background: 'var(--primary)',
+                color: '#fff',
+              } : {
+                background: 'var(--bg-subtle)',
+                color: 'var(--text-muted)',
+                border: '1px solid var(--border)',
+              }}
+            >
+              {v === 'all' ? 'All' : v === 'assigned' ? 'Assigned' : 'Unassigned'}
+            </button>
+          ))}
         </div>
       </div>
 
@@ -244,14 +302,21 @@ export default function ResponseTable({ range = '30d', branch = 'all' }: { range
                   isExpanded={expandedId === r.id}
                   onToggle={(id) => setExpandedId(prev => prev === id ? null : id)}
                   currentUserId={currentUserId}
-                  onAssign={handleAssign}
-                  onArchiveSurvey={handleArchiveSurvey}
+                  onAssignClick={setAssignModalRow}
+                  onArchiveResponse={handleArchiveResponse}
                 />
               ))
             )}
           </tbody>
         </table>
       </div>
+      
+      <AssignResponseModal 
+        isOpen={!!assignModalRow}
+        onClose={() => setAssignModalRow(null)}
+        onAssign={handleAssign}
+        responseId={assignModalRow?.id ?? null}
+      />
     </div>
   )
 }

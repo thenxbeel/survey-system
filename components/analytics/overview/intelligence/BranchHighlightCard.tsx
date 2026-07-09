@@ -41,8 +41,8 @@ export function BranchHighlightCard({ branch, variant, delay = 0 }: BranchHighli
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.35, delay, ease: [0.16, 1, 0.3, 1] }}
       whileHover={{ y: -2 }}
-      className="group relative flex flex-col overflow-hidden rounded-[14px] bg-white p-8"
-      style={{ border: '1px solid var(--border)', boxShadow: 'var(--shadow-xs)' }}
+      className="group relative flex flex-col overflow-hidden rounded-[18px] bg-white p-8"
+      style={{ border: '1px solid var(--border)', boxShadow: 'var(--shadow)' }}
     >
       {/* Top accent stripe */}
       <div

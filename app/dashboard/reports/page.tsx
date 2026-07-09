@@ -95,14 +95,16 @@ export default function ReportsPage() {
     }
   }, [])
 
-  useEffect(() => {
+  const loadAllData = useCallback(async () => {
     setLoading(true)
-    Promise.all([
-      fetch('/api/analytics/trends?period=monthly', { cache: 'no-store' }).then(r => r.ok ? r.json() : null),
-      fetch('/api/analytics/heatmap', { cache: 'no-store' }).then(r => r.ok ? r.json() : null),
-      fetch('/api/analytics/overview?period=1y', { cache: 'no-store' }).then(r => r.ok ? r.json() : null),
-      fetchReports()
-    ]).then(([trends, heatmap, overview]) => {
+    try {
+      const [trends, heatmap, overview] = await Promise.all([
+        fetch('/api/analytics/trends?period=monthly', { cache: 'no-store' }).then(r => r.ok ? r.json() : null),
+        fetch('/api/analytics/heatmap', { cache: 'no-store' }).then(r => r.ok ? r.json() : null),
+        fetch('/api/analytics/overview?period=1y', { cache: 'no-store' }).then(r => r.ok ? r.json() : null),
+        fetchReports()
+      ])
+      
       if (trends?.data) {
         setNpsTrendData(
           trends.data.map((item: any) => ({
@@ -122,9 +124,16 @@ export default function ReportsPage() {
           }))
         )
       }
-    }).catch(() => { /* ignore */ })
-    .finally(() => setLoading(false))
+    } catch {
+      // ignore
+    } finally {
+      setLoading(false)
+    }
   }, [fetchReports])
+
+  useEffect(() => {
+    loadAllData()
+  }, [loadAllData])
 
   const stats = useMemo(() => computeReportStats(savedReports, scheduledReports, REPORT_TEMPLATES), [savedReports, scheduledReports])
 
@@ -231,6 +240,7 @@ export default function ReportsPage() {
       radar: 'department_performance',
       heatmap: 'executive_summary'
     }
+    const tags: string[] = customConfig.tags ?? []
     const payload = {
       id: `rpt_${Date.now()}`,
       name: customConfig.name,
@@ -242,18 +252,23 @@ export default function ReportsPage() {
       parameters: [
         { label: 'Metric', value: customConfig.metric },
         { label: 'Group By', value: customConfig.groupBy },
-        { label: 'Tags', value: customConfig.tags.join(', ') },
+        ...(tags.length > 0 ? [{ label: 'Tags', value: tags.join(', ') }] : []),
       ],
       description: `Custom report builder output grouped by ${customConfig.groupBy} tracking ${customConfig.metric}.`,
     }
 
     try {
-      await fetch('/api/reports/saved', {
+      const res = await fetch('/api/reports/saved', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
       })
-      fetchReports() // refresh from DB
+      if (!res.ok) {
+        const err = await res.json().catch(() => null)
+        pushToast('warning', 'Error', err?.error || 'Failed to save custom report.')
+        return
+      }
+      await fetchReports() // refresh library
       pushToast('success', 'Custom Report saved', `${payload.name} saved to library.`)
     } catch {
       pushToast('warning', 'Error', 'Failed to save custom report.')
@@ -306,15 +321,19 @@ export default function ReportsPage() {
 
   return (
     <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ duration: 0.3 }}
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.42, ease: [0.16, 1, 0.3, 1] }}
       className="flex flex-col gap-6 p-7"
     >
       {/* Header */}
       <ReportHeader
         totalReports={stats.totalReports}
         scheduledCount={stats.totalScheduled}
+        onRefresh={() => {
+          loadAllData()
+          pushToast('info', 'Refreshing', 'Reports data is being refreshed...')
+        }}
         onExport={() => {
           window.open('/api/reports/export?format=csv&type=executive', '_blank')
           pushToast('success', 'Export started', 'Executive report CSV is downloading.')

@@ -2,6 +2,7 @@
 
 import { motion } from 'framer-motion'
 import { FileBarChart, Download, Plus, CalendarClock, RefreshCw } from 'lucide-react'
+import Button from '@/components/common/Button'
 
 interface Props {
   totalReports: number
@@ -9,12 +10,13 @@ interface Props {
   onExport?: () => void
   onNew?: () => void
   onSchedule?: () => void
+  onRefresh?: () => void
 }
 
 /**
  * ReportHeader — premium hero banner matching the enterprise design system.
  */
-export function ReportHeader({ totalReports, scheduledCount, onExport, onNew, onSchedule }: Props) {
+export function ReportHeader({ totalReports, scheduledCount, onExport, onNew, onSchedule, onRefresh }: Props) {
   return (
     <motion.div
       initial={{ opacity: 0, y: -8 }}
@@ -107,43 +109,48 @@ export function ReportHeader({ totalReports, scheduledCount, onExport, onNew, on
         </div>
 
         {/* Refresh */}
-        <button
-          className="flex items-center justify-center rounded-[10px] px-6 py-3 text-white transition-all hover:opacity-90 "
-          style={{ background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.15)' }}
+        <Button
+          onClick={onRefresh}
+          variant="ghost"
+          size="md"
           aria-label="Refresh reports"
+          className="!text-white !border-[rgba(255,255,255,0.15)] hover:!bg-[rgba(255,255,255,0.15)] !bg-[rgba(255,255,255,0.1)]"
         >
-          <RefreshCw size={13} />
-        </button>
+          <RefreshCw size={13} className="active:animate-spin" />
+        </Button>
 
         {/* Schedule */}
-        <button
+        <Button
           onClick={onSchedule}
-          className="flex items-center gap-2 rounded-[10px] px-6 py-3 text-[12px] font-semibold text-white transition-all hover:opacity-90 items-center justify-center text-center"
-          style={{ background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.15)' }}
+          variant="ghost"
+          size="md"
+          className="!text-white !border-[rgba(255,255,255,0.15)] hover:!bg-[rgba(255,255,255,0.15)] !bg-[rgba(255,255,255,0.1)]"
         >
           <CalendarClock size={13} />
           <span className="hidden md:inline">Schedule</span>
-        </button>
+        </Button>
 
         {/* Export All */}
-        <button
+        <Button
           onClick={onExport}
-          className="flex items-center gap-2 rounded-[10px] px-6 py-3 text-[12px] font-semibold text-white transition-all hover:opacity-90 items-center justify-center text-center"
-          style={{ background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.15)' }}
+          variant="ghost"
+          size="md"
+          className="!text-white !border-[rgba(255,255,255,0.15)] hover:!bg-[rgba(255,255,255,0.15)] !bg-[rgba(255,255,255,0.1)]"
         >
           <Download size={13} />
           <span className="hidden md:inline">Export All</span>
-        </button>
+        </Button>
 
         {/* New Report */}
-        <button
+        <Button
           onClick={onNew}
-          className="flex items-center gap-2 rounded-[10px] px-6 py-3 text-[12px] font-semibold transition-all hover:opacity-90 active:scale-95 items-center justify-center text-center"
-          style={{ background: '#fff', color: '#0B4A8B', boxShadow: '0 4px 12px rgba(0,0,0,0.12)' }}
+          variant="secondary"
+          size="md"
+          className="!bg-white !text-[#0B4A8B] hover:!bg-[#f7fafc] !shadow-[0_4px_12px_rgba(0,0,0,0.12)]"
         >
           <Plus size={13} strokeWidth={2.5} />
           <span className="hidden md:inline">New Report</span>
-        </button>
+        </Button>
       </div>
     </motion.div>
   )

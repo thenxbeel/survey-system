@@ -150,7 +150,7 @@ function renderChart(type: ChartType, metric: string, groupBy: string, period: s
 }
 
 interface Props {
-  onSave?: (config: { name: string; chartType: ChartType; metric: string; groupBy: string; period: string }) => void
+  onSave?: (config: { name: string; chartType: ChartType; metric: string; groupBy: string; period: string }) => Promise<void> | void
   onExport?: (config: { name: string; chartType: ChartType; metric: string; groupBy: string; period: string }) => void
   onNotify?: (n: { type: 'success' | 'info' | 'warning'; title: string; message: string }) => void
 }
@@ -205,18 +205,21 @@ export function CustomReportBuilder({ onSave, onExport, onNotify }: Props) {
     }
   }, [groupBy, period])
 
-  function handleGenerate() {
+  async function handleGenerate() {
     setGenerating(true)
-    setTimeout(() => {
-      setGenerating(false)
-      onSave?.({
+    try {
+      await onSave?.({
         name: reportName,
         chartType,
         metric,
         groupBy,
         period,
       })
-    }, 1500)
+    } catch {
+      onNotify?.({ type: 'warning', title: 'Save failed', message: 'Could not save report to library.' })
+    } finally {
+      setGenerating(false)
+    }
   }
 
   function handleExport() {

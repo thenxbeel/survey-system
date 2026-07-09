@@ -45,7 +45,7 @@ export default function BranchesPage() {
   const toast = useToast()
 
   return (
-    <div className="flex flex-col gap-6 p-7">
+    <div className="flex flex-col gap-6 p-7 animate-fade-up">
       {/* Header */}
       <div className="animate-fade-up flex items-start justify-between">
         <div>
@@ -161,7 +161,7 @@ function BranchesTab() {
 
       {/* Table */}
       <div
-        className="overflow-hidden rounded-[14px] bg-white"
+        className="overflow-hidden rounded-[18px] bg-white"
         style={{ border: '1px solid var(--border)', boxShadow: 'var(--shadow)' }}
       >
         <table className="w-full">
@@ -287,7 +287,7 @@ function DepartmentsTab() {
       </div>
 
       <div
-        className="overflow-hidden rounded-[14px] bg-white"
+        className="overflow-hidden rounded-[18px] bg-white"
         style={{ border: '1px solid var(--border)', boxShadow: 'var(--shadow)' }}
       >
         <table className="w-full">
@@ -410,7 +410,7 @@ function TouchpointsTab() {
       </div>
 
       <div
-        className="overflow-hidden rounded-[14px] bg-white"
+        className="overflow-hidden rounded-[18px] bg-white"
         style={{ border: '1px solid var(--border)', boxShadow: 'var(--shadow)' }}
       >
         <table className="w-full">

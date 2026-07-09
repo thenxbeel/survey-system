@@ -5,7 +5,7 @@ import type { ResponseStatus, Sentiment } from '@/lib/types/response'
 const STATUS_STYLE: Record<ResponseStatus, { bg: string; border: string; color: string }> = {
   new: { bg: 'var(--tint-blue)', border: 'rgba(11,74,139,0.3)', color: 'var(--primary)' },
   reviewed: { bg: 'var(--tint-amber)', border: 'rgba(245,158,11,0.3)', color: 'var(--tint-amber-fg)' },
-  actioned: { bg: 'var(--tint-emerald)', border: 'rgba(23,166,115,0.3)', color: 'var(--emerald)' },
+  actioned: { bg: 'var(--tint-amber)', border: 'rgba(245,158,11,0.3)', color: 'var(--tint-amber-fg)' },
   closed: { bg: 'var(--bg-subtle)', border: 'var(--border-strong)', color: 'var(--text-secondary)' },
   solved: { bg: 'var(--tint-emerald)', border: 'rgba(23,166,115,0.3)', color: 'var(--emerald)' },
 }
@@ -13,7 +13,7 @@ const STATUS_STYLE: Record<ResponseStatus, { bg: string; border: string; color: 
 const STATUS_LABELS: Record<ResponseStatus, string> = {
   new: 'New',
   reviewed: 'Reviewed',
-  actioned: 'Actioned',
+  actioned: 'Assigned',
   closed: 'Closed',
   solved: 'Solved',
 }
@@ -25,7 +25,7 @@ export function ResponseStatusBadge({ status }: StatusProps) {
   const s = STATUS_STYLE[status] ?? FALLBACK_STYLE
   return (
     <span
-      className="inline-flex items-center rounded-[5px] border px-2 py-0.5 text-[11px] font-semibold"
+      className="inline-flex items-center justify-center rounded-[5px] border px-2 py-0.5 text-[11px] font-semibold min-w-[72px]"
       style={{ background: s.bg, borderColor: s.border, color: s.color }}
     >
       {STATUS_LABELS[status] ?? status}

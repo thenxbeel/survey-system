@@ -46,10 +46,10 @@ export function ChartContainer({
     <div
       role="region"
       aria-label={title}
-      className={`group flex flex-col rounded-[14px] bg-white p-6 transition-all duration-200 hover:shadow-[0_4px_16px_rgba(13,27,46,0.06)] ${className}`}
+      className={`group flex flex-col rounded-[18px] bg-white p-6 transition-all duration-200 hover:shadow-[0_8px_32px_rgba(13,27,46,0.08)] ${className}`}
       style={{
         border: "1px solid var(--border)",
-        boxShadow: "var(--shadow-xs)",
+        boxShadow: "var(--shadow)",
       }}
     >
       <div className="mb-6 flex items-start justify-between gap-3">

@@ -68,8 +68,8 @@ export function FilterBar({
 }: FilterBarProps) {
   return (
     <div
-      className={`rounded-[14px] border bg-white px-5 py-4 ${className}`}
-      style={{ borderColor: "var(--border)", boxShadow: "var(--shadow-xs)" }}
+      className={`rounded-[18px] border bg-white px-5 py-4 ${className}`}
+      style={{ borderColor: "var(--border)", boxShadow: "var(--shadow)" }}
     >
       <div className="flex flex-wrap items-center gap-2">
         {/* Search */}

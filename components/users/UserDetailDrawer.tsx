@@ -317,74 +317,7 @@ export function UserDetailDrawer({ user: u, onClose, onUpdate, onDelete, onNotif
                 <PermissionMatrix activeRole={u.role} />
               </div>
 
-              {/* Recent logins */}
-              <div className="px-6 py-6" style={{ borderBottom: '1px solid var(--border)' }}>
-                <SectionHeader
-                  icon={<Globe size={13} />}
-                  label="Recent Logins"
-                  action={<span className="text-[10px] font-semibold" style={{ color: 'var(--text-muted)' }}>{u.recentLogins.length} sessions</span>}
-                />
-                <div className="flex flex-col gap-2">
-                  {u.recentLogins.map(l => (
-                    <div
-                      key={l.id}
-                      className="flex items-center gap-2.5 rounded-[8px] px-3 py-2"
-                      style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)' }}
-                    >
-                      <div
-                        className="flex h-[26px] w-[26px] flex-shrink-0 items-center justify-center rounded-[6px]"
-                        style={l.successful
-                          ? { background: 'var(--tint-emerald)', color: 'var(--emerald)' }
-                          : { background: 'var(--tint-red)', color: 'var(--red)' }
-                        }
-                      >
-                        <Smartphone size={12} strokeWidth={2.1} />
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center justify-between">
-                          <span className="text-[11.5px] font-semibold" style={{ color: 'var(--text)' }}>{l.device}</span>
-                          <span className="text-[10px]" style={{ color: 'var(--text-muted)' }}>{formatDate(l.at)}</span>
-                        </div>
-                        <div className="text-[10.5px]" style={{ color: 'var(--text-light)' }}>
-                          {l.location} · {l.ip}
-                          {!l.successful && <span className="ml-1 font-bold" style={{ color: 'var(--red)' }}>· Failed</span>}
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
 
-              {/* Audit trail */}
-              <div className="px-6 py-6">
-                <SectionHeader
-                  icon={<History size={13} />}
-                  label="Activity Log"
-                  action={<span className="text-[10px] font-semibold" style={{ color: 'var(--text-muted)' }}>{u.activity.length} events</span>}
-                />
-                <div className="flex flex-col gap-2">
-                  {u.activity.map(a => (
-                    <div
-                      key={a.id}
-                      className="flex items-start gap-2.5 rounded-[8px] px-3 py-2"
-                      style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)' }}
-                    >
-                      <div
-                        className="mt-0.5 flex h-[22px] w-[22px] flex-shrink-0 items-center justify-center rounded-[5px]"
-                        style={{ background: 'white', color: 'var(--text-light)' }}
-                      >
-                        <Activity size={10} strokeWidth={2.1} />
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <div className="text-[12px] font-medium" style={{ color: 'var(--text)' }}>{a.description}</div>
-                        <div className="mt-0.5 text-[10px]" style={{ color: 'var(--text-muted)' }}>
-                          {formatDate(a.at)} · {a.ip}{a.userAgent ? ` · ${a.userAgent}` : ''}
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
             </div>
           </motion.div>
         </>

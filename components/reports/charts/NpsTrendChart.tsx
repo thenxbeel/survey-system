@@ -26,7 +26,7 @@ export function NpsTrendChart({ data }: Props) {
           stroke="#0B4A8B"
           strokeWidth={2.2}
           fill="url(#rpt-nps-grad)"
-          connectNulls={true}
+          connectNulls={false}
           dot={{ r: 3, fill: '#0B4A8B', stroke: '#FFFFFF', strokeWidth: 2 }}
           activeDot={{ r: 5, fill: '#0B4A8B', stroke: '#FFFFFF', strokeWidth: 2 }}
         />

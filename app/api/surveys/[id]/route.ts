@@ -433,6 +433,24 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       return NextResponse.json({ data: { id: updated.id, lifecycleStatus: updated.lifecycleStatus } })
     }
 
+    case 'unarchive': {
+      const updated = await prisma.survey.update({
+        where: { id: numericId },
+        data: { lifecycleStatus: 'ACTIVE', status: 'PUBLISHED', lastModifiedById: user.id },
+      })
+      await recordSurveyAudit(numericId, 'SURVEY_UNARCHIVED', { actorId: user.id })
+      try {
+        await notify({
+          userId: user.id,
+          title: 'Survey Unarchived',
+          message: `"${survey.title}" was unarchived and is now active.`,
+          category: 'survey',
+          link: `/dashboard/surveys/${numericId}`,
+        })
+      } catch { /* non-fatal */ }
+      return NextResponse.json({ data: { id: updated.id, lifecycleStatus: updated.lifecycleStatus } })
+    }
+
     case 'extend': {
       // body: { addDays?: number, newExpirationDate?: string }
       const currentExp = survey.expirationDate ?? new Date()

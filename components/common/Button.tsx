@@ -1,4 +1,4 @@
-import type { ReactNode, ButtonHTMLAttributes } from 'react'
+import { Children, type ReactNode, type ButtonHTMLAttributes } from 'react'
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: 'primary' | 'secondary' | 'ghost' | 'danger'
@@ -15,10 +15,37 @@ export default function Button({
 }: ButtonProps) {
   const base = 'inline-flex items-center justify-center text-center gap-2 font-semibold transition-all duration-150 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed'
 
+  const childArray = Children.toArray(children)
+  const hasText = childArray.some(
+    (child) => typeof child === 'string' || typeof child === 'number'
+  )
+  const isIconOnly = !hasText
+
   const sizes = {
-    sm: { borderRadius: '8px', fontSize: '11.5px', padding: '10px 20px', minHeight: '36px' },
-    md: { borderRadius: '10px', fontSize: '12.5px', padding: '12px 24px', minHeight: '42px' },
-    lg: { borderRadius: '12px', fontSize: '13.5px', padding: '16px 32px', minHeight: '50px' },
+    sm: { 
+      borderRadius: '8px', 
+      fontSize: '11.5px', 
+      padding: isIconOnly ? '0' : '10px 20px', 
+      minHeight: '36px',
+      width: isIconOnly ? '36px' : 'auto',
+      minWidth: isIconOnly ? '36px' : '100px',
+    },
+    md: { 
+      borderRadius: '10px', 
+      fontSize: '12.5px', 
+      padding: isIconOnly ? '0' : '12px 24px', 
+      minHeight: '42px',
+      width: isIconOnly ? '42px' : 'auto',
+      minWidth: isIconOnly ? '42px' : '130px',
+    },
+    lg: { 
+      borderRadius: '12px', 
+      fontSize: '13.5px', 
+      padding: isIconOnly ? '0' : '16px 32px', 
+      minHeight: '50px',
+      width: isIconOnly ? '50px' : 'auto',
+      minWidth: isIconOnly ? '50px' : '160px',
+    },
   }
 
   const variants = {

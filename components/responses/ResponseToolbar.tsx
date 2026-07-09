@@ -23,6 +23,7 @@ export interface ResponseFilters {
   dateFrom: string
   dateTo: string
   category: string
+  assignedFilter: string
 }
 
 export const DEFAULT_FILTERS: ResponseFilters = {
@@ -37,6 +38,7 @@ export const DEFAULT_FILTERS: ResponseFilters = {
   dateFrom: '',
   dateTo: '',
   category: 'all',
+  assignedFilter: 'all',
 }
 
 interface Props {
@@ -130,14 +132,13 @@ export function ResponseToolbar({
         <select
           className={selectCls + ' w-auto'}
           style={inputStyle}
-          value={filters.status}
-          onChange={(e) => patch('status', e.target.value)}
+          value={filters.assignedFilter}
+          onChange={(e) => patch('assignedFilter', e.target.value)}
         >
           <option value="all">All Statuses</option>
-          <option value="new">New</option>
-          <option value="reviewed">Reviewed</option>
-          <option value="actioned">Actioned</option>
-          <option value="closed">Closed</option>
+          <option value="assigned">Assigned</option>
+          <option value="unassigned">Unassigned</option>
+          <option value="new">New Responses</option>
         </select>
 
         {selCount > 0 ? (

@@ -7,6 +7,9 @@ import {
 import { SettingsCard, Field, TextInput } from '../SettingsCard'
 import { useSettings, type UserProfile } from '@/lib/stores/SettingsStore'
 import { useToast } from '@/lib/stores/ToastStore'
+import { useDepartments } from '@/lib/hooks/useDepartments'
+import { useBranchList } from '@/lib/hooks/useBranches'
+import { ChevronDown } from 'lucide-react'
 
 interface Props {
   delay?: number
@@ -30,10 +33,15 @@ export function ProfileSection({ delay = 0 }: Props) {
   const [email,       setEmail]       = useState(profile.email)
   const [phone,       setPhone]       = useState(profile.phone)
   const [role,        setRole]        = useState(profile.role)
-  const [department,  setDepartment]  = useState(profile.department)
-  const [branch,      setBranch]      = useState(profile.branch)
+  
+  const [departmentId, setDepartmentId] = useState<number | null>(profile.departmentId)
+  const [branchId,     setBranchId]     = useState<number | null>(profile.branchId)
+  
   const [bio,         setBio]         = useState(profile.bio)
   const [avatarColor, setAvatarColor] = useState(profile.avatarColor)
+
+  const { departments } = useDepartments()
+  const { branches } = useBranchList()
 
   const [liveStats, setLiveStats] = useState<LiveStats>({
     surveysManaged: 0,
@@ -54,12 +62,12 @@ export function ProfileSection({ delay = 0 }: Props) {
     setEmail(profile.email)
     setPhone(profile.phone)
     setRole(profile.role)
-    setDepartment(profile.department)
-    setBranch(profile.branch)
+    setDepartmentId(profile.departmentId)
+    setBranchId(profile.branchId)
     setBio(profile.bio)
     setAvatarColor(profile.avatarColor)
   }, [profile.fullName, profile.displayName, profile.email, profile.phone,
-      profile.role, profile.department, profile.branch, profile.bio,
+      profile.role, profile.departmentId, profile.branchId, profile.bio,
       profile.avatarColor])
 
   const fetchStats = async () => {
@@ -103,8 +111,10 @@ export function ProfileSection({ delay = 0 }: Props) {
       email,
       phone,
       role,
-      department,
-      branch,
+      department: departments.find(d => d.id === departmentId)?.name ?? '',
+      departmentId,
+      branch: branches.find(b => b.id === branchId)?.name ?? '',
+      branchId,
       bio,
       avatarColor,
       avatarInitials: initials,
@@ -120,6 +130,8 @@ export function ProfileSection({ delay = 0 }: Props) {
             name: fullName,
             email,
             phone,
+            departmentId,
+            branchId,
           })
         })
       } catch {
@@ -176,21 +188,48 @@ export function ProfileSection({ delay = 0 }: Props) {
               <TextInput value={phone} onChange={setPhone} placeholder="-" />
             </Field>
             <Field label="Department">
-              <TextInput value={department || ''} onChange={setDepartment} />
+              <div className="relative">
+                <select
+                  value={departmentId ?? ''}
+                  onChange={e => setDepartmentId(e.target.value ? parseInt(e.target.value) : null)}
+                  className={selectCls}
+                >
+                  <option value="">None</option>
+                  {departments.map(d => (
+                    <option key={d.id} value={d.id}>{d.name}</option>
+                  ))}
+                </select>
+                <ChevronDown size={14} className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-400" />
+              </div>
             </Field>
             <Field label="Branch">
-              <TextInput value={branch || ''} onChange={setBranch} />
+              <div className="relative">
+                <select
+                  value={branchId ?? ''}
+                  onChange={e => setBranchId(e.target.value ? parseInt(e.target.value) : null)}
+                  className={selectCls}
+                >
+                  <option value="">None</option>
+                  {branches.map(b => (
+                    <option key={b.id} value={b.id}>{b.name}</option>
+                  ))}
+                </select>
+                <ChevronDown size={14} className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-400" />
+              </div>
             </Field>
             <Field label="Role" className="md:col-span-2">
-              <select
-                value={role}
-                onChange={e => setRole(e.target.value)}
-                className={selectCls}
-              >
-                <option value="Admin">Admin</option>
-                <option value="Manager">Manager</option>
-                <option value="User">User</option>
-              </select>
+              <div className="relative">
+                <select
+                  value={role}
+                  onChange={e => setRole(e.target.value)}
+                  className={selectCls}
+                >
+                  <option value="Admin">Admin</option>
+                  <option value="Manager">Manager</option>
+                  <option value="User">User</option>
+                </select>
+                <ChevronDown size={14} className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-400" />
+              </div>
             </Field>
             <Field label="Bio" className="md:col-span-2">
               <textarea
@@ -253,11 +292,11 @@ export function ProfileSection({ delay = 0 }: Props) {
         <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
           <div>
             <div className="text-[10px] font-bold uppercase tracking-[0.08em] text-[#8FA0B5]">Department</div>
-            <div className="mt-1 text-[13px] font-semibold text-[#0D1B2E]">{department || 'Information Technology'}</div>
+            <div className="mt-1 text-[13px] font-semibold text-[#0D1B2E]">{departments.find(d => d.id === departmentId)?.name || 'None'}</div>
           </div>
           <div>
             <div className="text-[10px] font-bold uppercase tracking-[0.08em] text-[#8FA0B5]">Branch</div>
-            <div className="mt-1 text-[13px] font-semibold text-[#0D1B2E]">{branch || 'Head Office'}</div>
+            <div className="mt-1 text-[13px] font-semibold text-[#0D1B2E]">{branches.find(b => b.id === branchId)?.name || 'None'}</div>
           </div>
           <div>
             <div className="text-[10px] font-bold uppercase tracking-[0.08em] text-[#8FA0B5]">Joined Date</div>

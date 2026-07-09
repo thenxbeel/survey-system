@@ -22,6 +22,7 @@ interface SurveyTableProps {
   onEdit: (survey: SurveyRecord) => void
   onDuplicate: (survey: SurveyRecord) => void
   onArchive: (survey: SurveyRecord) => void
+  onUnarchive: (survey: SurveyRecord) => void
   onDelete: (survey: SurveyRecord) => void
   onCopyUrl: (survey: SurveyRecord) => void
   page: number
@@ -38,7 +39,7 @@ interface SurveyTableProps {
 export default function SurveyTable({
   surveys, loading, hasActiveFilters, onClearFilters,
   selectedIds, onToggleSelect, onToggleSelectAll,
-  onView, onEdit, onDuplicate, onArchive, onDelete, onCopyUrl,
+  onView, onEdit, onDuplicate, onArchive, onUnarchive, onDelete, onCopyUrl,
   page, totalPages, totalItems, pageSize, onPageChange,
   filters, onFiltersChange, onBulkArchive, onBulkDelete,
 }: SurveyTableProps) {
@@ -91,6 +92,7 @@ export default function SurveyTable({
                   onEdit={onEdit}
                   onDuplicate={onDuplicate}
                   onArchive={onArchive}
+                  onUnarchive={onUnarchive}
                   onDelete={onDelete}
                   onCopyUrl={onCopyUrl}
                 />

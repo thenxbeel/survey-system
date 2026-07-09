@@ -90,7 +90,12 @@ export async function GET(req: NextRequest) {
     }
   }
   if (surveyId) where.surveyId = parseInt(surveyId.replace(/^SRV-/, '') || surveyId)
-  if (status && status !== 'all') where.status = status
+  if (status && status !== 'all') {
+    where.status = status
+  } else {
+    // Exclude archived responses by default
+    where.status = { not: 'archived' }
+  }
   if (channel && channel !== 'all') where.distributionChannel = channel.toUpperCase()
   if (campaignId) where.campaignId = parseInt(campaignId)
   if (createdBy) where.survey = { createdById: parseInt(createdBy) }
@@ -132,8 +137,9 @@ export async function GET(req: NextRequest) {
     where.survey = { ...where.survey, ...surveyWhere }
   }
 
-  const orderBy: any = { submittedAt: 'desc' }
-  if (params.sort === 'npsScore') orderBy.npsScore = params.sortDir
+  const orderBy: any = params.sort === 'npsScore'
+    ? [{ npsScore: params.sortDir }, { submittedAt: 'desc' }]
+    : { submittedAt: 'desc' }
 
   const [responses, total] = await Promise.all([
     prisma.response.findMany({

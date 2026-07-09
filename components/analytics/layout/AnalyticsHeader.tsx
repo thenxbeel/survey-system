@@ -7,6 +7,7 @@ import {
   SlidersHorizontal, type LucideIcon,
 } from 'lucide-react'
 import { useAnalytics } from '../state/useAnalytics'
+import Button from '@/components/common/Button'
 
 const dateRanges = [
   { value: '7d',  label: 'Last 7 days'   },
@@ -98,16 +99,17 @@ export function AnalyticsHeader() {
       <div className="relative z-[1] flex flex-wrap items-center gap-2">
         {/* Date range selector */}
         <div className="relative">
-          <button
+          <Button
             onClick={() => setDateOpen(o => !o)}
-            className="flex items-center gap-2 rounded-[10px] px-3 py-2 text-[12px] font-semibold text-white transition-all hover:opacity-90"
-            style={{ background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.15)' }}
+            variant="ghost"
+            size="md"
+            className="!text-white !border-[rgba(255,255,255,0.15)] hover:!bg-[rgba(255,255,255,0.15)] !bg-[rgba(255,255,255,0.1)]"
           >
             <CalendarRange size={13} />
             <span className="hidden sm:inline">{currentRange.label}</span>
             <span className="sm:hidden">{currentRange.value}</span>
             <ChevronDown size={12} className={`transition-transform ${dateOpen ? 'rotate-180' : ''}`} />
-          </button>
+          </Button>
           {dateOpen && (
             <>
               <div className="fixed inset-0 z-10" onClick={() => setDateOpen(false)} />
@@ -152,48 +154,48 @@ export function AnalyticsHeader() {
 
 
         {/* Refresh */}
-        <button
+        <Button
           onClick={handleRefresh}
-          className="flex items-center gap-2 rounded-[10px] px-6 py-3 text-[12px] font-semibold text-white transition-all hover:opacity-90 items-center justify-center text-center"
-          style={{ background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.15)' }}
+          variant="ghost"
+          size="md"
           aria-label="Refresh analytics"
+          className="!text-white !border-[rgba(255,255,255,0.15)] hover:!bg-[rgba(255,255,255,0.15)] !bg-[rgba(255,255,255,0.1)]"
         >
           <RefreshCw size={13} className={refreshing ? 'animate-spin' : ''} />
-        </button>
+        </Button>
 
         {/* Export */}
-        <button
+        <Button
           onClick={() => dispatch({ type: 'OPEN_MODAL', modal: 'export' })}
-          className="flex items-center gap-2 rounded-[10px] px-3 py-2 text-[12px] font-semibold text-white transition-all hover:opacity-90"
-          style={{ background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.15)' }}
+          variant="ghost"
+          size="md"
+          className="!text-white !border-[rgba(255,255,255,0.15)] hover:!bg-[rgba(255,255,255,0.15)] !bg-[rgba(255,255,255,0.1)]"
         >
           <Download size={13} />
           Export
-        </button>
+        </Button>
 
         {/* Ask Analytics */}
-        <button
+        <Button
           onClick={() => dispatch({ type: 'OPEN_MODAL', modal: 'ask' })}
-          className="flex items-center gap-2 rounded-[10px] px-3 py-2 text-[12px] font-semibold transition-all hover:opacity-90"
-          style={{
-            background: 'linear-gradient(135deg, rgba(245,158,11,0.95) 0%, rgba(239,68,68,0.95) 100%)',
-            color: '#fff',
-            boxShadow: '0 4px 12px rgba(239,68,68,0.25)',
-          }}
+          variant="ghost"
+          size="md"
+          className="!text-white !border-transparent hover:!opacity-95 !bg-gradient-to-r !from-[rgba(245,158,11,0.95)] !to-[rgba(239,68,68,0.95)] !shadow-[0_4px_12px_rgba(239,68,68,0.25)]"
         >
           <Sparkles size={13} />
           <span className="hidden md:inline">AI Analysis ✨</span>
-        </button>
+        </Button>
 
         {/* New visualization */}
-        <button
+        <Button
           onClick={() => dispatch({ type: 'OPEN_MODAL', modal: 'vizBuilder' })}
-          className="flex items-center gap-2 rounded-[10px] px-3 py-2 text-[12px] font-semibold transition-all hover:opacity-90 active:scale-95"
-          style={{ background: '#fff', color: '#0B4A8B', boxShadow: '0 4px 12px rgba(0,0,0,0.12)' }}
+          variant="secondary"
+          size="md"
+          className="!bg-white !text-[#0B4A8B] hover:!bg-[#f7fafc] !shadow-[0_4px_12px_rgba(0,0,0,0.12)]"
         >
           <Plus size={13} strokeWidth={2.5} />
           <span className="hidden md:inline">New Dashboard</span>
-        </button>
+        </Button>
       </div>
     </motion.div>
   )

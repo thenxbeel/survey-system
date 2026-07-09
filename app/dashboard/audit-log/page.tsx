@@ -147,7 +147,7 @@ export default function AuditLogPage() {
       </div>
 
       {/* Filters */}
-      <div className="rounded-[14px] border border-[#E2E8F3] bg-white p-8 shadow-sm">
+      <div className="rounded-[18px] border border-[#E2E8F3] bg-white p-8" style={{ boxShadow: 'var(--shadow)' }}>
         <div className="flex flex-wrap items-center gap-3">
           <div 
             className="group flex flex-1 min-w-[200px] items-center gap-2.5 rounded-full border border-[#E2E8F3] bg-white px-3.5 py-2 transition-all duration-200 hover:shadow-md focus-within:border-[#0B4A8B]"

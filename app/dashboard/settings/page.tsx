@@ -15,6 +15,7 @@ import { PreferencesSection }     from '@/components/settings/sections/Preferenc
 
 import { useSettings } from '@/lib/stores/SettingsStore'
 import { useToast }    from '@/lib/stores/ToastStore'
+import Button          from '@/components/common/Button'
 
 type SectionId = 'profile' | 'security' | 'notifications' | 'appearance' | 'preferences'
 
@@ -65,9 +66,9 @@ export default function SettingsPage() {
 
   return (
     <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ duration: 0.3 }}
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.42, ease: [0.16, 1, 0.3, 1] }}
       className="flex flex-col gap-6 p-7"
     >
       {/* Hero Header */}
@@ -128,21 +129,23 @@ export default function SettingsPage() {
 
         {/* Right: Quick actions */}
         <div className="relative z-[1] flex flex-wrap items-center gap-2">
-          <button
+          <Button
             onClick={handleReset}
-            className="flex items-center gap-2 rounded-[10px] px-6 py-3 text-[12px] font-semibold text-white transition-all hover:opacity-90 items-center justify-center text-center"
-            style={{ background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.15)' }}
+            variant="ghost"
+            size="md"
+            className="!text-white !border-[rgba(255,255,255,0.15)] hover:!bg-[rgba(255,255,255,0.15)] !bg-[rgba(255,255,255,0.1)]"
           >
             Reset to Default
-          </button>
-          <button
+          </Button>
+          <Button
             onClick={handleSaveAll}
-            className="flex items-center gap-2 rounded-[10px] px-6 py-3 text-[12px] font-semibold transition-all hover:opacity-90 active:scale-95 items-center justify-center text-center"
-            style={{ background: '#fff', color: '#0B4A8B', boxShadow: '0 4px 12px rgba(0,0,0,0.12)' }}
+            variant="secondary"
+            size="md"
+            className="!bg-white !text-[#0B4A8B] hover:!bg-[#f7fafc] !shadow-[0_4px_12px_rgba(0,0,0,0.12)]"
           >
             <Check size={13} strokeWidth={2.5} />
             Save All Changes
-          </button>
+          </Button>
         </div>
       </motion.div>
 

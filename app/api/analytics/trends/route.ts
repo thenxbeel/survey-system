@@ -140,5 +140,12 @@ export async function GET(req: NextRequest) {
     }
   })
 
-  return NextResponse.json({ data: trendData })
+  // Remove trailing periods with no responses (current in-progress month
+  // and any future pre-filled buckets that have no data yet)
+  let trimmed = trendData
+  while (trimmed.length > 0 && trimmed[trimmed.length - 1].responses === 0 && trimmed[trimmed.length - 1].npsScore === null) {
+    trimmed = trimmed.slice(0, -1)
+  }
+
+  return NextResponse.json({ data: trimmed })
 }

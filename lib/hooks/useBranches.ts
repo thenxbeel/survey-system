@@ -2,6 +2,12 @@
 
 import { useEffect, useState } from 'react'
 
+export interface BranchOption {
+  id: number
+  name: string
+  location: string | null
+}
+
 /**
  * useBranches — fetches the live branch list from /api/branches.
  *
@@ -28,6 +34,28 @@ export function useBranches(): string[] {
   }, [])
 
   return branches
+}
+
+export function useBranchList(): { branches: BranchOption[], loading: boolean } {
+  const [branches, setBranches] = useState<BranchOption[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    let cancelled = false
+    setLoading(true)
+    fetch('/api/branches', { cache: 'no-store' })
+      .then(r => r.ok ? r.json() : null)
+      .then(json => {
+        if (!cancelled && json?.data) {
+          setBranches(json.data)
+        }
+      })
+      .catch(() => { /* keep default */ })
+      .finally(() => { if (!cancelled) setLoading(false) })
+    return () => { cancelled = true }
+  }, [])
+
+  return { branches, loading }
 }
 
 /**

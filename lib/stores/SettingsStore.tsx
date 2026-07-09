@@ -39,7 +39,9 @@ export interface UserProfile {
   phone:          string
   role:           string
   department:     string
+  departmentId:   number | null
   branch:         string
+  branchId:       number | null
   bio:            string
   avatarColor:    string
   avatarInitials: string
@@ -65,7 +67,9 @@ export const DEFAULT_PROFILE: UserProfile = {
   phone:          '',
   role:           '',
   department:     '',
+  departmentId:   null,
   branch:         '',
+  branchId:       null,
   bio:            '',
   avatarColor:    '#0B4A8B',
   avatarInitials: '',
@@ -195,7 +199,9 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
           phone: u.phone ?? '',
           role: u.role ?? '',
           department: u.department ?? '',
+          departmentId: u.departmentId ?? null,
           branch: u.branch ?? '',
+          branchId: u.branchId ?? null,
           avatarColor,
           avatarInitials: initials || '?',
           joinedDate: u.createdAt ?? '',

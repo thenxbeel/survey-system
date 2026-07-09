@@ -89,11 +89,11 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
                 style={{
                   padding: collapsed ? "10px 0" : "10px 14px",
                   justifyContent: collapsed ? "center" : "flex-start",
-                  background: active ? "linear-gradient(135deg,#6366f1,#8b5cf6)" : "transparent",
+                  background: active ? "linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%)" : "transparent",
                   color: active ? "#fff" : "var(--text-secondary)",
                   fontWeight: active ? 600 : 400,
                   fontSize: 14,
-                  boxShadow: active ? "0 4px 14px rgba(99,102,241,0.35)" : "none",
+                  boxShadow: active ? "0 4px 14px rgba(11,74,139,0.35)" : "none",
                 }}
                 onMouseEnter={(e) => {
                   if (!active) {
