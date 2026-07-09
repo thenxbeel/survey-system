@@ -28,7 +28,6 @@ interface PublicSurvey {
   touchpoint: string
   category: string | null
   isAnonymous: boolean
-  requireContactInfo: boolean
   activationDate: string | null
   expirationDate: string | null
   lifecycleStatus: string
@@ -64,10 +63,6 @@ export default function PublicSurveyPage() {
       const res = await fetch(`/api/public/surveys/${slug}`, { cache: 'no-store' })
       const json = await res.json()
       if (!res.ok) {
-        if (res.status === 401) {
-          router.push(`/login?redirect=/survey/${slug}`)
-          return
-        }
         if (res.status === 404) {
           setError('Survey not found. Please check your link and try again.')
         } else if (res.status === 410) {
@@ -98,46 +93,6 @@ export default function PublicSurveyPage() {
   )
   const progress = totalQuestions > 0 ? Math.round((answeredCount / totalQuestions) * 100) : 0
 
-  // ── Translation ──
-  useEffect(() => {
-    // 1. Setup MutationObserver for RTL detection
-    const observer = new MutationObserver((mutations) => {
-      for (const m of mutations) {
-        if (m.type === 'attributes' && (m.attributeName === 'class' || m.attributeName === 'lang')) {
-          const isRTL = document.documentElement.classList.contains('translated-rtl') || document.documentElement.lang === 'ar'
-          document.documentElement.dir = isRTL ? 'rtl' : 'ltr'
-        }
-      }
-    })
-    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class', 'lang'] })
-
-    // 2. Inject Google Translate script
-    if (!document.getElementById('google-translate-script')) {
-      (window as any).googleTranslateElementInit = () => {
-        new (window as any).google.translate.TranslateElement(
-          { pageLanguage: 'en', includedLanguages: 'ar,en', autoDisplay: false },
-          'google_translate_element'
-        );
-      };
-      const script = document.createElement('script');
-      script.id = 'google-translate-script';
-      script.src = '//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit';
-      document.body.appendChild(script);
-    }
-    
-    return () => observer.disconnect()
-  }, []);
-
-  const handleTranslate = useCallback(() => {
-    const select = document.querySelector('.goog-te-combo') as HTMLSelectElement | null;
-    if (select) {
-      select.value = 'ar';
-      select.dispatchEvent(new Event('change'));
-    } else {
-      window.location.href = `https://translate.google.com/translate?sl=en&tl=ar&u=${encodeURIComponent(window.location.href)}`;
-    }
-  }, []);
-
   // Contact info is always optional — no customer record is ever created.
   // The provided name/email/phone is stored directly on the Response row.
 
@@ -146,31 +101,11 @@ export default function PublicSurveyPage() {
     setAnswers(prev => ({ ...prev, [qId]: value }))
   }
 
-  // ── Auto-advance ──
-  const handleAutoAdvance = useCallback((currentIndex: number) => {
-    // Wait for the visual selection animation to complete before scrolling
-    setTimeout(() => {
-      const nextElement = document.getElementById(`question-${currentIndex + 1}`)
-      if (nextElement) {
-        nextElement.scrollIntoView({ behavior: 'smooth', block: 'center' })
-      } else {
-        const contactElement = document.getElementById('contact-info')
-        if (contactElement) {
-          contactElement.scrollIntoView({ behavior: 'smooth', block: 'center' })
-        }
-      }
-    }, 350)
-  }, [])
-
   function canSubmit() {
     if (!survey) return false
     // All required questions must be answered
     const missingRequired = questions.some(q => q.required && !answers[q.id]?.trim())
     if (missingRequired) return false
-    // If identified AND requireContactInfo, at least one contact method must be present
-    if (!survey.isAnonymous && survey.requireContactInfo) {
-      if (!contactInfo.email && !contactInfo.phone) return false
-    }
     return true
   }
 
@@ -178,39 +113,6 @@ export default function PublicSurveyPage() {
     if (!survey || !canSubmit()) return
     setSubmitting(true)
     setSubmitError(null)
-
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-    const phoneRegex = /^\d+$/
-    const isEmailInvalid = contactInfo.email && !emailRegex.test(contactInfo.email)
-    const isPhoneInvalid = contactInfo.phone && !phoneRegex.test(contactInfo.phone)
-
-    if (isEmailInvalid && isPhoneInvalid) {
-      setSubmitError('Email and phone invalid')
-      setSubmitting(false)
-      return
-    } else if (isEmailInvalid) {
-      setSubmitError('Invalid email address')
-      setSubmitting(false)
-      return
-    } else if (isPhoneInvalid) {
-      setSubmitError('Invalid phone number')
-      setSubmitting(false)
-      return
-    }
-
-    // Identified + requireContactInfo: name + at least one contact method required
-    if (!survey.isAnonymous && survey.requireContactInfo) {
-      if (!contactInfo.name && !contactInfo.email && !contactInfo.phone) {
-        setSubmitError('Please provide at least one contact method (Name, Email, or Phone).')
-        setSubmitting(false)
-        return
-      }
-      if (!contactInfo.email && !contactInfo.phone) {
-        setSubmitError('Please provide at least one contact method (Email or Phone).')
-        setSubmitting(false)
-        return
-      }
-    }
 
     try {
       const payload: Record<string, unknown> = {
@@ -269,7 +171,7 @@ export default function PublicSurveyPage() {
   // ── Render: loading ──
   if (loading) {
     return (
-      <PublicSurveyShell onTranslate={handleTranslate}>
+      <PublicSurveyShell>
         <div className="flex flex-col items-center justify-center py-20">
           <Loader2 className="mb-3 h-7 w-7 animate-spin text-[#0B4A8B]" />
           <p className="text-[13px] text-[#8FA0B5]">Loading survey…</p>
@@ -281,7 +183,7 @@ export default function PublicSurveyPage() {
   // ── Render: closed / expired ──
   if (closedMessage) {
     return (
-      <PublicSurveyShell onTranslate={handleTranslate}>
+      <PublicSurveyShell>
         <div className="flex flex-col items-center justify-center py-20 text-center">
           <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-[#FEF2F2]">
             <AlertTriangle className="h-7 w-7 text-[#E5484D]" />
@@ -296,7 +198,7 @@ export default function PublicSurveyPage() {
   // ── Render: error ──
   if (error || !survey) {
     return (
-      <PublicSurveyShell onTranslate={handleTranslate}>
+      <PublicSurveyShell>
         <div className="flex flex-col items-center justify-center py-20 text-center">
           <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-[#FEF2F2]">
             <AlertTriangle className="h-7 w-7 text-[#E5484D]" />
@@ -312,7 +214,7 @@ export default function PublicSurveyPage() {
 
   // ── Render: survey (ALL questions on one page) ──
   return (
-    <PublicSurveyShell survey={survey} answeredCount={answeredCount} totalQuestions={totalQuestions} progress={progress} onTranslate={handleTranslate}>
+    <PublicSurveyShell survey={survey} answeredCount={answeredCount} totalQuestions={totalQuestions} progress={progress}>
       {/* Welcome card */}
       <div className="flex flex-col gap-4 rounded-[16px] border border-[#E2E8F3] bg-white p-5 shadow-sm sm:flex-row sm:items-center sm:justify-between sm:p-6">
         <div className="flex items-center gap-3.5">
@@ -326,7 +228,7 @@ export default function PublicSurveyPage() {
             </p>
           </div>
         </div>
-        <div className="flex items-center gap-3.5 sm:border-s sm:border-[#E2E8F3] sm:ps-6">
+        <div className="flex items-center gap-3.5 sm:border-l sm:border-[#E2E8F3] sm:pl-6">
           <span className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-full bg-[#ECFDF5]">
             <ShieldCheck className="h-5 w-5 text-[#17A673]" />
           </span>
@@ -341,51 +243,38 @@ export default function PublicSurveyPage() {
       {questions.map((q, idx) => (
         <QuestionCard
           key={q.id}
-          id={`question-${idx}`}
           number={idx + 1}
           question={q}
           value={answers[q.id] ?? ''}
           onChange={(v) => setAnswer(q.id, v)}
-          onAutoAdvance={() => handleAutoAdvance(idx)}
         />
       ))}
 
-      {/* Contact info section — after all questions */}
-      <div id="contact-info" className="rounded-[20px] border border-[#E2E8F3] bg-white p-6 shadow-[0_4px_24px_rgba(13,27,46,0.04)] sm:p-8">
-        <div className="mb-3 flex items-center gap-2.5">
-          <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[#ECFDF5]">
-            <ShieldCheck className="h-4 w-4 text-[#17A673]" />
-          </span>
-          <h3 className="text-[14px] font-bold text-[#0D1B2E]">
-            {!survey.isAnonymous && survey.requireContactInfo ? 'Contact Info' : 'Optional Contact Info'}
-          </h3>
-          <span className={`ms-1 rounded-full px-2.5 py-1 text-[9.5px] font-bold uppercase tracking-wider ${
-            !survey.isAnonymous && survey.requireContactInfo
-              ? 'bg-[#EBF5FF] text-[#0B4A8B]'
-              : 'bg-[#F4F7FB] text-[#6B7A90]'
-          }`}>
-            {!survey.isAnonymous && survey.requireContactInfo ? 'Required' : 'Optional'}
+      {/* Optional contact info section — after all questions */}
+      <div className="rounded-[16px] border border-[#E2E8F3] bg-[#F8FAFD] p-5 sm:p-6">
+        <div className="mb-3 flex items-center gap-2">
+          <ShieldCheck className="h-4 w-4 text-[#17A673]" />
+          <h3 className="text-[13px] font-bold text-[#0D1B2E]">Optional Contact Info</h3>
+          <span className="ml-1 rounded-full bg-[#EBF0F7] px-2 py-0.5 text-[9.5px] font-semibold uppercase tracking-wide text-[#4A5568]">
+            Optional
           </span>
         </div>
-        <p className="mb-6 ps-9 text-[13px] leading-relaxed text-[#6B7A90]">
-          {!survey.isAnonymous && survey.requireContactInfo
-            ? "Please provide your contact details so we can follow up with you. Your information is kept confidential."
-            : "Share your contact details if you'd like us to follow up. Your information is kept confidential and stored only with this response."}
+        <p className="mb-4 text-[12px] leading-relaxed text-[#4A5568]">
+          Share your contact details if you'd like us to follow up. Your information is kept
+          confidential and stored only with this response.
         </p>
-        <div className="grid grid-cols-1 gap-4 ps-0 sm:grid-cols-3 sm:ps-9">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
           <CustomerInput label="Full Name" value={contactInfo.name}
             onChange={(v) => setContactInfo(p => ({ ...p, name: v }))} />
-          <CustomerInput label="Email Address" type="email" value={contactInfo.email}
+          <CustomerInput label="Email" type="email" value={contactInfo.email}
             onChange={(v) => setContactInfo(p => ({ ...p, email: v }))} />
-          <CustomerInput label="Phone Number" type="tel" value={contactInfo.phone}
+          <CustomerInput label="Phone" type="tel" value={contactInfo.phone}
             onChange={(v) => setContactInfo(p => ({ ...p, phone: v }))} />
         </div>
-        <div className="mt-5 ps-0 sm:ps-9">
-          <p className="inline-flex items-center gap-2 rounded-full bg-[#F4F7FB] px-3 py-1.5 text-[11px] font-medium text-[#6B7A90]">
-            <ShieldCheck className="h-3.5 w-3.5 text-[#17A673]" />
-            Your information is secure and will never be shared.
-          </p>
-        </div>
+        <p className="mt-3 flex items-center gap-2.5 text-[11px] text-[#8FA0B5]">
+          <ShieldCheck className="h-3 w-3" />
+          Your information is secure and will never be shared.
+        </p>
       </div>
 
       {/* Submit error */}
@@ -434,31 +323,21 @@ export default function PublicSurveyPage() {
 // ─── Question Card ──────────────────────────────────────────────────────────
 
 function QuestionCard({
-  id, number, question, value, onChange, onAutoAdvance
+  number, question, value, onChange,
 }: {
-  id?: string
   number: number
   question: PublicQuestion
   value: string
   onChange: (v: string) => void
-  onAutoAdvance?: () => void
 }) {
   const isAnswered = !!value.trim()
   return (
-    <motion.div
-      id={id}
-      initial={{ opacity: 0, y: 30 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: number * 0.1, type: 'spring', stiffness: 200, damping: 25 }}
-      className="rounded-[20px] border border-[#E2E8F3] bg-white p-6 transition-all duration-300 sm:p-8 scroll-m-6"
-      style={
-        isAnswered 
-          ? { borderColor: '#17A673', boxShadow: '0 4px 20px rgba(23,166,115,0.08), 0 0 0 1px #17A673' }
-          : { boxShadow: '0 4px 24px rgba(13,27,46,0.04)' }
-      }
+    <div
+      className="rounded-[14px] border border-[#E2E8F3] bg-white p-5 transition-all"
+      style={isAnswered ? { borderColor: '#17A673', boxShadow: '0 0 0 1px #17A673' } : undefined}
     >
-      <div className="mb-6 flex items-start gap-4">
-        <span className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-[#0B4A8B] text-[12px] font-bold text-white shadow-sm">
+      <div className="mb-4 flex items-start gap-3">
+        <span className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full bg-[#0B4A8B] text-[11px] font-bold text-white">
           {number}
         </span>
         <h3 className="flex-1 text-[14px] font-bold leading-snug text-[#0D1B2E]">
@@ -470,20 +349,19 @@ function QuestionCard({
           </span>
         )}
       </div>
-      <div className="ps-0 sm:ps-9">
-        <QuestionInput question={question} value={value} onChange={onChange} onAutoAdvance={onAutoAdvance} />
+      <div className="pl-0 sm:pl-9">
+        <QuestionInput question={question} value={value} onChange={onChange} />
       </div>
-    </motion.div>
+    </div>
   )
 }
 
 function QuestionInput({
-  question, value, onChange, onAutoAdvance
+  question, value, onChange,
 }: {
   question: PublicQuestion
   value: string
   onChange: (v: string) => void
-  onAutoAdvance?: () => void
 }) {
   const baseInput = "w-full rounded-[10px] border border-[#E2E8F3] bg-white px-4 py-3 text-[13.5px] text-[#0D1B2E] outline-none transition-colors focus:border-[#0B4A8B] focus:ring-2 focus:ring-[#0B4A8B]/15 placeholder:text-[#B0BDCC]"
 
@@ -496,22 +374,15 @@ function QuestionInput({
             {Array.from({ length: 11 }, (_, i) => i).map(score => {
               const isActive = selected === score
               const colorClass =
-                score <= 6 ? 'bg-white text-[#E5484D] border-[#FECACA] hover:bg-[#FEF2F2] hover:border-[#F87171]'
-                : score <= 8 ? 'bg-white text-[#D97706] border-[#FDE68A] hover:bg-[#FFFBEB] hover:border-[#FBBF24]'
-                : 'bg-white text-[#17A673] border-[#A7F3D0] hover:bg-[#ECFDF5] hover:border-[#34D399]'
+                score <= 6 ? 'bg-[#FEF2F2] text-[#E5484D] border-[#FECACA] hover:bg-[#FEE2E2]'
+                : score <= 8 ? 'bg-[#FFFBEB] text-[#D97706] border-[#FDE68A] hover:bg-[#FEF3C7]'
+                : 'bg-[#ECFDF5] text-[#17A673] border-[#A7F3D0] hover:bg-[#D1FAE5]'
               return (
                 <button
                   key={score}
                   type="button"
-                  onClick={() => {
-                    onChange(String(score))
-                    onAutoAdvance?.()
-                  }}
-                  className={`flex h-[52px] items-center justify-center rounded-[14px] border-2 text-[15px] font-bold transition-all duration-200 ${
-                    isActive 
-                      ? '!bg-[#0B4A8B] !text-white !border-[#0B4A8B] scale-[1.08] shadow-md' 
-                      : `${colorClass} shadow-sm hover:scale-[1.03]`
-                  }`}
+                  onClick={() => onChange(String(score))}
+                  className={`flex h-11 items-center justify-center rounded-[10px] border-2 text-[14px] font-bold transition-all ${isActive ? '!bg-[#0B4A8B] !text-white !border-[#0B4A8B] scale-105' : colorClass}`}
                 >
                   {score}
                 </button>
@@ -565,10 +436,7 @@ function QuestionInput({
               <button
                 key={opt}
                 type="button"
-                onClick={() => {
-                  onChange(opt)
-                  onAutoAdvance?.()
-                }}
+                onClick={() => onChange(opt)}
                 className={`flex-1 rounded-[10px] border-2 px-6 py-3 text-[13.5px] font-semibold transition-all ${isActive ? 'border-[#0B4A8B] bg-[#EFF6FF] text-[#0B4A8B]' : 'border-[#E2E8F3] text-[#4A5568] hover:border-[#C8D4E3]'}`}
               >
                 {opt}
@@ -598,11 +466,8 @@ function QuestionInput({
               <button
                 key={o.id}
                 type="button"
-                onClick={() => {
-                  onChange(o.value)
-                  if (question.type === 'multiple_choice') onAutoAdvance?.()
-                }}
-                className={`flex items-center gap-3 rounded-[10px] border-2 px-4 py-3 text-start text-[13px] transition-all ${isActive ? 'border-[#0B4A8B] bg-[#EFF6FF] text-[#0B4A8B] font-medium' : 'border-[#E2E8F3] text-[#4A5568] hover:border-[#C8D4E3]'}`}
+                onClick={() => onChange(o.value)}
+                className={`flex items-center gap-3 rounded-[10px] border-2 px-4 py-3 text-left text-[13px] transition-all ${isActive ? 'border-[#0B4A8B] bg-[#EFF6FF] text-[#0B4A8B] font-medium' : 'border-[#E2E8F3] text-[#4A5568] hover:border-[#C8D4E3]'}`}
               >
                 <span className={`flex h-4 w-4 items-center justify-center rounded-full border-2 ${isActive ? 'border-[#0B4A8B] bg-[#0B4A8B]' : 'border-[#C8D4E3]'}`}>
                   {isActive && <span className="h-1.5 w-1.5 rounded-full bg-white" />}
@@ -631,7 +496,7 @@ function QuestionInput({
                     : [...selected, o.value]
                   onChange(next.join('|'))
                 }}
-                className={`flex items-center gap-3 rounded-[10px] border-2 px-4 py-3 text-start text-[13px] transition-all ${isActive ? 'border-[#0B4A8B] bg-[#EFF6FF] text-[#0B4A8B] font-medium' : 'border-[#E2E8F3] text-[#4A5568] hover:border-[#C8D4E3]'}`}
+                className={`flex items-center gap-3 rounded-[10px] border-2 px-4 py-3 text-left text-[13px] transition-all ${isActive ? 'border-[#0B4A8B] bg-[#EFF6FF] text-[#0B4A8B] font-medium' : 'border-[#E2E8F3] text-[#4A5568] hover:border-[#C8D4E3]'}`}
               >
                 <span className={`flex h-4 w-4 items-center justify-center rounded-[4px] border-2 ${isActive ? 'border-[#0B4A8B] bg-[#0B4A8B] text-white' : 'border-[#C8D4E3]'}`}>
                   {isActive && <CheckCircle2 className="h-3 w-3" />}
@@ -668,12 +533,12 @@ function CustomerInput({
 }) {
   return (
     <label className="block">
-      <span className="mb-1.5 block ps-1 text-[11px] font-bold uppercase tracking-wider text-[#8FA0B5]">{label}</span>
+      <span className="mb-1.5 block text-[11px] font-semibold uppercase tracking-wide text-[#8FA0B5]">{label}</span>
       <input
         type={type}
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="w-full rounded-[12px] border border-[#E2E8F3] bg-[#F8FAFD] px-4 py-3.5 text-[13.5px] font-medium text-[#0D1B2E] outline-none transition-all focus:border-[#0B4A8B] focus:bg-white focus:ring-2 focus:ring-[#0B4A8B]/20"
+        className="w-full rounded-[8px] border border-[#E2E8F3] bg-white px-3 py-2 text-[12.5px] text-[#0D1B2E] outline-none transition-colors focus:border-[#0B4A8B] focus:ring-2 focus:ring-[#0B4A8B]/15"
       />
     </label>
   )
@@ -682,68 +547,23 @@ function CustomerInput({
 // ─── Page shell with ADNTC branding ─────────────────────────────────────────
 
 function PublicSurveyShell({
-  survey, answeredCount = 0, totalQuestions = 0, progress = 0, onTranslate, children,
+  survey, answeredCount = 0, totalQuestions = 0, progress = 0, children,
 }: {
   survey?: PublicSurvey | null
   answeredCount?: number
   totalQuestions?: number
   progress?: number
-  onTranslate?: () => void
   children: React.ReactNode
 }) {
   return (
-    <div className="relative min-h-screen bg-[#F4F7FB] overflow-hidden">
-      {/* Hidden container for Google Translate widget */}
-      <div id="google_translate_element" className="hidden" />
-      
-      {/* Background aesthetic overlay (Subtle Islamic geometry) */}
-      <div 
-        className="pointer-events-none absolute inset-0 z-0 opacity-[0.02]"
-        style={{
-          backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80'%3E%3Cpath d='M40 0 L80 40 L40 80 L0 40Z' fill='none' stroke='%230B4A8B' stroke-width='1'/%3E%3Cpath d='M40 10 L70 40 L40 70 L10 40Z' fill='none' stroke='%230B4A8B' stroke-width='0.5'/%3E%3Ccircle cx='40' cy='40' r='15' fill='none' stroke='%230B4A8B' stroke-width='0.5'/%3E%3Cpath d='M40 0 L40 80 M0 40 L80 40' stroke='%230B4A8B' stroke-width='0.3'/%3E%3C/svg%3E")`,
-          backgroundSize: '80px 80px',
-        }}
-      />
-      <div className="pointer-events-none absolute inset-0 z-0 bg-gradient-to-b from-transparent via-transparent to-[#EBF0F7]" />
-      
-      {/* Content Layer */}
-      <div className="relative z-10 flex min-h-screen flex-col">
-        {/* Top Utility Bar */}
-      <div className="bg-[#4A5568] px-4 py-2 text-white/90 sm:px-6">
-        <div className="mx-auto flex w-full max-w-[1600px] flex-wrap items-center justify-center gap-y-2 text-[13px] font-semibold tracking-wide sm:justify-between lg:px-10">
-          <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 sm:gap-x-8">
-            <a href="tel:8002244" className="flex items-center gap-2 transition-colors hover:text-white">
-              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
-              800 2244
-            </a>
-            <a href="mailto:customer.service@takaful.ae" className="flex items-center gap-2 transition-colors hover:text-white">
-              <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
-              customer.service@takaful.ae
-            </a>
-          </div>
-          <button type="button" onClick={onTranslate} className="flex items-center rounded-[6px] border border-white/30 px-3 py-1 text-[12px] font-bold transition-all hover:bg-white/10 cursor-pointer">
-            العربية
-          </button>
-        </div>
-      </div>
-
+    <div className="min-h-screen bg-gradient-to-b from-[#F4F7FB] via-[#F4F7FB] to-[#EBF0F7]">
       {/* Header — single blue block: logo row + title/progress row */}
       <header className="bg-gradient-to-r from-[#06386F] to-[#0B4A8B] text-white">
         <div className="mx-auto max-w-[1600px] px-4 py-4 sm:px-6 sm:py-5 lg:px-10">
           <div className="flex items-center justify-between">
-            <a href="https://www.takaful.ae/" target="_blank" rel="noopener noreferrer" className="group relative flex items-center gap-2 py-1 transition-transform duration-500 hover:scale-110">
-              <div
-                className="absolute inset-0 z-0 opacity-40 blur-[32px] transition-opacity duration-500 group-hover:opacity-80"
-                style={{
-                  background: 'radial-gradient(ellipse at center, rgba(255,255,255,0.6) 0%, transparent 65%)'
-                }}
-              />
-              <img 
-                src="/adntc-logo.png" 
-                alt="ADNTC" 
-                className="relative z-10 h-[48px] w-auto drop-shadow-[0_8px_24px_rgba(0,0,0,0.4)] sm:h-[56px]" 
-              />
-            </a>
+            <Link href="/" className="flex items-center gap-2">
+              <img src="/adntc-logo.png" alt="ADNTC" className="h-8 w-auto sm:h-9" />
+            </Link>
             {survey && (
               <div className="flex items-center gap-2 rounded-[10px] bg-white/10 px-3.5 py-2 sm:px-4">
                 <Clock className="h-4 w-4" />
@@ -761,12 +581,10 @@ function PublicSurveyShell({
             <div className="mx-auto max-w-[1600px] px-4 py-4 sm:px-6 sm:py-5 lg:px-10">
               <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
                 <div>
-                  <div className="text-[15px] font-bold sm:text-[17px]">
-                    {survey.title}
-                  </div>
-                  <div className="mt-0.5 text-[13px] uppercase tracking-wide text-white/80">
+                  <div className="text-[15px] font-bold uppercase tracking-wide sm:text-[17px]">
                     {survey.surveyCode || survey.touchpoint}
                   </div>
+                  <div className="mt-0.5 text-[13px] text-white/80">{survey.title}</div>
                 </div>
                 {totalQuestions > 0 && (
                   <div className="flex items-center gap-3">
@@ -792,9 +610,9 @@ function PublicSurveyShell({
         )}
       </header>
 
-      {/* Main content — elegantly constrained for optimal reading width */}
-      <main className="mx-auto w-full max-w-[800px] px-4 py-10 sm:px-6 lg:px-8">
-        <div className="flex w-full flex-col gap-6">
+      {/* Main content — matches header's full-width container exactly, no extra nested constraint */}
+      <main className="mx-auto w-full max-w-[1600px] px-4 py-8 sm:px-6 lg:px-10">
+        <div className="flex w-full flex-col gap-4 lg:gap-5">
           {children}
         </div>
       </main>
@@ -810,7 +628,6 @@ function PublicSurveyShell({
           </p>
         </div>
       </footer>
-      </div>
     </div>
   )
 }

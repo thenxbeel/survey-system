@@ -159,7 +159,7 @@ export function AnalyticsHeader() {
           variant="ghost"
           size="md"
           aria-label="Refresh analytics"
-          className="!text-white !border-[rgba(255,255,255,0.15)] hover:!bg-[rgba(255,255,255,0.15)] !bg-[rgba(255,255,255,0.1)]"
+          className="!text-white !border-[rgba(255,255,255,0.15)] hover:!bg-[rgba(255,255,255,0.15)] !bg-[rgba(255,255,255,0.1)] aspect-square !px-0"
         >
           <RefreshCw size={13} className={refreshing ? 'animate-spin' : ''} />
         </Button>

@@ -82,9 +82,9 @@ function SurveyBuilderContent() {
     setDraft({
       title: template.title,
       description: template.description,
-      touchpoint: template.touchpoint,
+      touchpoint: '',
       department: '',
-      branch: 'All Branches',
+      branch: '',
       visibility: 'public',
       expiryDate: '',
       requireContactInfo: false,
@@ -122,7 +122,7 @@ function SurveyBuilderContent() {
           description: s.description ?? '',
           touchpoint: s.touchpoint ?? '',
           department: s.department ?? '',
-          branch: s.branch ?? 'All Branches',
+          branch: s.branch ?? '',
           visibility: s.visibility === 'public' ? 'public' : 'private',
           expiryDate: s.expiryDate ? s.expiryDate.split('T')[0] : '',
           requireContactInfo: s.requireContactInfo ?? false,
@@ -150,6 +150,8 @@ function SurveyBuilderContent() {
   const handleSaveDraft = useCallback(async (): Promise<string | null> => {
     if (!draft.title.trim()) return 'Please enter a survey title.'
     if (!draft.touchpoint) return 'Please select a touchpoint.'
+    if (!draft.department) return 'Please select a department.'
+    if (!draft.branch) return 'Please select a branch.'
     if (draft.questions.length === 0) return 'Please add at least one question.'
 
     const payload = buildPayload(draft, false)
@@ -193,6 +195,8 @@ function SurveyBuilderContent() {
   const handlePublish = useCallback(async (): Promise<string | number | null> => {
     if (!draft.title.trim()) return 'Please enter a survey title.'
     if (!draft.touchpoint) return 'Please select a touchpoint.'
+    if (!draft.department) return 'Please select a department.'
+    if (!draft.branch) return 'Please select a branch.'
     if (draft.questions.length === 0) return 'Please add at least one question.'
 
     const payload = buildPayload(draft, true)
@@ -335,7 +339,7 @@ function SurveyBuilderContent() {
             <div className="flex flex-col gap-2.5">
               {[
                 { label: 'Title set',          done: Boolean(draft.title.trim()) },
-                { label: 'Touchpoint chosen',  done: Boolean(draft.touchpoint) },
+                { label: 'Targeting chosen',  done: Boolean(draft.touchpoint && draft.department && draft.branch) },
                 { label: 'Has questions',      done: draft.questions.length > 0 },
                 { label: 'All questions titled',done: draft.questions.length > 0 && draft.questions.every((q) => q.title.trim()) },
               ].map(({ label, done }) => (
@@ -543,7 +547,7 @@ function buildPayload(draft: ExtendedDraft, publish: boolean) {
     description: draft.description.trim() || undefined,
     touchpoint: draft.touchpoint,
     department: draft.department || undefined,
-    branch: draft.branch === 'All Branches' ? undefined : (draft.branch || undefined),
+    branch: draft.branch || undefined,
     visibility: draft.visibility === 'public' ? 'PUBLIC' : 'PRIVATE',
     expiryDate: expirationDate,
     requireContactInfo: draft.requireContactInfo ?? false,

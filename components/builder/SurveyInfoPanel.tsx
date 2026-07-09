@@ -52,7 +52,7 @@ export default function SurveyInfoPanel({ draft, onChange }: Props) {
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         {/* Touchpoint */}
         <div>
-          <label className={labelCls}>Touchpoint</label>
+          <label className={labelCls}>Touchpoint <span className="text-red-500">*</span></label>
           <select
             className={inputBase + ' cursor-pointer'}
             style={{ borderColor: 'var(--border)', color: 'var(--text)' }}
@@ -68,7 +68,7 @@ export default function SurveyInfoPanel({ draft, onChange }: Props) {
 
         {/* Department */}
         <div>
-          <label className={labelCls}>Department</label>
+          <label className={labelCls}>Department <span className="text-red-500">*</span></label>
           <select
             className={inputBase + ' cursor-pointer'}
             style={{ borderColor: 'var(--border)', color: 'var(--text)' }}
@@ -84,13 +84,14 @@ export default function SurveyInfoPanel({ draft, onChange }: Props) {
 
         {/* Branch */}
         <div>
-          <label className={labelCls}>Branch</label>
+          <label className={labelCls}>Branch <span className="text-red-500">*</span></label>
           <select
             className={inputBase + ' cursor-pointer'}
             style={{ borderColor: 'var(--border)', color: 'var(--text)' }}
             value={draft.branch}
             onChange={(e) => onChange({ branch: e.target.value })}
           >
+            <option value="">Select branch…</option>
             {BRANCHES.map((b) => (
               <option key={b} value={b}>{b}</option>
             ))}

@@ -22,30 +22,9 @@ export default function Button({
   const isIconOnly = !hasText
 
   const sizes = {
-    sm: { 
-      borderRadius: '8px', 
-      fontSize: '11.5px', 
-      padding: isIconOnly ? '0' : '10px 20px', 
-      minHeight: '36px',
-      width: isIconOnly ? '36px' : 'auto',
-      minWidth: isIconOnly ? '36px' : '100px',
-    },
-    md: { 
-      borderRadius: '10px', 
-      fontSize: '12.5px', 
-      padding: isIconOnly ? '0' : '12px 24px', 
-      minHeight: '42px',
-      width: isIconOnly ? '42px' : 'auto',
-      minWidth: isIconOnly ? '42px' : '130px',
-    },
-    lg: { 
-      borderRadius: '12px', 
-      fontSize: '13.5px', 
-      padding: isIconOnly ? '0' : '16px 32px', 
-      minHeight: '50px',
-      width: isIconOnly ? '50px' : 'auto',
-      minWidth: isIconOnly ? '50px' : '160px',
-    },
+    sm: 'rounded-[8px] text-[11.5px] min-h-[36px] px-3',
+    md: 'rounded-[10px] text-[12.5px] min-h-[42px] px-4',
+    lg: 'rounded-[12px] text-[13.5px] min-h-[50px] px-6',
   }
 
   const variants = {
@@ -55,17 +34,14 @@ export default function Button({
     danger:    'bg-[#FEF2F2] text-[#E5484D] border border-[#FECACA] hover:bg-[#E5484D] hover:text-white',
   }
 
+  // To support purely icon buttons that were relying on `isIconOnly` before:
+  // If the user manually adds 'aspect-square' or 'w-[42px]' we respect it.
+  // We no longer force `width` and `minWidth` via inline styles so text can dictate width!
+
   return (
     <button 
-      className={`${base} ${variants[variant]} ${className}`} 
-      style={{
-        display: 'inline-flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        textAlign: 'center',
-        ...sizes[size],
-        ...(props.style || {})
-      }}
+      className={`${base} ${variants[variant]} ${sizes[size]} ${className}`} 
+      style={props.style}
       {...props}
     >
       {children}

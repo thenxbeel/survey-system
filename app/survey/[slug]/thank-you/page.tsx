@@ -22,6 +22,18 @@ export default function ThankYouPage() {
   }, [slug])
 
   useEffect(() => {
+    // 1. Setup MutationObserver for RTL detection
+    const observer = new MutationObserver((mutations) => {
+      for (const m of mutations) {
+        if (m.type === 'attributes' && (m.attributeName === 'class' || m.attributeName === 'lang')) {
+          const isRTL = document.documentElement.classList.contains('translated-rtl') || document.documentElement.lang === 'ar'
+          document.documentElement.dir = isRTL ? 'rtl' : 'ltr'
+        }
+      }
+    })
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class', 'lang'] })
+
+    // 2. Inject Google Translate script
     if (!document.getElementById('google-translate-script')) {
       (window as any).googleTranslateElementInit = () => {
         new (window as any).google.translate.TranslateElement(
@@ -34,6 +46,8 @@ export default function ThankYouPage() {
       script.src = '//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit';
       document.body.appendChild(script);
     }
+    
+    return () => observer.disconnect()
   }, []);
 
   const handleTranslate = () => {

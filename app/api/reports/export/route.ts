@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getCurrentUser } from '@/lib/auth/session'
+import fs from 'fs'
+import path from 'path'
 
 function getPeriodDate(period: string | null): Date | null {
   if (!period || period === 'all' || period === 'All Time') return null
@@ -67,6 +69,15 @@ export async function GET(req: NextRequest) {
     let payloadHtml = ''
     let filename = ''
 
+    let logoBase64 = ''
+    try {
+      const logoPath = path.join(process.cwd(), 'public', 'adntc-logo.png')
+      logoBase64 = fs.readFileSync(logoPath).toString('base64')
+    } catch (e) {
+      console.error('Failed to load logo', e)
+    }
+    const logoDataUri = logoBase64 ? `data:image/png;base64,${logoBase64}` : '/adntc-logo.png'
+
     switch (type) {
       case 'executive': {
         const responsesWhere: any = {}
@@ -94,6 +105,7 @@ export async function GET(req: NextRequest) {
             include: {
               survey: { select: { title: true, touchpoint: true, branch: true, department: true } },
               campaign: { select: { name: true } },
+              assignedTo: { select: { name: true } },
             },
             orderBy: { submittedAt: 'desc' },
           }),
@@ -151,7 +163,7 @@ export async function GET(req: NextRequest) {
           `Detractors,${detractors}`,
           '',
           'Response Details',
-          'ID,Respondent,Survey,Touchpoint,Branch,Department,Campaign,NPS Score,CSAT,CES,Channel,Device,Date',
+          'ID,Respondent,Survey,Touchpoint,Branch,Department,Campaign,NPS Score,CSAT,CES,Channel,Device,Assigned To,Status,Date',
           ...normalizedResponses.map(r => [
             `RSP-${String(r.id).padStart(5, '0')}`,
             `"${r.respondentName ?? 'Anonymous'}"`,
@@ -165,6 +177,8 @@ export async function GET(req: NextRequest) {
             r.cesScore ?? '',
             r.distributionChannel ?? 'WEB',
             r.deviceType ?? 'unknown',
+            `"${r.assignedTo?.name ?? 'Unassigned'}"`,
+            `"${r.status}"`,
             formatDateTime(r.submittedAt),
           ].join(',')),
         ].join('\n')
@@ -194,10 +208,10 @@ export async function GET(req: NextRequest) {
   <br/>
   <table border="1">
     <tr style="background:#0B4A8B;color:#ffffff;font-weight:bold;">
-      <th colspan="13">Response Details</th>
+      <th colspan="15">Response Details</th>
     </tr>
     <tr style="background:#e2e8f0;font-weight:bold;">
-      <th>ID</th><th>Respondent</th><th>Survey</th><th>Touchpoint</th><th>Branch</th><th>Department</th><th>Campaign</th><th>NPS Score</th><th>CSAT</th><th>CES</th><th>Channel</th><th>Device</th><th>Date</th>
+      <th>ID</th><th>Respondent</th><th>Survey</th><th>Touchpoint</th><th>Branch</th><th>Department</th><th>Campaign</th><th>NPS Score</th><th>CSAT</th><th>CES</th><th>Channel</th><th>Device</th><th>Assigned To</th><th>Status</th><th>Date</th>
     </tr>
     ${normalizedResponses.map(r => `
       <tr>
@@ -213,6 +227,8 @@ export async function GET(req: NextRequest) {
         <td>${r.cesScore ?? ''}</td>
         <td>${r.distributionChannel ?? 'WEB'}</td>
         <td>${r.deviceType ?? 'unknown'}</td>
+        <td>${r.assignedTo?.name ?? 'Unassigned'}</td>
+        <td>${r.status}</td>
         <td>${formatDateTime(r.submittedAt)}</td>
       </tr>
     `).join('')}
@@ -247,9 +263,14 @@ export async function GET(req: NextRequest) {
   </style>
 </head>
 <body>
-  <div class="no-print" style="margin-bottom: 25px; display: flex; justify-content: flex-end; gap: 10px;">
-    <button onclick="window.print()" style="background:#0b4a8b;color:#fff;border:none;padding:8px 18px;border-radius:8px;font-weight:600;cursor:pointer;font-size:12px;">Print or Save to PDF</button>
-    <button onclick="window.close()" style="background:#fff;color:#4b5563;border:1px solid #d1d5db;padding:8px 18px;border-radius:8px;font-weight:600;cursor:pointer;font-size:12px;">Close</button>
+  <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 25px;">
+    <div>
+      <img src="${logoDataUri}" alt="Company Logo" style="height: 50px; filter: contrast(300%) grayscale(100%) brightness(0.4) sepia(100%) hue-rotate(190deg) saturate(500%); mix-blend-mode: multiply;" onerror="this.src='/logo.svg';this.onerror=null;" />
+    </div>
+    <div class="no-print" style="display: flex; gap: 10px;">
+      <button onclick="window.print()" style="background:#0b4a8b;color:#fff;border:none;padding:8px 18px;border-radius:8px;font-weight:600;cursor:pointer;font-size:12px;">Print or Save to PDF</button>
+      <button onclick="window.close()" style="background:#fff;color:#4b5563;border:1px solid #d1d5db;padding:8px 18px;border-radius:8px;font-weight:600;cursor:pointer;font-size:12px;">Close</button>
+    </div>
   </div>
   <h1>Executive Summary Report</h1>
   <div class="meta">
@@ -269,11 +290,14 @@ export async function GET(req: NextRequest) {
   <table>
     <thead>
       <tr>
-        <th>ID</th><th>Respondent</th><th>Survey</th><th>Touchpoint</th><th>Branch</th><th>Department</th><th>Campaign</th><th>NPS</th><th>CSAT</th><th>CES</th><th>Channel</th><th>Date</th>
+        <th>ID</th><th>Respondent</th><th>Survey</th><th>Touchpoint</th><th>Branch</th><th>Department</th><th>Campaign</th><th>NPS</th><th>CSAT</th><th>CES</th><th>Channel</th><th>Assigned To</th><th>Status</th><th>Date</th>
       </tr>
     </thead>
     <tbody>
-      ${normalizedResponses.map(r => `
+      ${normalizedResponses.map(r => {
+        const statusBadgeColor = r.status === 'solved' ? '#047857' : r.status === 'in_progress' ? '#b45309' : '#374151';
+        const statusBadgeBg = r.status === 'solved' ? '#ecfdf5' : r.status === 'in_progress' ? '#fffbeb' : '#f3f4f6';
+        return `
         <tr>
           <td>RSP-${String(r.id).padStart(5, '0')}</td>
           <td>${r.respondentName ?? 'Anonymous'}</td>
@@ -286,9 +310,11 @@ export async function GET(req: NextRequest) {
           <td>${r.csatScore ?? ''}</td>
           <td>${r.cesScore ?? ''}</td>
           <td>${r.distributionChannel ?? 'WEB'}</td>
+          <td>${r.assignedTo?.name ?? 'Unassigned'}</td>
+          <td><span style="background:${statusBadgeBg};color:${statusBadgeColor};padding:2px 6px;border-radius:4px;font-size:10px;font-weight:600;text-transform:uppercase;">${r.status}</span></td>
           <td>${formatDateTime(r.submittedAt)}</td>
         </tr>
-      `).join('')}
+      `}).join('')}
     </tbody>
   </table>
   <script>
