@@ -485,9 +485,14 @@ export async function GET(req: NextRequest) {
   </style>
 </head>
 <body>
-  <div class="no-print" style="margin-bottom: 25px; display: flex; justify-content: flex-end; gap: 10px;">
-    <button onclick="window.print()" style="background:#0b4a8b;color:#fff;border:none;padding:8px 18px;border-radius:8px;font-weight:600;cursor:pointer;font-size:12px;">Print or Save to PDF</button>
-    <button onclick="window.close()" style="background:#fff;color:#4b5563;border:1px solid #d1d5db;padding:8px 18px;border-radius:8px;font-weight:600;cursor:pointer;font-size:12px;">Close</button>
+  <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 25px;">
+    <div>
+      <img src="${logoDataUri}" alt="Company Logo" style="height: 50px; filter: contrast(300%) grayscale(100%) brightness(0.4) sepia(100%) hue-rotate(190deg) saturate(500%); mix-blend-mode: multiply;" onerror="this.src='/logo.svg';this.onerror=null;" />
+    </div>
+    <div class="no-print" style="display: flex; gap: 10px;">
+      <button onclick="window.print()" style="background:#0b4a8b;color:#fff;border:none;padding:8px 18px;border-radius:8px;font-weight:600;cursor:pointer;font-size:12px;">Print or Save to PDF</button>
+      <button onclick="window.close()" style="background:#fff;color:#4b5563;border:1px solid #d1d5db;padding:8px 18px;border-radius:8px;font-weight:600;cursor:pointer;font-size:12px;">Close</button>
+    </div>
   </div>
   <h1>Responses Detail Report</h1>
   <div class="meta">
@@ -669,9 +674,14 @@ export async function GET(req: NextRequest) {
   </style>
 </head>
 <body>
-  <div class="no-print" style="margin-bottom: 25px; display: flex; justify-content: flex-end; gap: 10px;">
-    <button onclick="window.print()" style="background:#0b4a8b;color:#fff;border:none;padding:8px 18px;border-radius:8px;font-weight:600;cursor:pointer;font-size:12px;">Print or Save to PDF</button>
-    <button onclick="window.close()" style="background:#fff;color:#4b5563;border:1px solid #d1d5db;padding:8px 18px;border-radius:8px;font-weight:600;cursor:pointer;font-size:12px;">Close</button>
+  <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 25px;">
+    <div>
+      <img src="${logoDataUri}" alt="Company Logo" style="height: 50px; filter: contrast(300%) grayscale(100%) brightness(0.4) sepia(100%) hue-rotate(190deg) saturate(500%); mix-blend-mode: multiply;" onerror="this.src='/logo.svg';this.onerror=null;" />
+    </div>
+    <div class="no-print" style="display: flex; gap: 10px;">
+      <button onclick="window.print()" style="background:#0b4a8b;color:#fff;border:none;padding:8px 18px;border-radius:8px;font-weight:600;cursor:pointer;font-size:12px;">Print or Save to PDF</button>
+      <button onclick="window.close()" style="background:#fff;color:#4b5563;border:1px solid #d1d5db;padding:8px 18px;border-radius:8px;font-weight:600;cursor:pointer;font-size:12px;">Close</button>
+    </div>
   </div>
   <h1>Surveys List Report</h1>
   <p style="font-size: 13px; color: #4b5563; margin-bottom: 20px;">
@@ -834,9 +844,14 @@ export async function GET(req: NextRequest) {
   </style>
 </head>
 <body>
-  <div class="no-print" style="margin-bottom: 25px; display: flex; justify-content: flex-end; gap: 10px;">
-    <button onclick="window.print()" style="background:#0b4a8b;color:#fff;border:none;padding:8px 18px;border-radius:8px;font-weight:600;cursor:pointer;font-size:12px;">Print or Save to PDF</button>
-    <button onclick="window.close()" style="background:#fff;color:#4b5563;border:1px solid #d1d5db;padding:8px 18px;border-radius:8px;font-weight:600;cursor:pointer;font-size:12px;">Close</button>
+  <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 25px;">
+    <div>
+      <img src="${logoDataUri}" alt="Company Logo" style="height: 50px; filter: contrast(300%) grayscale(100%) brightness(0.4) sepia(100%) hue-rotate(190deg) saturate(500%); mix-blend-mode: multiply;" onerror="this.src='/logo.svg';this.onerror=null;" />
+    </div>
+    <div class="no-print" style="display: flex; gap: 10px;">
+      <button onclick="window.print()" style="background:#0b4a8b;color:#fff;border:none;padding:8px 18px;border-radius:8px;font-weight:600;cursor:pointer;font-size:12px;">Print or Save to PDF</button>
+      <button onclick="window.close()" style="background:#fff;color:#4b5563;border:1px solid #d1d5db;padding:8px 18px;border-radius:8px;font-weight:600;cursor:pointer;font-size:12px;">Close</button>
+    </div>
   </div>
   <h1>Campaigns List Report</h1>
   <p style="font-size: 13px; color: #4b5563; margin-bottom: 20px;">
