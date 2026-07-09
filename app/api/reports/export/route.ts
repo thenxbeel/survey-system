@@ -163,7 +163,7 @@ export async function GET(req: NextRequest) {
           `Detractors,${detractors}`,
           '',
           'Response Details',
-          'ID,Respondent,Survey,Touchpoint,Branch,Department,Campaign,NPS Score,CSAT,CES,Channel,Device,Assigned To,Status,Date',
+          'ID,Respondent,Survey,Touchpoint,Branch,Department,NPS Score,CSAT,CES,Channel,Device,Assigned To,Status,Date',
           ...normalizedResponses.map(r => [
             `RSP-${String(r.id).padStart(5, '0')}`,
             `"${r.respondentName ?? 'Anonymous'}"`,
@@ -171,7 +171,6 @@ export async function GET(req: NextRequest) {
             r.survey.touchpoint,
             `"${r.survey.branch ?? ''}"`,
             `"${r.survey.department ?? ''}"`,
-            `"${r.campaign?.name ?? ''}"`,
             r.npsScore ?? '',
             r.csatScore ?? '',
             r.cesScore ?? '',
@@ -208,10 +207,10 @@ export async function GET(req: NextRequest) {
   <br/>
   <table border="1">
     <tr style="background:#0B4A8B;color:#ffffff;font-weight:bold;">
-      <th colspan="15">Response Details</th>
+      <th colspan="14">Response Details</th>
     </tr>
     <tr style="background:#e2e8f0;font-weight:bold;">
-      <th>ID</th><th>Respondent</th><th>Survey</th><th>Touchpoint</th><th>Branch</th><th>Department</th><th>Campaign</th><th>NPS Score</th><th>CSAT</th><th>CES</th><th>Channel</th><th>Device</th><th>Assigned To</th><th>Status</th><th>Date</th>
+      <th>ID</th><th>Respondent</th><th>Survey</th><th>Touchpoint</th><th>Branch</th><th>Department</th><th>NPS Score</th><th>CSAT</th><th>CES</th><th>Channel</th><th>Device</th><th>Assigned To</th><th>Status</th><th>Date</th>
     </tr>
     ${normalizedResponses.map(r => `
       <tr>
@@ -221,7 +220,6 @@ export async function GET(req: NextRequest) {
         <td>${r.survey.touchpoint}</td>
           <td>${r.survey.branch ?? ''}</td>
           <td>${r.survey.department ?? ''}</td>
-          <td>${r.campaign?.name ?? ''}</td>
         <td>${r.npsScore ?? ''}</td>
         <td>${r.csatScore ?? ''}</td>
         <td>${r.cesScore ?? ''}</td>
@@ -290,7 +288,7 @@ export async function GET(req: NextRequest) {
   <table>
     <thead>
       <tr>
-        <th>ID</th><th>Respondent</th><th>Survey</th><th>Touchpoint</th><th>Branch</th><th>Department</th><th>Campaign</th><th>NPS</th><th>CSAT</th><th>CES</th><th>Channel</th><th>Assigned To</th><th>Status</th><th>Date</th>
+        <th>ID</th><th>Respondent</th><th>Survey</th><th>Touchpoint</th><th>Branch</th><th>Department</th><th>NPS</th><th>CSAT</th><th>CES</th><th>Channel</th><th>Assigned To</th><th>Status</th><th>Date</th>
       </tr>
     </thead>
     <tbody>
@@ -305,7 +303,6 @@ export async function GET(req: NextRequest) {
           <td>${r.survey.touchpoint}</td>
           <td>${r.survey.branch ?? ''}</td>
           <td>${r.survey.department ?? ''}</td>
-          <td>${r.campaign?.name ?? ''}</td>
           <td>${r.npsScore ?? ''}</td>
           <td>${r.csatScore ?? ''}</td>
           <td>${r.cesScore ?? ''}</td>
@@ -382,7 +379,7 @@ export async function GET(req: NextRequest) {
 
         // ── CSV Generator ──
         payloadCsv = [
-          'Response ID,Respondent Name,Respondent Email,Respondent Phone,Survey,Touchpoint,Branch,Department,Survey URL,Campaign,NPS Score,NPS Category,CSAT,CES,Channel,Device,Browser,OS,IP,Country,City,Status,Submitted At',
+          'Response ID,Respondent Name,Respondent Email,Respondent Phone,Survey,Touchpoint,Branch,Department,Survey URL,NPS Score,NPS Category,CSAT,CES,Channel,Device,Browser,OS,IP,Country,City,Status,Submitted At',
           ...normalizedResponses.map(r => {
             const score = r.npsScore
             const category = score != null ? (score >= 9 ? 'Promoter' : score >= 7 ? 'Passive' : 'Detractor') : ''
@@ -396,7 +393,6 @@ export async function GET(req: NextRequest) {
               `"${r.survey.branch ?? ''}"`,
               `"${r.survey.department ?? ''}"`,
               `"${r.survey.publicUrl ?? ''}"`,
-              `"${r.campaign?.name ?? ''}"`,
               r.npsScore ?? '',
               category,
               r.csatScore ?? '',
@@ -422,7 +418,7 @@ export async function GET(req: NextRequest) {
   <h2>Responses Export Report</h2>
   <table border="1">
     <tr style="background:#0B4A8B;color:#ffffff;font-weight:bold;">
-      <th>Response ID</th><th>Respondent Name</th><th>Respondent Email</th><th>Respondent Phone</th><th>Survey</th><th>Touchpoint</th><th>Branch</th><th>Department</th><th>Survey URL</th><th>Campaign</th><th>NPS Score</th><th>NPS Category</th><th>CSAT</th><th>CES</th><th>Channel</th><th>Device</th><th>Browser</th><th>OS</th><th>IP</th><th>Country</th><th>City</th><th>Status</th><th>Submitted At</th>
+      <th>Response ID</th><th>Respondent Name</th><th>Respondent Email</th><th>Respondent Phone</th><th>Survey</th><th>Touchpoint</th><th>Branch</th><th>Department</th><th>Survey URL</th><th>NPS Score</th><th>NPS Category</th><th>CSAT</th><th>CES</th><th>Channel</th><th>Device</th><th>Browser</th><th>OS</th><th>IP</th><th>Country</th><th>City</th><th>Status</th><th>Submitted At</th>
     </tr>
     ${normalizedResponses.map(r => {
       const score = r.npsScore
@@ -438,7 +434,6 @@ export async function GET(req: NextRequest) {
           <td>${r.survey.branch ?? ''}</td>
           <td>${r.survey.department ?? ''}</td>
           <td>${r.survey.publicUrl ?? ''}</td>
-          <td>${r.campaign?.name ?? ''}</td>
           <td>${r.npsScore ?? ''}</td>
           <td>${category}</td>
           <td>${r.csatScore ?? ''}</td>
@@ -581,7 +576,7 @@ export async function GET(req: NextRequest) {
 
         // ── CSV Generator ──
         payloadCsv = [
-          'Survey ID,Title,Touchpoint,Branch,Department,Status,Lifecycle,Owner,Employee ID,Campaign,Questions,Responses,Avg NPS,NPS Score,Public URL,Survey Code,Created At,Expiration',
+          'Survey ID,Title,Touchpoint,Branch,Department,Status,Lifecycle,Owner,Employee ID,Questions,Responses,Avg NPS,NPS Score,Public URL,Survey Code,Created At,Expiration',
           ...surveys.map(s => {
             const scores = s.responses.map(r => r.npsScore!).filter((v): v is number => v !== null)
             const promoters = scores.filter(v => v >= 9).length
@@ -598,7 +593,6 @@ export async function GET(req: NextRequest) {
               s.lifecycleStatus,
               `"${s.createdBy.name}"`,
               s.createdBy.employeeId,
-              `"${s.campaign?.name ?? ''}"`,
               s._count.questions,
               s._count.responses,
               avgNps ?? '',
@@ -619,7 +613,7 @@ export async function GET(req: NextRequest) {
   <h2>Surveys List Report</h2>
   <table border="1">
     <tr style="background:#0B4A8B;color:#ffffff;font-weight:bold;">
-      <th>Survey ID</th><th>Title</th><th>Touchpoint</th><th>Branch</th><th>Department</th><th>Status</th><th>Lifecycle</th><th>Owner</th><th>Employee ID</th><th>Campaign</th><th>Questions</th><th>Responses</th><th>Avg NPS</th><th>NPS Score</th><th>Public URL</th><th>Survey Code</th><th>Created At</th><th>Expiration</th>
+      <th>Survey ID</th><th>Title</th><th>Touchpoint</th><th>Branch</th><th>Department</th><th>Status</th><th>Lifecycle</th><th>Owner</th><th>Employee ID</th><th>Questions</th><th>Responses</th><th>Avg NPS</th><th>NPS Score</th><th>Public URL</th><th>Survey Code</th><th>Created At</th><th>Expiration</th>
     </tr>
     ${surveys.map(s => {
       const scores = s.responses.map(r => r.npsScore!).filter((v): v is number => v !== null)
@@ -638,7 +632,6 @@ export async function GET(req: NextRequest) {
           <td>${s.lifecycleStatus}</td>
           <td>${s.createdBy.name}</td>
           <td>${s.createdBy.employeeId}</td>
-          <td>${s.campaign?.name ?? ''}</td>
           <td>${s._count.questions}</td>
           <td>${s._count.responses}</td>
           <td>${avgNps ?? ''}</td>
