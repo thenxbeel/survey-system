@@ -191,41 +191,70 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
         for (let i = 0; i < fullName.length; i++) hash = fullName.charCodeAt(i) + ((hash << 5) - hash)
         const avatarColor = colors[Math.abs(hash) % colors.length]
 
-        dispatch({ type: 'UPDATE_PROFILE', value: {
-          id: u.id,
-          fullName,
-          displayName: fullName.split(' ')[0] ?? fullName,
-          email: u.email ?? '',
-          phone: u.phone ?? '',
-          role: u.role ?? '',
-          department: u.department ?? '',
-          departmentId: u.departmentId ?? null,
-          branch: u.branch ?? '',
-          branchId: u.branchId ?? null,
-          avatarColor,
-          avatarInitials: initials || '?',
-          joinedDate: u.createdAt ?? '',
-          allowedPages: u.allowedPages ?? [],
-        }})
+        // Load user-specific localStorage preferences if any exist
+        let userLocalPrefs: Partial<SettingsState> = {}
+        try {
+          if (typeof window !== 'undefined') {
+            const rawUserLocal = window.localStorage.getItem(`adntc-settings-${u.id}`)
+            if (rawUserLocal) {
+              const parsed = JSON.parse(rawUserLocal)
+              if (parsed.theme)      userLocalPrefs.theme = parsed.theme
+              if (parsed.accent)     userLocalPrefs.accent = parsed.accent
+              if (parsed.density)    userLocalPrefs.density = parsed.density
+              if (parsed.fontSize)   userLocalPrefs.fontSize = parsed.fontSize
+              if (parsed.typography) userLocalPrefs.typography = parsed.typography
+            }
+          }
+        } catch { /* noop */ }
 
-        // /api/me/preferences returns the server-persisted UI prefs
+        // Fetch server-persisted preferences
+        let serverPrefs: Partial<SettingsState> = {}
         try {
           const prefsRes = await fetch('/api/me/preferences', { cache: 'no-store' })
           if (prefsRes.ok) {
             const prefsJson = await prefsRes.json()
             const p = prefsJson.data ?? {}
-            const serverPatch: Partial<SettingsState> = {}
-            if (p.theme)     serverPatch.theme     = p.theme as ThemeMode
-            if (p.accent)    serverPatch.accent    = p.accent as string
-            if (p.density)   serverPatch.density   = p.density as DensityMode
-            if (p.fontSize)  serverPatch.fontSize  = p.fontSize as FontSizeMode
-            if (p.typography)serverPatch.typography= p.typography as TypographyMode
-            serverPatch.language = 'English'
-            if (Object.keys(serverPatch).length > 0) {
-              dispatch({ type: 'HYDRATE', value: serverPatch })
+            if (p.theme)      serverPrefs.theme     = p.theme as ThemeMode
+            if (p.accent)     serverPrefs.accent    = p.accent as string
+            if (p.density)    serverPrefs.density   = p.density as DensityMode
+            if (p.fontSize)   serverPrefs.fontSize  = p.fontSize as FontSizeMode
+            if (p.typography) serverPrefs.typography = p.typography as TypographyMode
+          }
+        } catch { /* preferences endpoint unavailable — fall back to userLocalPrefs or defaults */ }
+
+        // Merge preferences: Server DB > User LocalStorage > System Defaults
+        const finalPrefs = {
+          theme:      (serverPrefs.theme ?? userLocalPrefs.theme ?? DEFAULT_SETTINGS.theme) as ThemeMode,
+          accent:     (serverPrefs.accent ?? userLocalPrefs.accent ?? DEFAULT_SETTINGS.accent) as string,
+          density:    (serverPrefs.density ?? userLocalPrefs.density ?? DEFAULT_SETTINGS.density) as DensityMode,
+          fontSize:   (serverPrefs.fontSize ?? userLocalPrefs.fontSize ?? DEFAULT_SETTINGS.fontSize) as FontSizeMode,
+          typography: (serverPrefs.typography ?? userLocalPrefs.typography ?? DEFAULT_SETTINGS.typography) as TypographyMode,
+          language:   'English',
+        }
+
+        dispatch({
+          type: 'HYDRATE',
+          value: {
+            ...finalPrefs,
+            profile: {
+              id: u.id,
+              fullName,
+              displayName: fullName.split(' ')[0] ?? fullName,
+              email: u.email ?? '',
+              phone: u.phone ?? '',
+              role: u.role ?? '',
+              department: u.department ?? '',
+              departmentId: u.departmentId ?? null,
+              branch: u.branch ?? '',
+              branchId: u.branchId ?? null,
+              bio: u.bio ?? '',
+              avatarColor,
+              avatarInitials: initials || '?',
+              joinedDate: u.createdAt ?? '',
+              allowedPages: u.allowedPages ?? [],
             }
           }
-        } catch { /* preferences endpoint unavailable — keep localStorage state */ }
+        })
       } catch { /* ignore — profile stays empty until login completes */ }
       finally {
         serverHydrated.current = true
@@ -240,6 +269,9 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     try {
       if (typeof window !== 'undefined') {
         window.localStorage.setItem(STORAGE_KEY, JSON.stringify(state))
+        if (state.profile.id) {
+          window.localStorage.setItem(`adntc-settings-${state.profile.id}`, JSON.stringify(state))
+        }
       }
     } catch { /* noop */ }
   }, [state])

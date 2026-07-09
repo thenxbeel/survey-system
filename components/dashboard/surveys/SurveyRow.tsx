@@ -44,9 +44,9 @@ export default function SurveyRow({
   }
 
   if (survey.status === 'archived') {
-    menuItems.push({ label: 'Unarchive', icon: ArchiveRestore, onSelect: () => onUnarchive(survey), divider: survey.status === 'draft' })
+    menuItems.push({ label: 'Unarchive', icon: ArchiveRestore, onSelect: () => onUnarchive(survey), divider: (survey.status as string) === 'draft' })
   } else {
-    menuItems.push({ label: 'Archive', icon: Archive, onSelect: () => onArchive(survey), divider: survey.status === 'draft' })
+    menuItems.push({ label: 'Archive', icon: Archive, onSelect: () => onArchive(survey), divider: (survey.status as string) === 'draft' })
   }
 
   menuItems.push(
