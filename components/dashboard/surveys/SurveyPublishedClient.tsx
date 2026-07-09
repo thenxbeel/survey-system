@@ -11,6 +11,22 @@ import {
   Calendar, Hash, Activity,
 } from 'lucide-react'
 import { useToast } from '@/lib/stores/ToastStore'
+import { normalizeBaseUrl } from '@/lib/app-url'
+
+/**
+ * Ensure a stored publicUrl is always a valid absolute URL before passing it
+ * to window.open(), clipboard, or share APIs.
+ *
+ * Surveys published before the VERCEL_URL fix may have a bare hostname in the
+ * DB, e.g.: "survey-system-ljpl.vercel.app/survey/abc"
+ * Passing that to window.open() makes the browser treat it as a relative path
+ * → 404. This helper detects the missing protocol and adds https://.
+ */
+function safeUrl(url: string | null | undefined): string | null {
+  if (!url) return null
+  if (url.startsWith('http://') || url.startsWith('https://')) return url
+  return 'https://' + url
+}
 
 interface SurveyDetail {
   numericId: number
@@ -149,7 +165,7 @@ export default function SurveyPublishedClient({ id }: Props) {
   async function copyUrl() {
     if (!survey?.publicUrl) return
     try {
-      await navigator.clipboard.writeText(survey.publicUrl)
+      await navigator.clipboard.writeText(safeUrl(survey.publicUrl) ?? survey.publicUrl ?? '')
       setCopied(true)
       setTimeout(() => setCopied(false), 2000)
       toast.success('URL copied', 'Survey link is in your clipboard.')
@@ -165,7 +181,7 @@ export default function SurveyPublishedClient({ id }: Props) {
 
   function openSurvey() {
     if (!survey?.publicUrl) return
-    window.open(survey.publicUrl, '_blank', 'noopener,noreferrer')
+    window.open(safeUrl(survey.publicUrl)!, '_blank', 'noopener,noreferrer')
   }
 
   function downloadQr() {
@@ -195,7 +211,7 @@ export default function SurveyPublishedClient({ id }: Props) {
     if (!survey?.publicUrl) return
     const subject = encodeURIComponent(`Your feedback is requested: ${survey.title}`)
     const body = encodeURIComponent(
-      `You've been invited to share your feedback: "${survey.title}".\n\nPlease take 2 minutes to complete this short survey:\n${survey.publicUrl}\n\nThank you — your input helps us improve.`
+      `You've been invited to share your feedback: "${survey.title}".\n\nPlease take 2 minutes to complete this short survey:\n${safeUrl(survey.publicUrl)}\n\nThank you — your input helps us improve.`
     )
     window.location.href = `mailto:?subject=${subject}&body=${body}`
     fetch(`/api/surveys/${id}?action=share`, {
@@ -206,7 +222,7 @@ export default function SurveyPublishedClient({ id }: Props) {
 
   function shareViaSms() {
     if (!survey?.publicUrl) return
-    const body = encodeURIComponent(`You've been invited to share your feedback: "${survey.title}". ${survey.publicUrl}`)
+    const body = encodeURIComponent(`You've been invited to share your feedback: "${survey.title}". ${safeUrl(survey.publicUrl)}`)
     window.location.href = `sms:?&body=${body}`
     fetch(`/api/surveys/${id}?action=share`, {
       method: 'PATCH', headers: { 'Content-Type': 'application/json' },
@@ -216,7 +232,7 @@ export default function SurveyPublishedClient({ id }: Props) {
 
   function shareViaWhatsapp() {
     if (!survey?.publicUrl) return
-    const text = encodeURIComponent(`You've been invited to share your feedback: "${survey.title}". ${survey.publicUrl}`)
+    const text = encodeURIComponent(`You've been invited to share your feedback: "${survey.title}". ${safeUrl(survey.publicUrl)}`)
     window.open(`https://wa.me/?text=${text}`, '_blank', 'noopener,noreferrer')
     fetch(`/api/surveys/${id}?action=share`, {
       method: 'PATCH', headers: { 'Content-Type': 'application/json' },

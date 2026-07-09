@@ -36,6 +36,32 @@ import { networkInterfaces } from 'os'
 let _cachedServerBaseUrl: string | null = null
 
 /**
+ * Normalize any raw URL-like string into a clean absolute URL with no
+ * trailing slash.
+ *
+ * Rules applied in order:
+ *  1. Already starts with http:// or https:// → strip trailing slash, return.
+ *  2. Bare hostname / hostname:port (e.g. from VERCEL_URL) → prefix https://,
+ *     strip trailing slash, return.
+ *  3. Empty / falsy input → return the input unchanged (callers handle nulls).
+ *
+ * Examples:
+ *   normalizeBaseUrl('https://example.com/')          → 'https://example.com'
+ *   normalizeBaseUrl('http://localhost:3000/')         → 'http://localhost:3000'
+ *   normalizeBaseUrl('survey-system-ljpl.vercel.app') → 'https://survey-system-ljpl.vercel.app'
+ *   normalizeBaseUrl('survey-system-ljpl.vercel.app/') → 'https://survey-system-ljpl.vercel.app'
+ */
+export function normalizeBaseUrl(raw: string): string {
+  if (!raw) return raw
+  const trimmed = raw.trim().replace(/\/+$/, '') // strip trailing slashes first
+  if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
+    return trimmed
+  }
+  // Bare hostname (VERCEL_URL style) — always served over HTTPS on Vercel.
+  return `https://${trimmed}`
+}
+
+/**
  * Detect the current machine's primary LAN IPv4 address by scanning its
  * network interfaces. Returns the first non-internal, non-loopback IPv4
  * address found, or null if none is available.
@@ -90,14 +116,22 @@ export function getAppBaseUrl(): string {
     return _cachedServerBaseUrl
   }
 
+  // NEXT_PUBLIC_APP_URL takes priority — must include the full protocol
+  // (e.g. https://myapp.vercel.app). We still normalize in case it has
+  // a trailing slash or is missing the protocol.
+  //
+  // VERCEL_URL is auto-injected by Vercel WITHOUT a protocol prefix, e.g.:
+  //   survey-system-ljpl.vercel.app
+  // We MUST prefix https:// before using it, otherwise window.open() and
+  // fetch() treat it as a relative path — root cause of the production 404.
   const fromEnv =
     process.env.NEXT_PUBLIC_APP_URL ||
     process.env.VERCEL_URL
 
   if (fromEnv) {
-    const cleaned = fromEnv.replace(/\/+$/, '')
-    if (typeof window === 'undefined') _cachedServerBaseUrl = cleaned
-    return cleaned
+    const normalized = normalizeBaseUrl(fromEnv)
+    if (typeof window === 'undefined') _cachedServerBaseUrl = normalized
+    return normalized
   }
 
   // Auto-detect LAN IP — only works server-side (uses `os`).
@@ -150,10 +184,12 @@ export function buildAppUrl(path: string = ''): string {
 export function getAppBaseUrlClient(): string {
   if (typeof window !== 'undefined') {
     // If NEXT_PUBLIC_APP_URL is set, prefer it for cross-device consistency.
+    // Normalize it in case it lacks a protocol (shouldn't happen for a
+    // NEXT_PUBLIC_ var, but normalizeBaseUrl is cheap and defensive).
     const fromEnv = process.env.NEXT_PUBLIC_APP_URL
-    if (fromEnv) return fromEnv.replace(/\/+$/, '')
+    if (fromEnv) return normalizeBaseUrl(fromEnv)
     // Otherwise use whatever origin the browser is currently on — this
-    // already includes the LAN IP if the user accessed via it.
+    // already includes the correct protocol, host, and port.
     return window.location.origin
   }
   return getAppBaseUrl()

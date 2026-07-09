@@ -9,6 +9,13 @@ import {
   Loader2, ChevronLeft, ChevronRight, Eye, Star, MessageSquare,
 } from 'lucide-react'
 import { useToast } from '@/lib/stores/ToastStore'
+import { normalizeBaseUrl } from '@/lib/app-url'
+
+function safeUrl(url: string | null | undefined): string | null {
+  if (!url) return null
+  if (url.startsWith('http://') || url.startsWith('https://')) return url
+  return 'https://' + url
+}
 
 interface MySurvey {
   id: string
@@ -363,13 +370,13 @@ export default function ProfilePage() {
                     <td className="px-3 py-3">
                       <div className="flex items-center justify-end gap-1">
                         {s.publicUrl && (
-                          <button onClick={() => window.open(s.publicUrl!, '_blank')}
+                          <button onClick={() => window.open(safeUrl(s.publicUrl)!, '_blank')}
                             title="Open Survey" className="rounded-[6px] p-2.5 text-[#4A5568] hover:bg-[#EFF6FF] hover:text-[#0B4A8B]">
                             <ExternalLink className="h-3.5 w-3.5" />
                           </button>
                         )}
                         {s.publicUrl && (
-                          <button onClick={() => copyUrl(s.publicUrl)}
+                          <button onClick={() => copyUrl(safeUrl(s.publicUrl)!)}
                             title="Copy URL" className="rounded-[6px] p-2.5 text-[#4A5568] hover:bg-[#EFF6FF] hover:text-[#0B4A8B]">
                             <Copy className="h-3.5 w-3.5" />
                           </button>
