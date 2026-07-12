@@ -10,6 +10,7 @@ export default function ThankYouPage() {
   const params = useParams<{ slug: string }>()
   const slug = params.slug
   const [surveyTitle, setSurveyTitle] = useState<string | null>(null)
+  const [isArabic, setIsArabic] = useState(false)
 
   useEffect(() => {
     // Fetch the survey title for a personalized thank-you message
@@ -28,10 +29,15 @@ export default function ThankYouPage() {
         if (m.type === 'attributes' && (m.attributeName === 'class' || m.attributeName === 'lang')) {
           const isRTL = document.documentElement.classList.contains('translated-rtl') || document.documentElement.lang === 'ar'
           document.documentElement.dir = isRTL ? 'rtl' : 'ltr'
+          setIsArabic(isRTL)
         }
       }
     })
     observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class', 'lang'] })
+    
+    // Check initial state
+    const isInitiallyRTL = document.documentElement.classList.contains('translated-rtl') || document.documentElement.lang === 'ar'
+    setIsArabic(isInitiallyRTL)
 
     // 2. Inject Google Translate script
     if (!document.getElementById('google-translate-script')) {
@@ -51,19 +57,38 @@ export default function ThankYouPage() {
   }, []);
 
   const handleTranslate = () => {
+    const nextLang = isArabic ? 'en' : 'ar';
+    const nextCookie = isArabic ? '/en/en' : '/en/ar';
+    
+    // Force cookie for immediate recognition
+    document.cookie = `googtrans=${nextCookie}; path=/`;
+    document.cookie = `googtrans=${nextCookie}; domain=${window.location.hostname}; path=/`;
+
     const select = document.querySelector('.goog-te-combo') as HTMLSelectElement | null;
     if (select) {
-      select.value = 'ar';
-      select.dispatchEvent(new Event('change'));
+      select.value = nextLang;
+      select.dispatchEvent(new Event('change', { bubbles: true }));
+      
+      // Google Translate lazy-loads dictionaries. Fire again shortly after to ensure it applies immediately
+      setTimeout(() => {
+        if (select.value !== nextLang) select.value = nextLang;
+        select.dispatchEvent(new Event('change', { bubbles: true }));
+      }, 400);
     } else {
-      window.location.href = `https://translate.google.com/translate?sl=en&tl=ar&u=${encodeURIComponent(window.location.href)}`;
+      console.warn("Translation widget not fully loaded yet.");
+      if ((window as any).google && (window as any).google.translate) {
+         new (window as any).google.translate.TranslateElement(
+            { pageLanguage: 'en', includedLanguages: 'ar,en', autoDisplay: false },
+            'google_translate_element'
+          );
+      }
     }
   }
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-[#F4F7FB] via-[#F4F7FB] to-[#EBF0F7]">
       {/* Hidden container for Google Translate widget */}
-      <div id="google_translate_element" className="hidden" />
+      <div id="google_translate_element" style={{ position: 'absolute', opacity: 0, zIndex: -1, width: 1, height: 1, overflow: 'hidden' }} />
       {/* Top Utility Bar */}
       <div className="bg-[#4A5568] px-4 py-2 text-white/90 sm:px-6">
         <div className="mx-auto flex w-full max-w-[1600px] flex-wrap items-center justify-center gap-y-2 text-[13px] font-semibold tracking-wide sm:justify-between lg:px-4">
@@ -77,16 +102,19 @@ export default function ThankYouPage() {
               customer.service@takaful.ae
             </a>
           </div>
-          <button type="button" onClick={handleTranslate} className="flex items-center rounded-[6px] border border-white/30 px-3 py-1 text-[12px] font-bold transition-all hover:bg-white/10 cursor-pointer">
-            العربية
+          <button type="button" onClick={handleTranslate} className="notranslate flex items-center rounded-[6px] border border-white/30 px-3 py-1 text-[12px] font-bold transition-all hover:bg-white/10 cursor-pointer">
+            {isArabic ? 'English' : 'العربية'}
           </button>
         </div>
       </div>
 
       {/* Branding bar */}
-      <header className="bg-gradient-to-r from-[#06386F] to-[#0B4A8B] text-white shadow-md">
-        <div className="mx-auto flex w-full items-center justify-center px-5 py-6 sm:py-8">
-          <a href="https://www.takaful.ae/" target="_blank" rel="noopener noreferrer" className="group relative flex items-center justify-center py-1 transition-transform duration-500 hover:scale-110">
+      <header className="relative bg-gradient-to-r from-[#06386F] via-[#0B4A8B] to-[#06386F] text-white shadow-lg shadow-[#0B4A8B]/10 overflow-hidden">
+        {/* Subtle animated background gradient for header */}
+        <div className="absolute inset-0 opacity-30 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-white/20 via-transparent to-transparent pointer-events-none" />
+        
+        <div className="relative mx-auto flex w-full items-center justify-center px-5 py-6 sm:py-8">
+          <a href="https://www.takaful.ae/" target="_blank" rel="noopener noreferrer" className="group relative flex items-center justify-center py-1 transition-transform duration-500 hover:scale-105">
             <div
               className="absolute inset-0 z-0 opacity-40 blur-[32px] transition-opacity duration-500 group-hover:opacity-80"
               style={{
@@ -96,7 +124,7 @@ export default function ThankYouPage() {
             <img 
               src="/adntc-logo.png" 
               alt="ADNTC" 
-              className="relative z-10 h-[48px] w-auto drop-shadow-[0_8px_24px_rgba(0,0,0,0.4)] sm:h-[56px]" 
+              className="relative z-10 h-[40px] sm:h-[56px] w-auto drop-shadow-[0_4px_12px_rgba(0,0,0,0.3)] transition-all" 
             />
           </a>
         </div>
@@ -107,8 +135,9 @@ export default function ThankYouPage() {
           initial={{ opacity: 0, y: 20, scale: 0.96 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
           transition={{ type: 'spring', stiffness: 200, damping: 25 }}
-          className="w-full max-w-md rounded-[20px] border border-[#E2E8F3] bg-white p-8 text-center shadow-[0_12px_40px_rgba(13,27,46,0.10)]"
+          className="relative overflow-hidden w-full max-w-md rounded-[20px] border border-[#E2E8F3] bg-white/90 backdrop-blur-md p-8 text-center shadow-[0_12px_40px_rgba(13,27,46,0.10)]"
         >
+          <div className="absolute -left-10 -top-10 h-32 w-32 rounded-full bg-gradient-to-br from-[#17A673]/10 to-transparent blur-2xl pointer-events-none" />
           {/* Animated check */}
           <motion.div
             initial={{ scale: 0 }}

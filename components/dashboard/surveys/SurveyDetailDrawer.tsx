@@ -73,7 +73,7 @@ export default function SurveyDetailDrawer({
             animate={{ x: 0 }}
             exit={{ x: '100%' }}
             transition={{ type: 'spring', stiffness: 380, damping: 36 }}
-            className="fixed right-0 top-0 z-50 flex h-screen w-full max-w-[420px] flex-col border-l bg-white"
+            className="fixed right-0 top-0 bottom-0 z-50 flex w-full max-w-[420px] flex-col border-l bg-white"
             style={{ borderColor: 'var(--border)', boxShadow: 'var(--shadow-xl)' }}
           >
             {/* Header */}

@@ -60,6 +60,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       assignedAt: true,
       status: true,
       assignedTo: { select: { id: true, name: true, email: true, employeeId: true } },
+      survey: { select: { title: true } },
     },
   })
 
@@ -77,9 +78,9 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   // Create a notification for the assigned user
   await prisma.notification.create({
     data: {
-      title: 'New response assigned to you',
-      message: `Response RSP-${String(numericId).padStart(5, '0')} has been assigned to you by ${currentUser.name}.`,
-      category: 'response',
+      title: 'New Response Assigned to You',
+      message: `You have been assigned to follow up on a response for "${updated.survey.title}" (RSP-${String(numericId).padStart(5, '0')}). Assigned by ${currentUser.name}.`,
+      category: 'system',
       link: `/dashboard/responses`,
       isRead: false,
       userId: assignedToId,

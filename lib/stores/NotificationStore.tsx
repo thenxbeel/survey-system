@@ -116,6 +116,9 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
   const refresh = useCallback(async () => {
     dispatch({ type: 'SET_LOADING', loading: true })
     try {
+      // Best-effort check for expired surveys
+      await fetch('/api/cron/expiration').catch(() => { /* silent */ })
+
       const res = await fetch('/api/notifications?pageSize=20', { cache: 'no-store' })
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
       const json = await res.json()

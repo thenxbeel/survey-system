@@ -145,7 +145,7 @@ export function UserDetailDrawer({ user: u, onClose, onUpdate, onDelete, onNotif
             animate={{ x: 0 }}
             exit={{ x: '100%' }}
             transition={{ duration: 0.32, ease: [0.16, 1, 0.3, 1] }}
-            className="fixed right-0 top-0 z-40 flex h-full w-full max-w-[600px] flex-col border-l bg-white"
+            className="fixed right-0 top-0 bottom-0 z-40 flex w-full max-w-[600px] flex-col border-l bg-white"
             style={{
               borderColor: 'var(--border)',
               boxShadow: '0 0 60px rgba(13,27,46,0.18)',

@@ -168,7 +168,7 @@ export default function AuditLogPage() {
             {actions.map(a => <option key={a.value} value={a.value}>{a.label}</option>)}
           </select>
 
-          <input type="number" placeholder="Survey ID" value={surveyId}
+          <input type="text" placeholder="Survey ID/Code" value={surveyId}
             onChange={(e) => { setSurveyId(e.target.value); setPage(1) }}
             className="w-[120px] rounded-[8px] border border-[#E2E8F3] px-3 py-2 text-[12px] text-[#0D1B2E] outline-none focus:border-[#0B4A8B]" />
 

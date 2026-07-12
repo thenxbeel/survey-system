@@ -54,6 +54,7 @@ export default function PublicSurveyPage() {
   })
   const [submitting, setSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
+  const [isArabic, setIsArabic] = useState(false)
 
   // ── Fetch survey ──
   const fetchSurvey = useCallback(async () => {
@@ -106,10 +107,15 @@ export default function PublicSurveyPage() {
         if (m.type === 'attributes' && (m.attributeName === 'class' || m.attributeName === 'lang')) {
           const isRTL = document.documentElement.classList.contains('translated-rtl') || document.documentElement.lang === 'ar'
           document.documentElement.dir = isRTL ? 'rtl' : 'ltr'
+          setIsArabic(isRTL)
         }
       }
     })
     observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class', 'lang'] })
+    
+    // Check initial state
+    const isInitiallyRTL = document.documentElement.classList.contains('translated-rtl') || document.documentElement.lang === 'ar'
+    setIsArabic(isInitiallyRTL)
 
     // 2. Inject Google Translate script
     if (!document.getElementById('google-translate-script')) {
@@ -129,14 +135,34 @@ export default function PublicSurveyPage() {
   }, []);
 
   const handleTranslate = useCallback(() => {
+    const nextLang = isArabic ? 'en' : 'ar';
+    const nextCookie = isArabic ? '/en/en' : '/en/ar';
+    
+    // Force cookie for immediate recognition
+    document.cookie = `googtrans=${nextCookie}; path=/`;
+    document.cookie = `googtrans=${nextCookie}; domain=${window.location.hostname}; path=/`;
+
     const select = document.querySelector('.goog-te-combo') as HTMLSelectElement | null;
     if (select) {
-      select.value = 'ar';
-      select.dispatchEvent(new Event('change'));
+      select.value = nextLang;
+      select.dispatchEvent(new Event('change', { bubbles: true }));
+      
+      // Google Translate lazy-loads dictionaries. Fire again shortly after to ensure it applies immediately
+      setTimeout(() => {
+        if (select.value !== nextLang) select.value = nextLang;
+        select.dispatchEvent(new Event('change', { bubbles: true }));
+      }, 400);
     } else {
-      window.location.href = `https://translate.google.com/translate?sl=en&tl=ar&u=${encodeURIComponent(window.location.href)}`;
+      console.warn("Translation widget not fully loaded yet.");
+      // We don't reload to preserve state, just hope the Google translate script picks up the cookie
+      if ((window as any).google && (window as any).google.translate) {
+         new (window as any).google.translate.TranslateElement(
+            { pageLanguage: 'en', includedLanguages: 'ar,en', autoDisplay: false },
+            'google_translate_element'
+          );
+      }
     }
-  }, []);
+  }, [isArabic]);
 
   // Contact info is always optional — no customer record is ever created.
   // The provided name/email/phone is stored directly on the Response row.
@@ -247,7 +273,11 @@ export default function PublicSurveyPage() {
       const json = await res.json()
 
       if (res.status === 201) {
-        router.push(`/survey/${slug}/thank-you`)
+        if (isArabic) {
+          window.location.href = `/survey/${slug}/thank-you`
+        } else {
+          router.push(`/survey/${slug}/thank-you`)
+        }
         return
       }
       if (res.status === 409) {
@@ -269,7 +299,7 @@ export default function PublicSurveyPage() {
   // ── Render: loading ──
   if (loading) {
     return (
-      <PublicSurveyShell onTranslate={handleTranslate}>
+      <PublicSurveyShell onTranslate={handleTranslate} isArabic={isArabic}>
         <div className="flex flex-col items-center justify-center py-20">
           <Loader2 className="mb-3 h-7 w-7 animate-spin text-[#0B4A8B]" />
           <p className="text-[13px] text-[#8FA0B5]">Loading survey…</p>
@@ -281,7 +311,7 @@ export default function PublicSurveyPage() {
   // ── Render: closed / expired ──
   if (closedMessage) {
     return (
-      <PublicSurveyShell onTranslate={handleTranslate}>
+      <PublicSurveyShell onTranslate={handleTranslate} isArabic={isArabic}>
         <div className="flex flex-col items-center justify-center py-20 text-center">
           <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-[#FEF2F2]">
             <AlertTriangle className="h-7 w-7 text-[#E5484D]" />
@@ -296,7 +326,7 @@ export default function PublicSurveyPage() {
   // ── Render: error ──
   if (error || !survey) {
     return (
-      <PublicSurveyShell onTranslate={handleTranslate}>
+      <PublicSurveyShell onTranslate={handleTranslate} isArabic={isArabic}>
         <div className="flex flex-col items-center justify-center py-20 text-center">
           <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-[#FEF2F2]">
             <AlertTriangle className="h-7 w-7 text-[#E5484D]" />
@@ -312,9 +342,10 @@ export default function PublicSurveyPage() {
 
   // ── Render: survey (ALL questions on one page) ──
   return (
-    <PublicSurveyShell survey={survey} answeredCount={answeredCount} totalQuestions={totalQuestions} progress={progress} onTranslate={handleTranslate}>
+    <PublicSurveyShell survey={survey} answeredCount={answeredCount} totalQuestions={totalQuestions} progress={progress} onTranslate={handleTranslate} isArabic={isArabic}>
       {/* Welcome card */}
-      <div className="flex flex-col gap-4 rounded-[16px] border border-[#E2E8F3] bg-white p-5 shadow-sm sm:flex-row sm:items-center sm:justify-between sm:p-6">
+      <div className="relative overflow-hidden flex flex-col gap-4 rounded-[20px] border border-[#E2E8F3] bg-white/90 backdrop-blur-md p-5 shadow-[0_4px_24px_rgba(13,27,46,0.04)] sm:flex-row sm:items-center sm:justify-between sm:p-8 hover:shadow-[0_8px_30px_rgba(13,27,46,0.08)] transition-all duration-300">
+        <div className="absolute -left-10 -top-10 h-32 w-32 rounded-full bg-gradient-to-br from-[#0B4A8B]/10 to-transparent blur-2xl pointer-events-none" />
         <div className="flex items-center gap-3.5">
           <span className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-full bg-[#EFF6FF]">
             <Send className="h-5 w-5 -rotate-45 text-[#0B4A8B]" />
@@ -351,7 +382,8 @@ export default function PublicSurveyPage() {
       ))}
 
       {/* Contact info section — after all questions */}
-      <div id="contact-info" className="rounded-[20px] border border-[#E2E8F3] bg-white p-6 shadow-[0_4px_24px_rgba(13,27,46,0.04)] sm:p-8">
+      <div id="contact-info" className="relative overflow-hidden rounded-[20px] border border-[#E2E8F3] bg-white/90 backdrop-blur-md p-5 shadow-[0_4px_24px_rgba(13,27,46,0.04)] sm:p-8 hover:shadow-[0_8px_30px_rgba(13,27,46,0.08)] transition-all duration-300">
+        <div className="absolute -right-10 -bottom-10 h-32 w-32 rounded-full bg-gradient-to-tl from-[#17A673]/10 to-transparent blur-2xl pointer-events-none" />
         <div className="mb-3 flex items-center gap-2.5">
           <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[#ECFDF5]">
             <ShieldCheck className="h-4 w-4 text-[#17A673]" />
@@ -391,17 +423,17 @@ export default function PublicSurveyPage() {
       {/* Submit error */}
       {submitError && (
         <div className="rounded-[10px] border border-[#FECACA] bg-[#FEF2F2] px-4 py-3 text-[12.5px] text-[#E5484D]">
-          {submitError}
+          <span>{submitError}</span>
         </div>
       )}
 
       {/* Submit section — split card: message left, button right */}
-      <div className="flex flex-col gap-4 rounded-[16px] border border-[#E2E8F3] bg-white p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6">
+      <div className="flex flex-col gap-4 rounded-[20px] border border-[#E2E8F3] bg-white/90 backdrop-blur-md p-5 shadow-[0_4px_24px_rgba(13,27,46,0.04)] sm:flex-row sm:items-center sm:justify-between sm:p-6 hover:shadow-[0_8px_30px_rgba(13,27,46,0.08)] transition-all duration-300">
         <div className="flex items-center gap-2 text-[12.5px] font-medium text-[#4A5568]">
           <ShieldCheck className="h-4 w-4 flex-shrink-0 text-[#0B4A8B]" />
           {!canSubmit()
-            ? 'Please answer all required questions before submitting.'
-            : 'Please review your responses before submitting.'}
+            ? <span>Please answer all required questions before submitting.</span>
+            : <span>Please review your responses before submitting.</span>}
         </div>
         <button
           type="button"
@@ -417,12 +449,12 @@ export default function PublicSurveyPage() {
           {submitting ? (
             <>
               <Loader2 className="h-5 w-5 animate-spin" />
-              Submitting…
+              <span>Submitting…</span>
             </>
           ) : (
             <>
               <Send className="h-5 w-5" />
-              Submit Response
+              <span>Submit Response</span>
             </>
           )}
         </button>
@@ -450,13 +482,16 @@ function QuestionCard({
       initial={{ opacity: 0, y: 30 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: number * 0.1, type: 'spring', stiffness: 200, damping: 25 }}
-      className="rounded-[20px] border border-[#E2E8F3] bg-white p-6 transition-all duration-300 sm:p-8 scroll-m-6"
+      className="relative overflow-hidden rounded-[20px] border border-[#E2E8F3] bg-white/80 p-5 backdrop-blur-md transition-all duration-300 sm:p-8 scroll-m-6 hover:shadow-[0_8px_30px_rgba(13,27,46,0.08)]"
       style={
         isAnswered 
-          ? { borderColor: '#17A673', boxShadow: '0 4px 20px rgba(23,166,115,0.08), 0 0 0 1px #17A673' }
+          ? { borderColor: '#17A673', boxShadow: '0 8px 30px rgba(23,166,115,0.12), 0 0 0 1px #17A673', backgroundColor: 'rgba(255, 255, 255, 0.95)' }
           : { boxShadow: '0 4px 24px rgba(13,27,46,0.04)' }
       }
     >
+      {isAnswered && (
+        <div className="absolute -right-4 -top-4 h-16 w-16 rounded-full bg-gradient-to-br from-[#17A673]/20 to-transparent blur-xl pointer-events-none" />
+      )}
       <div className="mb-6 flex items-start gap-4">
         <span className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-[#0B4A8B] text-[12px] font-bold text-white shadow-sm">
           {number}
@@ -485,14 +520,14 @@ function QuestionInput({
   onChange: (v: string) => void
   onAutoAdvance?: () => void
 }) {
-  const baseInput = "w-full rounded-[10px] border border-[#E2E8F3] bg-white px-4 py-3 text-[13.5px] text-[#0D1B2E] outline-none transition-colors focus:border-[#0B4A8B] focus:ring-2 focus:ring-[#0B4A8B]/15 placeholder:text-[#B0BDCC]"
+  const baseInput = "w-full rounded-[12px] border border-[#E2E8F3] bg-[#F8FAFD] px-4 py-3.5 text-[14px] text-[#0D1B2E] rtl:text-right ltr:text-left outline-none transition-all focus:border-[#0B4A8B] focus:bg-white focus:ring-4 focus:ring-[#0B4A8B]/10 focus:shadow-sm placeholder:text-[#B0BDCC]"
 
   switch (question.type) {
     case 'nps': {
       const selected = value ? parseInt(value, 10) : null
       return (
         <div>
-          <div className="grid grid-cols-11 gap-2.5">
+          <div className="flex flex-wrap justify-center gap-2 sm:grid sm:grid-cols-11 sm:gap-2.5">
             {Array.from({ length: 11 }, (_, i) => i).map(score => {
               const isActive = selected === score
               const colorClass =
@@ -507,7 +542,7 @@ function QuestionInput({
                     onChange(String(score))
                     onAutoAdvance?.()
                   }}
-                  className={`flex h-[52px] items-center justify-center rounded-[14px] border-2 text-[15px] font-bold transition-all duration-200 ${
+                  className={`w-[calc(16.666%-8px)] sm:w-full flex h-[44px] sm:h-[52px] items-center justify-center rounded-[12px] sm:rounded-[14px] border-2 text-[14px] sm:text-[15px] font-bold transition-all duration-200 ${
                     isActive 
                       ? '!bg-[#0B4A8B] !text-white !border-[#0B4A8B] scale-[1.08] shadow-md' 
                       : `${colorClass} shadow-sm hover:scale-[1.03]`
@@ -558,7 +593,7 @@ function QuestionInput({
 
     case 'yes_no':
       return (
-        <div className="flex gap-3">
+        <div className="flex gap-2 sm:gap-3">
           {['Yes', 'No'].map(opt => {
             const isActive = value === opt
             return (
@@ -569,7 +604,7 @@ function QuestionInput({
                   onChange(opt)
                   onAutoAdvance?.()
                 }}
-                className={`flex-1 rounded-[10px] border-2 px-6 py-3 text-[13.5px] font-semibold transition-all ${isActive ? 'border-[#0B4A8B] bg-[#EFF6FF] text-[#0B4A8B]' : 'border-[#E2E8F3] text-[#4A5568] hover:border-[#C8D4E3]'}`}
+                className={`flex-1 rounded-[10px] sm:rounded-[12px] border-2 px-4 sm:px-6 py-3 text-[13px] sm:text-[14px] font-bold transition-all duration-200 active:scale-[0.98] ${isActive ? 'border-[#0B4A8B] bg-[#EFF6FF] text-[#0B4A8B] shadow-sm' : 'border-[#E2E8F3] text-[#4A5568] hover:border-[#C8D4E3] hover:bg-[#F8FAFD]'}`}
               >
                 {opt}
               </button>
@@ -602,7 +637,7 @@ function QuestionInput({
                   onChange(o.value)
                   if (question.type === 'multiple_choice') onAutoAdvance?.()
                 }}
-                className={`flex items-center gap-3 rounded-[10px] border-2 px-4 py-3 text-start text-[13px] transition-all ${isActive ? 'border-[#0B4A8B] bg-[#EFF6FF] text-[#0B4A8B] font-medium' : 'border-[#E2E8F3] text-[#4A5568] hover:border-[#C8D4E3]'}`}
+                className={`flex items-center gap-3 rounded-[12px] border-2 px-4 py-3.5 text-start text-[13.5px] sm:text-[14px] transition-all duration-200 active:scale-[0.99] ${isActive ? 'border-[#0B4A8B] bg-[#EFF6FF] text-[#0B4A8B] font-semibold shadow-sm' : 'border-[#E2E8F3] text-[#4A5568] hover:border-[#C8D4E3] hover:bg-[#F8FAFD]'}`}
               >
                 <span className={`flex h-4 w-4 items-center justify-center rounded-full border-2 ${isActive ? 'border-[#0B4A8B] bg-[#0B4A8B]' : 'border-[#C8D4E3]'}`}>
                   {isActive && <span className="h-1.5 w-1.5 rounded-full bg-white" />}
@@ -631,7 +666,7 @@ function QuestionInput({
                     : [...selected, o.value]
                   onChange(next.join('|'))
                 }}
-                className={`flex items-center gap-3 rounded-[10px] border-2 px-4 py-3 text-start text-[13px] transition-all ${isActive ? 'border-[#0B4A8B] bg-[#EFF6FF] text-[#0B4A8B] font-medium' : 'border-[#E2E8F3] text-[#4A5568] hover:border-[#C8D4E3]'}`}
+                className={`flex items-center gap-3 rounded-[12px] border-2 px-4 py-3.5 text-start text-[13.5px] sm:text-[14px] transition-all duration-200 active:scale-[0.99] ${isActive ? 'border-[#0B4A8B] bg-[#EFF6FF] text-[#0B4A8B] font-semibold shadow-sm' : 'border-[#E2E8F3] text-[#4A5568] hover:border-[#C8D4E3] hover:bg-[#F8FAFD]'}`}
               >
                 <span className={`flex h-4 w-4 items-center justify-center rounded-[4px] border-2 ${isActive ? 'border-[#0B4A8B] bg-[#0B4A8B] text-white' : 'border-[#C8D4E3]'}`}>
                   {isActive && <CheckCircle2 className="h-3 w-3" />}
@@ -673,7 +708,8 @@ function CustomerInput({
         type={type}
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="w-full rounded-[12px] border border-[#E2E8F3] bg-[#F8FAFD] px-4 py-3.5 text-[13.5px] font-medium text-[#0D1B2E] outline-none transition-all focus:border-[#0B4A8B] focus:bg-white focus:ring-2 focus:ring-[#0B4A8B]/20"
+        className="w-full rounded-[12px] border border-[#E2E8F3] bg-[#F8FAFD] px-4 py-3.5 text-[14px] font-medium text-[#0D1B2E] rtl:text-right ltr:text-left outline-none transition-all focus:border-[#0B4A8B] focus:bg-white focus:ring-4 focus:ring-[#0B4A8B]/10 focus:shadow-sm placeholder:text-[#B0BDCC]"
+        placeholder={`Enter your ${label.toLowerCase()}`}
       />
     </label>
   )
@@ -682,19 +718,20 @@ function CustomerInput({
 // ─── Page shell with ADNTC branding ─────────────────────────────────────────
 
 function PublicSurveyShell({
-  survey, answeredCount = 0, totalQuestions = 0, progress = 0, onTranslate, children,
+  survey, answeredCount = 0, totalQuestions = 0, progress = 0, onTranslate, isArabic, children,
 }: {
   survey?: PublicSurvey | null
   answeredCount?: number
   totalQuestions?: number
   progress?: number
   onTranslate?: () => void
+  isArabic?: boolean
   children: React.ReactNode
 }) {
   return (
     <div className="relative min-h-screen bg-[#F4F7FB] overflow-hidden">
       {/* Hidden container for Google Translate widget */}
-      <div id="google_translate_element" className="hidden" />
+      <div id="google_translate_element" style={{ position: 'absolute', opacity: 0, zIndex: -1, width: 1, height: 1, overflow: 'hidden' }} />
       
       {/* Background aesthetic overlay (Subtle Islamic geometry) */}
       <div 
@@ -721,17 +758,20 @@ function PublicSurveyShell({
               customer.service@takaful.ae
             </a>
           </div>
-          <button type="button" onClick={onTranslate} className="flex items-center rounded-[6px] border border-white/30 px-3 py-1 text-[12px] font-bold transition-all hover:bg-white/10 cursor-pointer">
-            العربية
+          <button type="button" onClick={onTranslate} className="notranslate flex items-center rounded-[6px] border border-white/30 px-3 py-1 text-[12px] font-bold transition-all hover:bg-white/10 cursor-pointer">
+            {isArabic ? 'English' : 'العربية'}
           </button>
         </div>
       </div>
 
       {/* Header — single blue block: logo row + title/progress row */}
-      <header className="bg-gradient-to-r from-[#06386F] to-[#0B4A8B] text-white">
-        <div className="mx-auto max-w-[1600px] px-4 py-4 sm:px-6 sm:py-5 lg:px-10">
-          <div className="flex items-center justify-between">
-            <a href="https://www.takaful.ae/" target="_blank" rel="noopener noreferrer" className="group relative flex items-center gap-2 py-1 transition-transform duration-500 hover:scale-110">
+      <header className="relative bg-gradient-to-r from-[#06386F] via-[#0B4A8B] to-[#06386F] text-white shadow-lg shadow-[#0B4A8B]/10 overflow-hidden">
+        {/* Subtle animated background gradient for header */}
+        <div className="absolute inset-0 opacity-30 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-white/20 via-transparent to-transparent pointer-events-none" />
+        
+        <div className="relative mx-auto max-w-[1600px] px-4 py-4 sm:px-6 sm:py-5 lg:px-10">
+          <div className="flex items-center justify-center">
+            <a href="https://www.takaful.ae/" target="_blank" rel="noopener noreferrer" className="group relative flex items-center justify-center py-1 transition-transform duration-500 hover:scale-105">
               <div
                 className="absolute inset-0 z-0 opacity-40 blur-[32px] transition-opacity duration-500 group-hover:opacity-80"
                 style={{
@@ -741,18 +781,9 @@ function PublicSurveyShell({
               <img 
                 src="/adntc-logo.png" 
                 alt="ADNTC" 
-                className="relative z-10 h-[48px] w-auto drop-shadow-[0_8px_24px_rgba(0,0,0,0.4)] sm:h-[56px]" 
+                className="relative z-10 h-[40px] sm:h-[56px] w-auto drop-shadow-[0_4px_12px_rgba(0,0,0,0.3)] transition-all" 
               />
             </a>
-            {survey && (
-              <div className="flex items-center gap-2 rounded-[10px] bg-white/10 px-3.5 py-2 sm:px-4">
-                <Clock className="h-4 w-4" />
-                <div className="leading-tight">
-                  <div className="text-[13px] font-bold">{survey.estimatedMinutes} min</div>
-                  <div className="text-[10px] text-white/70">Estimated time</div>
-                </div>
-              </div>
-            )}
           </div>
         </div>
 
@@ -768,24 +799,35 @@ function PublicSurveyShell({
                     {survey.surveyCode || survey.touchpoint}
                   </div>
                 </div>
-                {totalQuestions > 0 && (
-                  <div className="flex items-center gap-3">
-                    <span className="whitespace-nowrap text-[12px] font-semibold text-white/90">
-                      {answeredCount} of {totalQuestions} answered
-                    </span>
-                    <div className="h-2 w-32 overflow-hidden rounded-full bg-white/20 sm:w-52">
-                      <motion.div
-                        className="h-full rounded-full bg-white"
-                        initial={false}
-                        animate={{ width: `${progress}%` }}
-                        transition={{ type: 'spring', stiffness: 200, damping: 30 }}
-                      />
+                
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center lg:gap-6">
+                  {totalQuestions > 0 && (
+                    <div className="flex items-center gap-3">
+                      <span className="whitespace-nowrap text-[12px] font-semibold text-white/90">
+                        {answeredCount} of {totalQuestions} answered
+                      </span>
+                      <div className="h-2 w-32 overflow-hidden rounded-full bg-white/20 sm:w-52">
+                        <motion.div
+                          className="h-full rounded-full bg-white"
+                          initial={false}
+                          animate={{ width: `${progress}%` }}
+                          transition={{ type: 'spring', stiffness: 200, damping: 30 }}
+                        />
+                      </div>
+                      <span className="whitespace-nowrap text-[12px] font-semibold text-white">
+                        {progress}% complete
+                      </span>
                     </div>
-                    <span className="whitespace-nowrap text-[12px] font-semibold text-white">
-                      {progress}% complete
-                    </span>
+                  )}
+                  
+                  <div className="flex items-center gap-2 rounded-[10px] bg-white/10 px-3.5 py-2 sm:px-4 w-fit">
+                    <Clock className="h-4 w-4" />
+                    <div className="leading-tight">
+                      <div className="text-[13px] font-bold">{survey.estimatedMinutes} min</div>
+                      <div className="text-[10px] text-white/70">Estimated time</div>
+                    </div>
                   </div>
-                )}
+                </div>
               </div>
             </div>
           </div>

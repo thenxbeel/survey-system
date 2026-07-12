@@ -28,12 +28,19 @@ interface BranchOption {
   name: string
 }
 
+import { createPortal } from 'react-dom'
+
 export function AssignModal({ open, onClose, responseId, onAssigned }: Props) {
   const toast = useToast()
   const [users, setUsers] = useState<UserOption[]>([])
   const [branches, setBranches] = useState<BranchOption[]>([])
   const [loading, setLoading] = useState(false)
   const [selectedUserId, setSelectedUserId] = useState<string>('')
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
   // Search + branch filter states
   const [search, setSearch] = useState('')
@@ -41,7 +48,6 @@ export function AssignModal({ open, onClose, responseId, onAssigned }: Props) {
 
   useEffect(() => {
     if (!open) return
-
     // Fetch users
     fetch('/api/users?pageSize=500', { cache: 'no-store' })
       .then(r => r.ok ? r.json() : null)
@@ -125,7 +131,9 @@ export function AssignModal({ open, onClose, responseId, onAssigned }: Props) {
 
   const labelCls = 'block text-[10.5px] font-bold uppercase tracking-[0.08em] mb-1.5'
 
-  return (
+  if (!mounted) return null;
+
+  return createPortal(
     <AnimatePresence>
       {open && (
         <>
@@ -304,5 +312,5 @@ export function AssignModal({ open, onClose, responseId, onAssigned }: Props) {
         </>
       )}
     </AnimatePresence>
-  )
+  , document.body)
 }

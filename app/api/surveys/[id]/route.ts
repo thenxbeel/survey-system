@@ -145,6 +145,16 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
     return NextResponse.json({ error: 'Validation failed', details: parsed.error.flatten() }, { status: 400 })
   }
 
+  // Fetch existing survey to check ownership and status changes
+  const existingSurvey = await prisma.survey.findUnique({
+    where: { id: numericId },
+    select: { id: true, title: true, createdById: true, status: true },
+  })
+
+  if (!existingSurvey) {
+    return NextResponse.json({ error: 'Survey not found' }, { status: 404 })
+  }
+
   const {
     questions,
     expiryDate,
@@ -192,6 +202,21 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
     data,
     include: { questions: { include: { options: true } } },
   })
+
+  // Notify creator if a collaborator changed the status
+  if (existingSurvey.createdById !== user.id && existingSurvey.status !== updated.status) {
+    try {
+      await prisma.notification.create({
+        data: {
+          title: 'Survey Status Changed',
+          message: `Your survey "${updated.title}" status was changed to ${updated.status} by ${user.name}.`,
+          category: 'system',
+          link: `/dashboard/surveys`,
+          userId: existingSurvey.createdById,
+        }
+      })
+    } catch { /* non-fatal */ }
+  }
 
   await recordSurveyAudit(updated.id, 'SURVEY_EDITED', {
     actorId: user.id,

@@ -30,7 +30,19 @@ export async function GET(req: NextRequest) {
   const dateTo   = req.nextUrl.searchParams.get('dateTo')
 
   const where: any = {}
-  if (surveyId) where.surveyId = parseInt(surveyId)
+  if (surveyId) {
+    const parsedId = parseInt(surveyId)
+    if (!isNaN(parsedId) && /^\d+$/.test(surveyId)) {
+      where.surveyId = parsedId
+    } else {
+      where.survey = {
+        OR: [
+          { surveyCode: surveyId },
+          { slug: surveyId }
+        ]
+      }
+    }
+  }
   if (action && action !== 'all') where.action = action.toUpperCase()
   if (actorId) where.actorId = parseInt(actorId)
   if (dateFrom) where.createdAt = { ...where.createdAt, gte: new Date(dateFrom) }

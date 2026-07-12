@@ -81,9 +81,9 @@ export function AssignResponseModal({ isOpen, onClose, onAssign, responseId }: A
   if (!isOpen || !mounted) return null
 
   return createPortal(
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-[2px] animate-fade-in p-4">
+    <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-[2px] animate-fade-in">
       <div 
-        className="w-full max-w-sm overflow-hidden rounded-[20px] bg-white shadow-2xl animate-fade-up"
+        className="fixed left-1/2 top-1/2 z-50 flex max-h-[85vh] w-[95vw] max-w-[400px] -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-[20px] bg-white shadow-2xl animate-fade-up"
         onClick={e => e.stopPropagation()}
       >
         {/* Header */}
@@ -198,3 +198,4 @@ export function AssignResponseModal({ isOpen, onClose, onAssign, responseId }: A
     </div>
   , document.body)
 }
+

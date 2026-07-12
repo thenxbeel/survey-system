@@ -182,16 +182,40 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ slu
   // ── Notify the survey owner that a new response was received ──────────
   // Best-effort: a notification failure must not break response submission.
   try {
+    const totalResponses = await prisma.response.count({ where: { surveyId: survey.id } })
+    const isDetractor = created.npsScore !== null && created.npsScore <= 6
+    const isMilestone = [10, 50, 100, 500, 1000].includes(totalResponses)
+    
     const npsLabel = created.npsScore != null
       ? ` (NPS ${created.npsScore})`
       : ''
-    await notify({
-      userId: survey.createdById,
-      title: 'New Survey Response',
-      message: `"${survey.title}" received a new response${npsLabel}.${respondentName ? ` From ${respondentName}.` : ''}`,
-      category: 'response',
-      link: `/dashboard/responses`,
-    })
+      
+    if (isDetractor) {
+      await notify({
+        userId: survey.createdById,
+        title: '⚠️ Urgent Feedback Alert',
+        message: `"${survey.title}" received a critical detractor score${npsLabel}.${respondentName ? ` From ${respondentName}.` : ''}`,
+        category: 'alert',
+        link: `/dashboard/responses`,
+      })
+    } else if (isMilestone) {
+      await notify({
+        userId: survey.createdById,
+        title: '🎉 Survey Milestone Reached!',
+        message: `Congratulations! "${survey.title}" just hit ${totalResponses} total responses!`,
+        category: 'system',
+        link: `/dashboard/responses`,
+      })
+    } else {
+      // Standard notification
+      await notify({
+        userId: survey.createdById,
+        title: 'New Survey Response',
+        message: `"${survey.title}" received a new response${npsLabel}.${respondentName ? ` From ${respondentName}.` : ''}`,
+        category: 'response',
+        link: `/dashboard/responses`,
+      })
+    }
   } catch { /* non-fatal */ }
 
   return NextResponse.json({

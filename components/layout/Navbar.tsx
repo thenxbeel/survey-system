@@ -13,6 +13,7 @@ import { useSettings } from '@/lib/stores/SettingsStore'
 import { useNotifications } from '@/lib/stores/NotificationStore'
 import { useGlobalSearch } from '@/lib/stores/GlobalSearchStore'
 import { NotificationPanel } from './NotificationPanel'
+import { motion, AnimatePresence } from 'framer-motion'
 
 const pageMeta: Record<string, { title: string; sub: string; icon: LucideIcon }> = {
   '/dashboard':                  { title: 'Dashboard',       sub: 'Executive overview',            icon: LayoutDashboard },
@@ -55,6 +56,19 @@ export default function Navbar({ onMenuClick, isHidden = false }: NavbarProps = 
   const { unreadCount } = useNotifications()
   const { rawQuery, setQuery, clear: clearSearch } = useGlobalSearch()
   const profile = settingsState.profile
+
+  const profileRef = useRef<HTMLDivElement>(null)
+
+  // Robust click-away listener for the profile dropdown
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (profileOpen && profileRef.current && !profileRef.current.contains(event.target as Node)) {
+        setProfileOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [profileOpen])
 
   useEffect(() => {
     setMounted(true)
@@ -354,7 +368,7 @@ export default function Navbar({ onMenuClick, isHidden = false }: NavbarProps = 
             <div className="mx-1 h-[18px] w-px bg-white/20" />
 
             {/* Profile button — reads name + initials + role from SettingsStore */}
-            <div className="relative">
+            <div className="relative" ref={profileRef}>
               <button
                 onClick={() => setProfileOpen(o => !o)}
                 className="group flex items-center gap-2 rounded-[10px] px-2.5 py-1.5 transition-all duration-150 border border-transparent hover:bg-white/10 hover:border-white/10"
@@ -375,31 +389,39 @@ export default function Navbar({ onMenuClick, isHidden = false }: NavbarProps = 
                 <ChevronDown size={12} className="hidden sm:block text-white/50 group-hover:text-white/80 transition-colors" />
               </button>
 
-              {profileOpen && (
-                <>
-                  <div className="fixed inset-0 z-40" onClick={() => setProfileOpen(false)} />
-                  <div className="absolute right-0 top-[calc(100%+8px)] z-50 w-48 overflow-hidden rounded-[12px] border bg-white shadow-lg" style={{ borderColor: '#E2E8F3', boxShadow: '0 12px 40px rgba(13,27,46,0.12)' }}>
-                    <div className="py-1">
-                      <button
-                        onClick={() => { setProfileOpen(false); router.push('/dashboard/profile'); }}
-                        className="flex w-full items-center gap-2.5 px-4 py-2.5 text-left text-[12px] transition-colors hover:bg-[#F4F7FB]"
-                        style={{ color: '#0D1B2E' }}
-                      >
-                        <User size={14} style={{ color: '#8FA0B5' }} />
-                        My Profile
-                      </button>
-                      <button
-                        onClick={() => { setProfileOpen(false); router.push('/dashboard/settings'); }}
-                        className="flex w-full items-center gap-2.5 px-4 py-2.5 text-left text-[12px] transition-colors hover:bg-[#F4F7FB]"
-                        style={{ color: '#0D1B2E' }}
-                      >
-                        <Settings size={14} style={{ color: '#8FA0B5' }} />
-                        Settings
-                      </button>
-                    </div>
-                  </div>
-                </>
-              )}
+              <AnimatePresence>
+                {profileOpen && (
+                  <>
+                    <motion.div
+                      initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                      transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
+                      className="absolute right-0 top-[calc(100%+8px)] z-50 w-48 sm:w-56 overflow-hidden rounded-[12px] border shadow-lg"
+                      style={{ background: 'var(--card)', borderColor: 'var(--border)', boxShadow: 'var(--shadow-xl)' }}
+                    >
+                      <div className="py-1">
+                        <button
+                          onClick={() => { setProfileOpen(false); router.push('/dashboard/profile'); }}
+                          className="flex w-full items-center gap-3 px-4 py-3 text-left text-[13px] font-medium transition-colors hover:bg-black/5 dark:hover:bg-white/5"
+                          style={{ color: 'var(--text)' }}
+                        >
+                          <User size={16} style={{ color: 'var(--text-muted)' }} />
+                          My Profile
+                        </button>
+                        <button
+                          onClick={() => { setProfileOpen(false); router.push('/dashboard/settings'); }}
+                          className="flex w-full items-center gap-3 px-4 py-3 text-left text-[13px] font-medium transition-colors hover:bg-black/5 dark:hover:bg-white/5"
+                          style={{ color: 'var(--text)' }}
+                        >
+                          <Settings size={16} style={{ color: 'var(--text-muted)' }} />
+                          Settings
+                        </button>
+                      </div>
+                    </motion.div>
+                  </>
+                )}
+              </AnimatePresence>
             </div>
 
             {/* Logout */}

@@ -1,6 +1,7 @@
 'use client'
 
-import { Eye, Pencil, Copy, Archive, Trash2, MessageSquareText, Link2, ArchiveRestore } from 'lucide-react'
+import { Eye, Pencil, Copy, Archive, Trash2, MessageSquareText, Link2, ArchiveRestore, Share2 } from 'lucide-react'
+import { useRouter } from 'next/navigation'
 import SurveyStatusBadge from './SurveyStatusBadge'
 import ActionMenu, { type ActionMenuItem } from './ActionMenu'
 import type { SurveyRecord } from '@/lib/types/survey'
@@ -33,6 +34,8 @@ function npsColor(score: number | null) {
 export default function SurveyRow({
   survey, selected, onToggleSelect, onView, onEdit, onDuplicate, onArchive, onUnarchive, onDelete, onCopyUrl,
 }: SurveyRowProps) {
+  const router = useRouter()
+
   const menuItems: ActionMenuItem[] = [
     { label: 'View survey', icon: Eye, onSelect: () => onView(survey) },
     { label: 'Edit survey', icon: Pencil, onSelect: () => onEdit(survey) },
@@ -40,7 +43,9 @@ export default function SurveyRow({
   ]
 
   if (survey.status !== 'draft') {
-    menuItems.push({ label: 'Copy Survey URL', icon: Link2, onSelect: () => onCopyUrl(survey), divider: true })
+    const numericId = survey.numericId ?? survey.id.replace(/^SRV-/, '')
+    menuItems.push({ label: 'Distribution Info', icon: Share2, onSelect: () => router.push(`/dashboard/surveys/${numericId}/published`), divider: true })
+    menuItems.push({ label: 'Copy Survey URL', icon: Link2, onSelect: () => onCopyUrl(survey) })
   }
 
   if (survey.status === 'archived') {
@@ -75,8 +80,23 @@ export default function SurveyRow({
       {/* Title + id */}
       <td className="px-5 py-3.5">
         <div>
-          <div className="whitespace-normal break-words text-[13px] font-medium" style={{ color: 'var(--text)' }}>{survey.title}</div>
-          <div className="text-[11.5px]" style={{ color: 'var(--text-light)' }}>{survey.id} · {survey.touchpoint}</div>
+          {survey.status === 'published' && survey.slug ? (
+            <a 
+              href={`/survey/${survey.slug}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="whitespace-normal break-words text-[13px] font-medium hover:underline" 
+              style={{ color: 'var(--primary)' }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              {survey.title}
+            </a>
+          ) : (
+            <div className="whitespace-normal break-words text-[13px] font-medium" style={{ color: 'var(--text)' }}>
+              {survey.title}
+            </div>
+          )}
+          <div className="text-[11.5px] mt-0.5" style={{ color: 'var(--text-light)' }}>{survey.id} · {survey.touchpoint}</div>
         </div>
       </td>
 
