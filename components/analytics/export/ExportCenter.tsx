@@ -47,34 +47,24 @@ export function ExportCenter() {
     try {
       if (selectedFormat === 'csv' || selectedFormat === 'all') {
         const query = new URLSearchParams(state.filters as any)
-        const res = await fetch(`/api/analytics/overview?${query.toString()}`)
-        const json = await res.json()
-        const surveys = json?.data?.surveyPerformance || []
-        
-        let csvContent = "data:text/csv;charset=utf-8,"
-        csvContent += "Survey Title,Response Count,NPS Score\n"
-        surveys.forEach((s: any) => {
-          const title = (s.title || '').replace(/"/g, '""')
-          csvContent += `"${title}",${s.responseCount || 0},${s.nps || 0}\n`
-        })
-        const encodedUri = encodeURI(csvContent)
-        const link = document.createElement("a")
-        link.setAttribute("href", encodedUri)
-        link.setAttribute("download", `survey_responses_${new Date().toISOString().slice(0,10)}.csv`)
-        document.body.appendChild(link)
-        link.click()
-        link.remove()
+        query.set('format', 'csv')
+        query.set('type', 'responses')
+        // Redirect to the actual backend CSV export route
+        window.open(`/api/reports/export?${query.toString()}`, '_blank')
       }
 
       if (selectedFormat === 'png' || selectedFormat === 'all') {
-        close()
-        await new Promise(r => setTimeout(r, 400))
+        // Only close modal early if just PNG so it doesn't get captured in the screenshot
+        if (selectedFormat === 'png') close()
+        await new Promise(r => setTimeout(r, 400)) // wait for modal to animate out
+        
         const html2canvas = (await import('html2canvas-pro')).default
         const target = document.querySelector('.desktop-sidebar-offset') || document.body
         const canvas = await html2canvas(target as HTMLElement, { useCORS: true, scale: 2 })
         const imgData = canvas.toDataURL('image/png')
+        
         const link = document.createElement('a')
-        link.download = `dashboard_snapshot_${new Date().toISOString().slice(0,10)}.png`
+        link.download = `analytics_dashboard_${new Date().toISOString().slice(0,10)}.png`
         link.href = imgData
         link.click()
       }
@@ -166,7 +156,7 @@ export function ExportCenter() {
 
             <div className="border-t border-[#E6EDF3] px-6 py-3 text-[10px] text-[#B0B8C4]">
               <kbd className="rounded-[3px] border border-[#E6EDF3] bg-[#F5F7FA] px-1 py-0.5 font-mono text-[9px] text-[#8A94A6]">Esc</kbd>{' '}
-              to close · exports are simulated (mock data)
+              to close
             </div>
           </>
         )}
@@ -188,7 +178,7 @@ export function ExportCenter() {
                 </div>
                 <div className="text-center">
                   <p className="text-[13px] font-medium text-[#333333]">Export successful</p>
-                  <p className="mt-1 text-[11px] text-[#8A94A6]">Your {format?.toUpperCase()} file would be downloaded in production</p>
+                  <p className="mt-1 text-[11px] text-[#8A94A6]">Your {format?.toUpperCase()} file download has started.</p>
                 </div>
               </>
             )}
