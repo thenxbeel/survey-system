@@ -23,7 +23,11 @@ export function ResponseHeatmap() {
       .then(r => r.ok ? r.json() : null)
       .then(json => {
         if (!json?.data) return
-        setGrid(json.data)
+        if (Array.isArray(json.data)) {
+          setGrid(json.data)
+        } else {
+          setGrid(json.data.grid?.map((g: any) => ({ day: g.y, hour: g.x, value: g.value })) || [])
+        }
       })
       .catch(() => { /* ignore */ })
       .finally(() => setLoading(false))

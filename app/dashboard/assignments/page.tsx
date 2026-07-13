@@ -256,7 +256,7 @@ export default function AssignmentsPage() {
       {/* View Details Modal */}
       {detailsModalOpen && selectedAssignment && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#0D1B2E]/40 backdrop-blur-sm">
-          <div className="w-full max-w-sm rounded-[16px] bg-white shadow-xl flex flex-col max-h-[90vh]">
+          <div className="w-full max-w-2xl rounded-[16px] bg-white shadow-xl flex flex-col max-h-[90vh]">
             <div className="flex items-center justify-between border-b border-[#E2E8F3] px-6 py-5">
               <h2 className="text-[16px] font-bold text-[#0D1B2E]">Response Details</h2>
               <button 

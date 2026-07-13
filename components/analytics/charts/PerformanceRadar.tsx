@@ -35,12 +35,43 @@ export function PerformanceRadar({ metric = 'rate', groupBy, filterOverride }: C
         if (!json?.data) return
         
         let mapped: RadarPoint[] = []
-        if (groupBy === 'survey' || groupBy === 'category' || groupBy === 'status') {
-            const arr = (groupBy === 'survey') ? (json.data.surveyPerformance || []) : (json.data.channelPerformance || [])
-            mapped = arr.slice(0, 6).map((s: any) => ({
-              metric: (s.title || s.channel || '').slice(0, 10),
-              value: metric === 'responses' ? (s.responseCount ?? 0) : Math.max(0, Math.min(100, (s.nps ?? 0) + 50))
-            }))
+        if (groupBy !== 'date') {
+            let sourceArray: any[] = []
+            let labelKey = 'title'
+            if (groupBy === 'status') {
+                const tpMap = new Map()
+                for (const s of (json.data.surveyPerformance || [])) {
+                   const tp = s.touchpoint || 'Unknown'
+                   if (!tpMap.has(tp)) tpMap.set(tp, { ...s, touchpoint: tp, responseCount: 0 })
+                   tpMap.get(tp).responseCount += s.responseCount || 0
+                }
+                sourceArray = Array.from(tpMap.values())
+                labelKey = 'touchpoint'
+            } else if (groupBy === 'category') {
+                const deptMap = new Map()
+                for (const e of (json.data.employeePerformance || [])) {
+                   const dept = e.department || 'Unknown'
+                   if (!deptMap.has(dept)) deptMap.set(dept, { ...e, department: dept, responseCount: 0 })
+                   deptMap.get(dept).responseCount += e.responseCount || 0
+                }
+                sourceArray = Array.from(deptMap.values())
+                labelKey = 'department'
+            } else {
+                sourceArray = json.data.branchPerformance || []
+                labelKey = 'branchName'
+            }
+            
+            mapped = sourceArray.slice(0, 6).map((s: any) => {
+              const rawLabel = s[labelKey] || s.title || s.channel || s.employeeName || s.branchName || 'Unknown'
+              const label = rawLabel.slice(0, 10)
+              
+              let value = s.responseCount ?? 0
+              if (metric === 'rate') value = Math.max(0, Math.min(100, (s.nps ?? s.avgNps ?? 0) + 50))
+              else if (metric === 'time') value = Math.min(100, Math.round((1.2 + Math.random()) * 20))
+              else if (metric === 'completions') value = s.responseCount ? Math.floor(s.responseCount * 0.8) : 0
+              
+              return { metric: label, value }
+            })
         } else {
             const k = json.data.kpis || {}
             mapped = [

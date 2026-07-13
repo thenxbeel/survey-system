@@ -40,14 +40,26 @@ export function VolumeBarChart({ metric = 'responses', groupBy = 'survey', filte
             let sourceArray: any[] = []
             let labelKey = 'title'
             if (groupBy === 'status') {
-                sourceArray = json.data.channelPerformance || []
-                labelKey = 'channel'
+                const tpMap = new Map()
+                for (const s of (json.data.surveyPerformance || [])) {
+                   const tp = s.touchpoint || 'Unknown'
+                   if (!tpMap.has(tp)) tpMap.set(tp, { ...s, touchpoint: tp, responseCount: 0 })
+                   tpMap.get(tp).responseCount += s.responseCount || 0
+                }
+                sourceArray = Array.from(tpMap.values())
+                labelKey = 'touchpoint'
             } else if (groupBy === 'category') {
-                sourceArray = json.data.employeePerformance || []
-                labelKey = 'employeeName'
+                const deptMap = new Map()
+                for (const e of (json.data.employeePerformance || [])) {
+                   const dept = e.department || 'Unknown'
+                   if (!deptMap.has(dept)) deptMap.set(dept, { ...e, department: dept, responseCount: 0 })
+                   deptMap.get(dept).responseCount += e.responseCount || 0
+                }
+                sourceArray = Array.from(deptMap.values())
+                labelKey = 'department'
             } else {
-                sourceArray = json.data.surveyPerformance || []
-                labelKey = 'title'
+                sourceArray = json.data.branchPerformance || []
+                labelKey = 'branchName'
             }
             
             mapped = sourceArray.slice(0, 6).map((s: any) => {

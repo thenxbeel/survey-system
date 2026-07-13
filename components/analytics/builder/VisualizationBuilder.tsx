@@ -14,6 +14,7 @@ import { CompletionScatter } from '../charts/CompletionScatter'
 import { PerformanceRadar } from '../charts/PerformanceRadar'
 import { ActivityHeatmap } from '../charts/ActivityHeatmap'
 import { useAnalytics } from '../state/useAnalytics'
+import { useBranchList } from '@/lib/hooks/useBranches'
 import {
   ChartType, MetricType, GroupByType, FilterType, VisualizationConfig, WidgetConfig,
 } from '@/types/analytics'
@@ -29,25 +30,16 @@ const chartOptions: { value: ChartType; label: string; icon: React.ElementType }
 
 const metricOptions: { value: MetricType; label: string }[] = [
   { value: 'responses',  label: 'Total Submissions' },
-  { value: 'completions',label: 'Total Completions' },
-  { value: 'time',       label: 'Avg. Handling Time' },
-  { value: 'rate',       label: 'CSAT Score'         },
+  { value: 'rate',       label: 'Net Promoter Score (NPS)' },
 ]
 
 const groupByOptions: { value: GroupByType; label: string }[] = [
   { value: 'date',     label: 'Date / Time'    },
-  { value: 'survey',   label: 'Branch'         },
   { value: 'category', label: 'Department'     },
   { value: 'status',   label: 'Touchpoint'     },
 ]
 
-const filterOptions: { value: FilterType; label: string }[] = [
-  { value: 'all',          label: 'All'            },
-  { value: 'Abu Dhabi',    label: 'Abu Dhabi'      },
-  { value: 'Dubai',        label: 'Dubai'          },
-  { value: 'Al Ain City',  label: 'Al Ain City'    },
-  { value: 'Remote/Digital', label: 'Remote/Digital' },
-]
+
 
 function renderPreview(chartType: ChartType, config: VisualizationConfig) {
   switch (chartType) {
@@ -67,6 +59,13 @@ function chartTitleFor(type: ChartType) {
 
 export function VisualizationBuilder() {
   const { state, dispatch } = useAnalytics()
+  const { branches } = useBranchList()
+  
+  const filterOptions = [
+    { value: 'all', label: 'All' },
+    ...(branches || []).map(b => ({ value: b.name, label: b.name }))
+  ]
+
   const [config, setConfig] = useState<VisualizationConfig>({
     chartType: 'line', metric: 'responses', groupBy: 'date', filter: 'all',
   })

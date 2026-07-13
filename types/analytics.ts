@@ -63,7 +63,7 @@ export interface ScatterDataPoint {
 export type ChartType = 'line' | 'bar' | 'pie' | 'scatter' | 'radar' | 'heatmap';
 export type MetricType = 'responses' | 'completions' | 'time' | 'rate';
 export type GroupByType = 'date' | 'survey' | 'category' | 'status';
-export type FilterType = 'all' | 'Abu Dhabi' | 'Dubai' | 'Al Ain City' | 'Remote/Digital';
+export type FilterType = string;
 
 export interface VisualizationConfig {
   chartType: ChartType;

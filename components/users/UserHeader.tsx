@@ -105,15 +105,6 @@ export function UserHeader({ totalUsers, activeCount, onExport, onNew }: Props) 
           </div>
         </div>
 
-        {/* Refresh */}
-        <button
-          className="flex items-center justify-center rounded-[10px] px-6 py-3 text-white transition-all hover:opacity-90 "
-          style={{ background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.15)' }}
-          aria-label="Refresh users"
-        >
-          <RefreshCw size={13} />
-        </button>
-
         {/* Export */}
         <button
           onClick={onExport}
