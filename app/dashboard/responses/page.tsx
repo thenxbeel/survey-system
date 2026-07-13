@@ -2,8 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react'
 import {
-  Download,
-  ChevronDown
+  Download
 } from 'lucide-react'
 import Button from '@/components/common/Button'
 import ResponseStatsCards from '@/components/responses/ResponseStatsCards'
@@ -83,7 +82,6 @@ export default function ResponsesPage() {
   const [page, setPage] = useState(1)
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   const [activeResponse, setActiveResponse] = useState<ResponseRecord | null>(null)
-  const [isExportOpen, setIsExportOpen] = useState(false)
 
   const [responses, setResponses] = useState<ResponseRecord[]>([])
   const [loading, setLoading] = useState(true)
@@ -288,7 +286,7 @@ export default function ResponsesPage() {
   return (
     <div className="flex flex-col gap-6 p-7 animate-fade-up">
       {/* Page header */}
-      <div className="relative z-50 animate-fade-up flex items-start justify-between">
+      <div className="animate-fade-up flex items-start justify-between">
         <div>
           <h1 className="text-[20px] font-bold tracking-[-0.02em]" style={{ color: 'var(--text)' }}>
             Survey Responses
@@ -298,43 +296,14 @@ export default function ResponsesPage() {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <div className="relative">
-            <Button variant="secondary" onClick={() => setIsExportOpen(!isExportOpen)}>
-              <Download size={13} />
-              Export
-              <ChevronDown size={13} className="ml-1 opacity-70" />
-            </Button>
-            {isExportOpen && (
-              <>
-                <div 
-                  className="fixed inset-0 z-40" 
-                  onClick={() => setIsExportOpen(false)} 
-                />
-                <div className="absolute right-0 mt-2 w-40 bg-white dark:bg-slate-900 rounded-[8px] shadow-[0_4px_20px_-4px_rgba(0,0,0,0.1)] border z-50 overflow-hidden animate-in fade-in zoom-in duration-200" style={{ borderColor: 'var(--border)' }}>
-                  <button
-                    className="w-full text-left px-4 py-2.5 text-[12.5px] font-medium transition-colors hover:bg-black/5 dark:hover:bg-white/5"
-                    style={{ color: 'var(--text)' }}
-                    onClick={() => {
-                      setIsExportOpen(false)
-                      handleExportFiltered()
-                    }}
-                  >
-                    Export Filtered
-                  </button>
-                  <button
-                    className="w-full text-left px-4 py-2.5 text-[12.5px] font-medium transition-colors hover:bg-black/5 dark:hover:bg-white/5 border-t"
-                    style={{ color: 'var(--text)', borderColor: 'var(--border)' }}
-                    onClick={() => {
-                      setIsExportOpen(false)
-                      handleExportAll()
-                    }}
-                  >
-                    Export All
-                  </button>
-                </div>
-              </>
-            )}
-          </div>
+          <Button variant="secondary" onClick={handleExportFiltered}>
+            <Download size={13} />
+            Export Filtered
+          </Button>
+          <Button variant="secondary" onClick={handleExportAll}>
+            <Download size={13} />
+            Export All
+          </Button>
         </div>
       </div>
 
