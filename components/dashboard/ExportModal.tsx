@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { X, Download, FileText, FileSpreadsheet, Loader2 } from 'lucide-react'
 import { useToast } from '@/lib/stores/ToastStore'
@@ -18,6 +19,11 @@ export function ExportModal({ open, onClose, range, branch }: Props) {
   const [exporting, setExporting] = useState(false)
   const [format, setFormat] = useState<'csv' | 'pdf'>('csv')
   const [reportType, setReportType] = useState<'executive' | 'responses' | 'surveys'>('executive')
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
   useEffect(() => {
     if (open) {
@@ -49,7 +55,9 @@ export function ExportModal({ open, onClose, range, branch }: Props) {
 
   const labelCls = 'block text-[10.5px] font-bold uppercase tracking-[0.08em] mb-1.5'
 
-  return (
+  if (!mounted) return null;
+
+  return createPortal(
     <AnimatePresence>
       {open && (
         <>
@@ -66,8 +74,8 @@ export function ExportModal({ open, onClose, range, branch }: Props) {
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.96, y: 10 }}
             transition={{ type: 'spring', stiffness: 380, damping: 30 }}
-            className="fixed left-1/2 top-1/2 z-50 flex max-h-[90vh] w-full max-w-[440px] -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-[18px] bg-white"
-            style={{ border: '1px solid var(--border)', boxShadow: 'var(--shadow-xl)' }}
+            className="fixed left-1/2 top-1/2 z-50 flex max-h-[90vh] w-[95vw] max-w-[460px] -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-[18px]"
+            style={{ background: 'var(--card)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-xl)' }}
           >
             {/* Header */}
             <div className="flex items-center justify-between px-5 py-4" style={{ background: 'var(--bg-subtle)', borderBottom: '1px solid var(--border)' }}>
@@ -77,100 +85,100 @@ export function ExportModal({ open, onClose, range, branch }: Props) {
                 </div>
                 <div>
                   <h2 className="text-[15px] font-extrabold" style={{ color: 'var(--text)', letterSpacing: '-0.015em' }}>Export Dashboard</h2>
-                  <p className="text-[11.5px]" style={{ color: 'var(--text-light)' }}>Download filtered data as CSV</p>
+                  <p className="text-[11.5px]" style={{ color: 'var(--text-light)' }}>Select format and content</p>
                 </div>
               </div>
-              <button onClick={onClose} className="flex items-center justify-center text-center rounded-[8px] p-2 transition-all " style={{ color: 'var(--text-light)' }} aria-label="Close">
+              <button onClick={onClose} className="flex items-center justify-center rounded-[8px] p-2 transition-all" style={{ color: 'var(--text-light)' }} aria-label="Close">
                 <X size={16} />
               </button>
             </div>
 
             {/* Body */}
-            <div className="flex-1 overflow-y-auto p-5">
-              <div className="flex flex-col gap-5">
-                {/* Applied filters summary */}
-                <div
-                  ref={filtersRef}
-                  className="rounded-[10px] border p-3"
-                  style={{ borderColor: 'var(--border)', background: 'var(--bg-subtle)' }}
-                >
-                  <p className="mb-1.5 text-[10px] font-bold uppercase tracking-wide" style={{ color: 'var(--text-light)' }}>Applied Filters</p>
-                  <div className="flex flex-wrap gap-2.5">
-                    <span className="rounded-[5px] bg-white px-2 py-0.5 text-[10.5px] font-medium" style={{ color: 'var(--text-secondary)', border: '1px solid var(--border)' }}>
-                      Period: {range}
-                    </span>
-                    <span className="rounded-[5px] bg-white px-2 py-0.5 text-[10.5px] font-medium" style={{ color: 'var(--text-secondary)', border: '1px solid var(--border)' }}>
-                      Branch: {branch === 'all' ? 'All Branches' : branch}
-                    </span>
+            <div className="flex-1 overflow-y-auto p-5" ref={filtersRef}>
+              
+              {/* Context Summary (Read-only) */}
+              <div className="mb-6 rounded-[10px] border p-4" style={{ borderColor: 'var(--border)', background: 'var(--bg-subtle)' }}>
+                <p className={labelCls} style={{ color: 'var(--text-muted)' }}>Current Filters Applied</p>
+                <div className="flex flex-col gap-1.5 mt-2.5">
+                  <div className="flex items-center justify-between text-[12px]">
+                    <span style={{ color: 'var(--text-secondary)' }}>Period:</span>
+                    <span className="font-semibold" style={{ color: 'var(--text)' }}>{range}</span>
+                  </div>
+                  <div className="flex items-center justify-between text-[12px]">
+                    <span style={{ color: 'var(--text-secondary)' }}>Branch:</span>
+                    <span className="font-semibold" style={{ color: 'var(--text)' }}>{branch === 'all' ? 'All Branches' : branch}</span>
                   </div>
                 </div>
+              </div>
 
-                {/* Report type */}
-                <div>
-                  <label className={labelCls} style={{ color: 'var(--text-light)' }}>Report Type</label>
-                  <div className="grid grid-cols-2 gap-2">
-                    {([
-                      { value: 'executive', label: 'Executive Summary', icon: '📊' },
-                      { value: 'responses', label: 'All Responses', icon: '💬' },
-                      { value: 'surveys', label: 'Survey Performance', icon: '📋' },
-                    ] as const).map(r => (
-                      <button
-                        key={r.value}
-                        onClick={() => setReportType(r.value)}
-                        className="flex items-center gap-2 rounded-[10px] border-2 px-3 py-2.5 text-left text-[11.5px] font-semibold transition-all"
-                        style={reportType === r.value
-                          ? { borderColor: 'var(--primary)', background: 'var(--accent-soft)', color: 'var(--primary)' }
-                          : { borderColor: 'var(--border)', color: 'var(--text-secondary)' }
-                        }
-                      >
-                        <span>{r.icon}</span>
-                        {r.label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Format */}
-                <div>
-                  <label className={labelCls} style={{ color: 'var(--text-light)' }}>Format</label>
-                  <div className="flex gap-2">
+              {/* Report Type */}
+              <div className="mb-6">
+                <p className={labelCls} style={{ color: 'var(--text-muted)' }}>Report Type</p>
+                <div className="flex flex-col gap-2">
+                  {[
+                    { value: 'executive', label: 'Executive Summary', icon: '📊' },
+                    { value: 'responses', label: 'All Responses', icon: '💬' },
+                    { value: 'surveys', label: 'Survey Performance', icon: '📋' }
+                  ].map((t) => (
                     <button
-                      onClick={() => setFormat('csv')}
-                      className="flex flex-1 items-center gap-2 rounded-[10px] border-2 px-3 py-2.5 text-[12px] font-semibold transition-all"
-                      style={format === 'csv'
-                        ? { borderColor: 'var(--primary)', background: 'var(--accent-soft)', color: 'var(--primary)' }
-                        : { borderColor: 'var(--border)', color: 'var(--text-secondary)' }
-                      }
+                      key={t.value}
+                      onClick={() => setReportType(t.value as any)}
+                      className="flex items-center justify-between rounded-[10px] border-2 px-4 py-3 transition-all"
+                      style={reportType === t.value 
+                        ? { borderColor: 'var(--primary)', background: 'var(--accent-soft)' } 
+                        : { borderColor: 'var(--border)', background: 'var(--card)' }}
                     >
-                      <FileText size={14} />
-                      CSV
+                      <div className="flex items-center gap-3">
+                        <span className="text-[16px]">{t.icon}</span>
+                        <span className="text-[12.5px] font-semibold" style={{ color: reportType === t.value ? 'var(--primary)' : 'var(--text)' }}>
+                          {t.label}
+                        </span>
+                      </div>
+                      {reportType === t.value && (
+                        <div className="h-2 w-2 rounded-full" style={{ background: 'var(--primary)' }} />
+                      )}
                     </button>
-                    <button
-                      onClick={() => setFormat('pdf')}
-                      className="flex flex-1 items-center gap-2 rounded-[10px] border-2 px-3 py-2.5 text-[12px] font-semibold transition-all"
-                      style={format === 'pdf'
-                        ? { borderColor: 'var(--primary)', background: 'var(--accent-soft)', color: 'var(--primary)' }
-                        : { borderColor: 'var(--border)', color: 'var(--text-secondary)' }
-                      }
-                    >
-                      <FileText size={14} />
-                      PDF
-                    </button>
-                  </div>
+                  ))}
                 </div>
+              </div>
 
+              {/* Format */}
+              <div>
+                <p className={labelCls} style={{ color: 'var(--text-muted)' }}>Format</p>
+                <div className="flex gap-2">
+                  {[
+                    { value: 'csv', label: 'CSV', icon: FileSpreadsheet },
+                    { value: 'pdf', label: 'PDF', icon: FileText }
+                  ].map((f) => (
+                    <button
+                      key={f.value}
+                      onClick={() => setFormat(f.value as any)}
+                      className="flex flex-1 items-center justify-center gap-2 rounded-[10px] border-2 py-3 transition-all"
+                      style={format === f.value
+                        ? { borderColor: 'var(--primary)', background: 'var(--accent-soft)', color: 'var(--primary)' }
+                        : { borderColor: 'var(--border)', background: 'var(--card)', color: 'var(--text-secondary)' }}
+                    >
+                      <f.icon size={15} />
+                      <span className="text-[12px] font-bold">{f.label}</span>
+                    </button>
+                  ))}
+                </div>
               </div>
             </div>
 
             {/* Footer */}
-            <div className="flex items-center justify-end gap-2 border-t px-5 py-4" style={{ borderColor: 'var(--border)' }}>
-              <button onClick={onClose} className="flex items-center justify-center text-center rounded-[9px] border px-6 py-3 text-[12px] font-semibold transition-all" style={{ borderColor: 'var(--border)', color: 'var(--text-secondary)' }}>
+            <div className="flex items-center justify-end gap-2 border-t p-4" style={{ borderColor: 'var(--border)', background: 'var(--bg-subtle)' }}>
+              <button
+                onClick={onClose}
+                className="flex items-center justify-center rounded-[9px] border px-5 py-2.5 text-[12px] font-semibold transition-all"
+                style={{ borderColor: 'var(--border)', color: 'var(--text-secondary)', background: 'var(--card)' }}
+              >
                 Cancel
               </button>
               <button
                 onClick={handleExport}
                 disabled={exporting}
-                className="flex items-center justify-center text-center gap-2.5 rounded-[9px] px-6 py-3 text-[12px] font-semibold text-white transition-all disabled:opacity-50"
+                className="flex items-center justify-center text-center gap-2.5 rounded-[9px] px-6 py-2.5 text-[12px] font-semibold text-white transition-all disabled:opacity-50"
                 style={{ background: 'var(--primary)' }}
               >
                 {exporting ? <Loader2 size={13} className="animate-spin" /> : <Download size={13} />}
@@ -181,5 +189,5 @@ export function ExportModal({ open, onClose, range, branch }: Props) {
         </>
       )}
     </AnimatePresence>
-  )
+  , document.body)
 }
