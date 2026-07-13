@@ -2,7 +2,7 @@
 
 import { motion } from 'framer-motion'
 import {
-  AlertTriangle, Users, CalendarX, BellRing, type LucideIcon, ArrowRight,
+  AlertTriangle, Users, CalendarX, BellRing, type LucideIcon,
 } from 'lucide-react'
 import type { AttentionItem } from '@/lib/types/analytics'
 
@@ -72,13 +72,7 @@ export function AttentionRequiredList({ items, delay = 0 }: { items: AttentionIt
               </div>
             </div>
 
-            <button
-              className="flex-shrink-0 self-center opacity-0 transition-opacity group-hover:opacity-100 items-center justify-center text-center"
-              style={{ color: 'var(--primary)' }}
-              aria-label="View case"
-            >
-              <ArrowRight size={14} />
-            </button>
+
           </motion.div>
         )
       })}
