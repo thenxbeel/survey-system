@@ -86,7 +86,7 @@ export function ExportCenter() {
     f.desc.toLowerCase().includes(search.toLowerCase())
   )
 
-  return (
+  return createPortal(
     <div
       className="fixed inset-0 z-50 flex items-start justify-center bg-black/60 p-4 pt-[8vh] backdrop-blur-sm"
       onClick={close}
