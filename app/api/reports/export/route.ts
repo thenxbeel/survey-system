@@ -323,16 +323,85 @@ export async function GET(req: NextRequest) {
       }
 
       case 'responses': {
+        const search = req.nextUrl.searchParams.get('search')
+        const survey = req.nextUrl.searchParams.get('survey')
+        const touchpoint = req.nextUrl.searchParams.get('touchpoint')
+        const scoreMin = req.nextUrl.searchParams.get('scoreMin')
+        const scoreMax = req.nextUrl.searchParams.get('scoreMax')
+        const status = req.nextUrl.searchParams.get('status')
+        const dateFrom = req.nextUrl.searchParams.get('dateFrom')
+        const dateTo = req.nextUrl.searchParams.get('dateTo')
+        const category = req.nextUrl.searchParams.get('category')
+        const assignedFilter = req.nextUrl.searchParams.get('assignedFilter')
+
         const responsesWhere: any = {}
-        if (branch && branch !== 'all' && branch !== 'All' && branch !== 'All Branches') {
-          responsesWhere.survey = { ...responsesWhere.survey, branch }
+        
+        if (search) {
+          const s = search.trim()
+          const sLower = s.toLowerCase()
+          // Fast matching on exact slugs
+          const match = s.match(/\/survey\/([a-zA-Z0-9-]+)/)
+          const slugFromUrl = match ? match[1] : null
+          
+          if (slugFromUrl) {
+            responsesWhere.survey = { slug: slugFromUrl }
+          } else {
+            const parsedSurveyId = parseInt(s.replace(/^SRV-?/i, '').replace(/^srv/i, ''))
+            const parsedResponseId = parseInt(s.replace(/^RSP-?/i, '').replace(/^rsp/i, ''))
+            
+            const orConditions: any[] = [
+              { respondentName:  { contains: s } },
+              { respondentEmail: { contains: s } },
+              { feedback:        { contains: s } },
+              { survey: { title: { contains: s } } },
+              { survey: { surveyCode: { contains: s } } },
+              { survey: { slug: { contains: s } } },
+              { survey: { touchpoint: { contains: s } } },
+              { survey: { campaign: { name: { contains: s } } } },
+              { survey: { createdBy: { name: { contains: s } } } },
+            ]
+            
+            if (!isNaN(parsedSurveyId) && parsedSurveyId > 0) orConditions.push({ surveyId: parsedSurveyId })
+            if (!isNaN(parsedResponseId) && parsedResponseId > 0) orConditions.push({ id: parsedResponseId })
+            
+            responsesWhere.OR = orConditions
+          }
         }
-        if (department && department !== 'all' && department !== 'All' && department !== 'All Departments') {
-          responsesWhere.survey = { ...responsesWhere.survey, department }
+
+        if (survey && survey !== 'all' && survey !== 'All') {
+          responsesWhere.surveyId = parseInt(survey.replace(/^SRV-/, '') || survey)
         }
+
+        if (status && status !== 'all') {
+          responsesWhere.status = status
+        }
+
+        if (scoreMin) responsesWhere.npsScore = { ...responsesWhere.npsScore, gte: parseInt(scoreMin) }
+        if (scoreMax) responsesWhere.npsScore = { ...responsesWhere.npsScore, lte: parseInt(scoreMax) }
+        
         const minDate = getPeriodDate(period)
-        if (minDate) {
-          responsesWhere.submittedAt = { gte: minDate }
+        if (minDate) responsesWhere.submittedAt = { ...responsesWhere.submittedAt, gte: minDate }
+        if (dateFrom) responsesWhere.submittedAt = { ...responsesWhere.submittedAt, gte: new Date(dateFrom) }
+        if (dateTo) responsesWhere.submittedAt = { ...responsesWhere.submittedAt, lte: new Date(dateTo + 'T23:59:59') }
+
+        if (category && category !== 'all') {
+          if (category === 'promoter')  responsesWhere.npsScore = { gte: 9,  lte: 10 }
+          if (category === 'passive')   responsesWhere.npsScore = { gte: 7,  lte: 8  }
+          if (category === 'detractor') responsesWhere.npsScore = { gte: 0,  lte: 6  }
+        }
+
+        if (assignedFilter) {
+          if (assignedFilter === 'unassigned') responsesWhere.assignedToId = null
+          else if (assignedFilter === 'assigned') responsesWhere.assignedToId = { not: null }
+          else responsesWhere.assignedToId = parseInt(assignedFilter)
+        }
+
+        const surveyWhere: any = {}
+        if (touchpoint && touchpoint.toLowerCase() !== 'all') surveyWhere.touchpoint = touchpoint
+        if (branch && branch.toLowerCase() !== 'all' && branch !== 'All Branches') surveyWhere.branch = branch
+        if (department && department.toLowerCase() !== 'all' && department !== 'All Departments') surveyWhere.department = department
+        if (Object.keys(surveyWhere).length > 0) {
+          responsesWhere.survey = { ...responsesWhere.survey, ...surveyWhere }
         }
 
         const responses = await prisma.response.findMany({
