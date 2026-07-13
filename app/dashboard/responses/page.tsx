@@ -229,7 +229,25 @@ export default function ResponsesPage() {
   }
 
   function handleBulkExport() {
-    window.open('/api/reports/export?format=csv&type=responses', '_blank')
+    const query = new URLSearchParams()
+    query.set('format', 'csv')
+    query.set('type', 'responses')
+    
+    // Add all active filters
+    if (debouncedSearch) query.set('search', debouncedSearch)
+    if (filters.survey && filters.survey !== 'All') query.set('survey', filters.survey)
+    if (filters.touchpoint && filters.touchpoint !== 'All') query.set('touchpoint', filters.touchpoint)
+    if (filters.branch && filters.branch !== 'All') query.set('branch', filters.branch)
+    if (filters.department && filters.department !== 'All') query.set('department', filters.department)
+    if (filters.scoreMin) query.set('scoreMin', filters.scoreMin)
+    if (filters.scoreMax) query.set('scoreMax', filters.scoreMax)
+    if (filters.status && filters.status !== 'all') query.set('status', filters.status)
+    if (filters.dateFrom) query.set('dateFrom', filters.dateFrom)
+    if (filters.dateTo) query.set('dateTo', filters.dateTo)
+    if (filters.category && filters.category !== 'all') query.set('category', filters.category)
+    if (filters.assignedFilter && filters.assignedFilter !== 'all') query.set('assignedFilter', filters.assignedFilter)
+
+    window.open(`/api/reports/export?${query.toString()}`, '_blank')
     setSelectedIds(new Set())
   }
 

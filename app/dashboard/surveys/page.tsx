@@ -240,67 +240,69 @@ export default function SurveysPage() {
   }
 
   return (
-    <div className="flex flex-col gap-6 p-7 animate-fade-up">
-      {/* Page header */}
-      <div className="animate-fade-up flex items-center justify-between">
-        <div>
-          <h1 className="text-[20px] font-bold tracking-[-0.02em]" style={{ color: 'var(--text)' }}>Survey Management</h1>
-          <p className="mt-0.5 text-[12.5px]" style={{ color: 'var(--text-light)' }}>
-            Create, distribute, and track NPS surveys across all ADNTC branches.
-          </p>
-        </div>
-        {/* "New Survey" now routes to the Survey Builder — the single creation entry point */}
-        <div className="flex items-center gap-2">
-          <Button variant="ghost" size="md" onClick={() => setImportOpen(true)}>
-            <Upload size={13} />
-            Import
-          </Button>
-          <Button
-            variant="primary"
-            onClick={() => router.push('/dashboard/survey-builder')}
-            className="!bg-white !text-[var(--primary)] !border-[var(--primary)] hover:!bg-[var(--accent-soft)] hover:!text-[var(--primary-dark)] hover:!border-[var(--primary-dark)] !shadow-[0_3px_10px_rgba(11,74,139,0.15)]"
-          >
-            <Plus size={13} />
-            New Survey
-          </Button>
-        </div>
-      </div>
-
-      {/* Stats */}
-      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-4">
-        {stats.map((s, i) => (
-          <div key={s.label} className="animate-fade-up" style={{ animationDelay: `${i * 40}ms` }}>
-            <MetricCard {...s} />
+    <>
+      <div className="flex flex-col gap-6 p-7 animate-fade-up">
+        {/* Page header */}
+        <div className="animate-fade-up flex items-center justify-between">
+          <div>
+            <h1 className="text-[20px] font-bold tracking-[-0.02em]" style={{ color: 'var(--text)' }}>Survey Management</h1>
+            <p className="mt-0.5 text-[12.5px]" style={{ color: 'var(--text-light)' }}>
+              Create, distribute, and track NPS surveys across all ADNTC branches.
+            </p>
           </div>
-        ))}
-      </div>
+          {/* "New Survey" now routes to the Survey Builder — the single creation entry point */}
+          <div className="flex items-center gap-2">
+            <Button variant="ghost" size="md" onClick={() => setImportOpen(true)}>
+              <Upload size={13} />
+              Import
+            </Button>
+            <Button
+              variant="primary"
+              onClick={() => router.push('/dashboard/survey-builder')}
+              className="!bg-white !text-[var(--primary)] !border-[var(--primary)] hover:!bg-[var(--accent-soft)] hover:!text-[var(--primary-dark)] hover:!border-[var(--primary-dark)] !shadow-[0_3px_10px_rgba(11,74,139,0.15)]"
+            >
+              <Plus size={13} />
+              New Survey
+            </Button>
+          </div>
+        </div>
 
-      {/* Table (toolbar lives inside the Card, mirroring ResponseTable) */}
-      <SurveyTable
-        surveys={pageItems}
-        loading={loading}
-        hasActiveFilters={hasActiveFilters}
-        onClearFilters={handleClearFilters}
-        selectedIds={selectedIds}
-        onToggleSelect={toggleSelect}
-        onToggleSelectAll={toggleSelectAll}
-        onView={handleView}
-        onEdit={handleEdit}
-        onDuplicate={handleDuplicate}
-        onArchive={handleArchive}
-        onUnarchive={handleUnarchive}
-        onDelete={handleDelete}
-        onCopyUrl={handleCopyUrl}
-        page={page}
-        totalPages={totalPages}
-        totalItems={filtered.length}
-        pageSize={PAGE_SIZE}
-        onPageChange={handlePageChange}
-        filters={filters}
-        onFiltersChange={handleFiltersChange}
-        onBulkArchive={handleBulkArchive}
-        onBulkDelete={handleBulkDelete}
-      />
+        {/* Stats */}
+        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-4">
+          {stats.map((s, i) => (
+            <div key={s.label} className="animate-fade-up" style={{ animationDelay: `${i * 40}ms` }}>
+              <MetricCard {...s} />
+            </div>
+          ))}
+        </div>
+
+        {/* Table (toolbar lives inside the Card, mirroring ResponseTable) */}
+        <SurveyTable
+          surveys={pageItems}
+          loading={loading}
+          hasActiveFilters={hasActiveFilters}
+          onClearFilters={handleClearFilters}
+          selectedIds={selectedIds}
+          onToggleSelect={toggleSelect}
+          onToggleSelectAll={toggleSelectAll}
+          onView={handleView}
+          onEdit={handleEdit}
+          onDuplicate={handleDuplicate}
+          onArchive={handleArchive}
+          onUnarchive={handleUnarchive}
+          onDelete={handleDelete}
+          onCopyUrl={handleCopyUrl}
+          page={page}
+          totalPages={totalPages}
+          totalItems={filtered.length}
+          pageSize={PAGE_SIZE}
+          onPageChange={handlePageChange}
+          filters={filters}
+          onFiltersChange={handleFiltersChange}
+          onBulkArchive={handleBulkArchive}
+          onBulkDelete={handleBulkDelete}
+        />
+      </div>
 
       <SurveyDetailDrawer
         survey={activeSurvey}
@@ -316,6 +318,7 @@ export default function SurveysPage() {
       {/* Import Survey modal — validates JSON and refreshes the survey list
           via the SurveysStore. */}
       <ImportSurveyModal open={importOpen} onClose={() => setImportOpen(false)} />
-    </div>
+    </>
   )
 }
+

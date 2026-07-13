@@ -7,11 +7,12 @@ import {
 } from 'lucide-react'
 import { useAnalytics } from '../state/useAnalytics'
 
-type ExportFormat = 'pdf' | 'csv' | 'png' | 'all'
+type ExportFormat = 'pdf' | 'csv' | 'png' | 'excel' | 'all'
 type ExportStatus = 'idle' | 'exporting' | 'success'
 
 const formats = [
   { id: 'pdf' as ExportFormat,      name: 'PDF Document',  desc: 'Comprehensive visual report with charts',  icon: FileText,       color: '#E5484D' },
+  { id: 'excel' as ExportFormat,    name: 'Excel Report',  desc: 'Analytics charts and raw data',            icon: FileSpreadsheet,color: '#17A673' },
   { id: 'csv' as ExportFormat,      name: 'CSV Spreadsheet',desc: 'Raw response data (all columns)',          icon: FileSpreadsheet,color: '#17A673' },
   { id: 'png' as ExportFormat,      name: 'PNG Snapshot',  desc: 'Dashboard image (current view)',            icon: ImageIcon,     color: '#0B4A8B' },
   { id: 'all' as ExportFormat,      name: 'Export All',    desc: 'Download PDF, CSV, and PNG instantly',      icon: CheckCircle2,  color: '#F5A623' },
@@ -51,6 +52,70 @@ export function ExportCenter() {
         query.set('type', 'responses')
         // Redirect to the actual backend CSV export route
         window.open(`/api/reports/export?${query.toString()}`, '_blank')
+      }
+
+      if (selectedFormat === 'excel') {
+        // Close modal immediately so it's not captured
+        close()
+        await new Promise(r => setTimeout(r, 400))
+        
+        document.documentElement.classList.add('export-png-mode')
+        await new Promise(r => setTimeout(r, 100))
+        
+        const html2canvas = (await import('html2canvas-pro')).default
+        const target = document.querySelector('.desktop-sidebar-offset') || document.body
+        const canvas = await html2canvas(target as HTMLElement, { useCORS: true, scale: 2 })
+        
+        document.documentElement.classList.remove('export-png-mode')
+        
+        const imgData = canvas.toDataURL('image/png')
+        const ExcelJS = (await import('exceljs')).default
+        const { saveAs } = await import('file-saver')
+        
+        const workbook = new ExcelJS.Workbook()
+        const worksheet = workbook.addWorksheet('Dashboard')
+        
+        const imageId = workbook.addImage({ base64: imgData, extension: 'png' })
+        
+        worksheet.addImage(imageId, {
+          tl: { col: 0, row: 0 },
+          ext: { width: canvas.width / 2, height: canvas.height / 2 }
+        })
+        
+        try {
+          const query = new URLSearchParams(state.filters as any)
+          query.set('format', 'csv')
+          query.set('type', 'responses')
+          const res = await fetch(`/api/reports/export?${query.toString()}`)
+          if (res.ok) {
+            const csvText = await res.text()
+            const dataSheet = workbook.addWorksheet('Raw Data')
+            const rows = csvText.trim().split('\n').map(row => {
+              const cells = []
+              let inQuotes = false
+              let currentCell = ''
+              for (let i = 0; i < row.length; i++) {
+                const char = row[i]
+                if (char === '"' && row[i+1] === '"') { currentCell += '"'; i++ }
+                else if (char === '"') { inQuotes = !inQuotes }
+                else if (char === ',' && !inQuotes) { cells.push(currentCell); currentCell = '' }
+                else { currentCell += char }
+              }
+              cells.push(currentCell)
+              return cells
+            })
+            dataSheet.addRows(rows)
+            
+            // Format headers
+            dataSheet.getRow(1).font = { bold: true }
+          }
+        } catch (e) {
+          console.error('Failed to fetch raw data for Excel', e)
+        }
+        
+        const buffer = await workbook.xlsx.writeBuffer()
+        saveAs(new Blob([buffer]), `analytics_dashboard_${new Date().toISOString().slice(0,10)}.xlsx`)
+        return
       }
 
       if (selectedFormat === 'png' || selectedFormat === 'all') {
