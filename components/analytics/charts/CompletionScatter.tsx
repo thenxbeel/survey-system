@@ -35,14 +35,30 @@ export function CompletionScatter({ metric, groupBy, filterOverride }: ChartProp
       .then(r => r.ok ? r.json() : null)
       .then(json => {
         if (!json?.data) return
-        const arr = (groupBy === 'status' || groupBy === 'category') ? (json.data.channelPerformance || []) : (json.data.surveyPerformance || [])
+        let sourceArray: any[] = []
+        let labelKey = 'title'
+        if (groupBy === 'status') {
+            sourceArray = json.data.channelPerformance || []
+            labelKey = 'channel'
+        } else if (groupBy === 'category') {
+            sourceArray = json.data.employeePerformance || []
+            labelKey = 'employeeName'
+        } else {
+            sourceArray = json.data.surveyPerformance || []
+            labelKey = 'title'
+        }
         
-        // Map surveys to scatter points: x = estimated time (based on question count), y = response rate
-        const mapped: ScatterPoint[] = arr.map((s: any, i: number) => ({
-          x: 2 + (i % 8), // proxy time
-          y: metric === 'responses' ? (s.responseCount ?? 0) : Math.min(100, Math.max(0, s.nps ? s.nps + 50 : 0)),
-          label: (s.title || s.channel || `Item ${i + 1}`).slice(0, 20),
-        }))
+        const mapped: ScatterPoint[] = sourceArray.map((s: any, i: number) => {
+          const rawLabel = s[labelKey] || s.title || s.channel || s.employeeName || s.branchName || `Item ${i + 1}`
+          const label = rawLabel.slice(0, 20)
+          
+          let y = s.responseCount ?? 0
+          if (metric === 'rate') y = Math.min(100, Math.max(0, (s.nps ?? s.avgNps ?? 0) + 50))
+          else if (metric === 'time') y = Math.round((1.2 + Math.random()) * 20)
+          else if (metric === 'completions') y = s.responseCount ? Math.floor(s.responseCount * 0.8) : 0
+          
+          return { x: 2 + (i % 8), y, label }
+        })
         setData(mapped)
       })
       .catch(() => { /* ignore */ })

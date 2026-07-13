@@ -175,16 +175,6 @@ export function AnalyticsHeader() {
           Export
         </Button>
 
-        {/* Ask Analytics */}
-        <Button
-          onClick={() => dispatch({ type: 'OPEN_MODAL', modal: 'ask' })}
-          variant="ghost"
-          size="md"
-          className="!text-white !border-transparent hover:!opacity-95 !bg-gradient-to-r !from-[rgba(245,158,11,0.95)] !to-[rgba(239,68,68,0.95)] !shadow-[0_4px_12px_rgba(239,68,68,0.25)]"
-        >
-          <Sparkles size={13} />
-          <span className="hidden md:inline">AI Analysis ✨</span>
-        </Button>
 
         {/* New visualization */}
         <Button
