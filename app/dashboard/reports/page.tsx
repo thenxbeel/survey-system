@@ -114,7 +114,11 @@ export default function ReportsPage() {
           }))
         )
       }
-      if (heatmap?.data) setHeatmapData(heatmap.data)
+      if (heatmap?.data?.grid) {
+        setHeatmapData(heatmap.data.grid.map((g: any) => ({ day: g.y, hour: g.x, value: g.value })))
+      } else if (Array.isArray(heatmap?.data)) {
+        setHeatmapData(heatmap.data)
+      }
       if (overview?.data?.branchPerf) {
         setBranchPerfData(
           overview.data.branchPerf.map((b: any) => ({
