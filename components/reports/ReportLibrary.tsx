@@ -159,7 +159,7 @@ function SavedReportCard({ report, onDownload, onRegenerate, onDelete, onPreview
       </div>
 
       <div className="mt-2 flex flex-wrap gap-1">
-        {report.parameters.slice(0, 2).map((p, i) => (
+        {(report.parameters || []).slice(0, 2).map((p, i) => (
           <span
             key={i}
             className="inline-flex items-center rounded-[4px] border px-1.5 py-0.5 text-[9.5px] font-medium"

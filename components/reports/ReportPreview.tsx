@@ -191,7 +191,7 @@ export function ReportPreview({ report, onClose, onDownload, onRegenerate, npsTr
                     Report Parameters
                   </div>
                   <div className="grid grid-cols-2 gap-2 md:grid-cols-3">
-                    {report.parameters.map((p, i) => (
+                    {(report.parameters || []).map((p, i) => (
                       <div
                         key={i}
                         className="rounded-[8px] px-3 py-2"
