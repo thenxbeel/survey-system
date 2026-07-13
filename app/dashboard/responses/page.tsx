@@ -310,7 +310,7 @@ export default function ResponsesPage() {
                   className="fixed inset-0 z-40" 
                   onClick={() => setIsExportOpen(false)} 
                 />
-                <div className="absolute right-0 mt-2 w-40 rounded-[8px] shadow-[0_4px_20px_-4px_rgba(0,0,0,0.1)] border z-50 overflow-hidden animate-in fade-in zoom-in duration-200" style={{ backgroundColor: 'var(--card-bg)', borderColor: 'var(--border)' }}>
+                <div className="absolute right-0 mt-2 w-40 bg-white dark:bg-slate-900 rounded-[8px] shadow-[0_4px_20px_-4px_rgba(0,0,0,0.1)] border z-50 overflow-hidden animate-in fade-in zoom-in duration-200" style={{ borderColor: 'var(--border)' }}>
                   <button
                     className="w-full text-left px-4 py-2.5 text-[12.5px] font-medium transition-colors hover:bg-black/5 dark:hover:bg-white/5"
                     style={{ color: 'var(--text)' }}
