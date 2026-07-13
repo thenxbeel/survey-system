@@ -131,15 +131,15 @@ export async function GET(req: NextRequest) {
           }
         })
 
-        const npsScores = normalizedResponses.map(r => r.npsScore).filter(s => s !== null && s !== undefined && s !== '').map(Number).filter(s => !isNaN(s))
+        const npsScores = normalizedResponses.map(r => r.npsScore).filter(s => s !== null && s !== undefined).map(Number).filter(s => !isNaN(s))
         const promoters = npsScores.filter(s => s >= 9).length
         const detractors = npsScores.filter(s => s <= 6).length
         const passives = npsScores.filter(s => s >= 7 && s <= 8).length
         const nps = npsScores.length > 0 ? Math.round(((promoters - detractors) / npsScores.length) * 100) : 0
 
-        const csatScores = normalizedResponses.map(r => r.csatScore).filter(s => s !== null && s !== undefined && s !== '').map(Number).filter(s => !isNaN(s))
+        const csatScores = normalizedResponses.map(r => r.csatScore).filter(s => s !== null && s !== undefined).map(Number).filter(s => !isNaN(s))
         const avgCsat = csatScores.length > 0 ? (csatScores.reduce((a, b) => a + b, 0) / csatScores.length).toFixed(1) : '—'
-        const cesScores = normalizedResponses.map(r => r.cesScore).filter(s => s !== null && s !== undefined && s !== '').map(Number).filter(s => !isNaN(s))
+        const cesScores = normalizedResponses.map(r => r.cesScore).filter(s => s !== null && s !== undefined).map(Number).filter(s => !isNaN(s))
         const avgCes = cesScores.length > 0 ? (cesScores.reduce((a, b) => a + b, 0) / cesScores.length).toFixed(1) : '—'
 
         filename = `executive-report-${new Date().toISOString().slice(0, 10)}`
