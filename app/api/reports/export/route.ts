@@ -46,6 +46,8 @@ export async function GET(req: NextRequest) {
   const period = req.nextUrl.searchParams.get('period')
 
   let type = requestedType
+  let implicitCategory: string | null = null
+
   if (requestedType === 'executive_summary' || requestedType === 'nps_trend') {
     type = 'executive'
   } else if (
@@ -61,6 +63,8 @@ export async function GET(req: NextRequest) {
     requestedType === 'promoter_analysis'
   ) {
     type = 'responses'
+    if (requestedType === 'detractor_analysis') implicitCategory = 'detractor'
+    if (requestedType === 'promoter_analysis') implicitCategory = 'promoter'
   }
 
   try {
@@ -396,7 +400,8 @@ export async function GET(req: NextRequest) {
         const status = req.nextUrl.searchParams.get('status')
         const dateFrom = req.nextUrl.searchParams.get('dateFrom')
         const dateTo = req.nextUrl.searchParams.get('dateTo')
-        const category = req.nextUrl.searchParams.get('category')
+        const categoryParam = req.nextUrl.searchParams.get('category')
+        const category = (categoryParam && categoryParam !== 'all') ? categoryParam : implicitCategory
         const assignedFilter = req.nextUrl.searchParams.get('assignedFilter')
 
         const responsesWhere: any = {}
@@ -449,7 +454,7 @@ export async function GET(req: NextRequest) {
         if (dateFrom) responsesWhere.submittedAt = { ...responsesWhere.submittedAt, gte: new Date(dateFrom) }
         if (dateTo) responsesWhere.submittedAt = { ...responsesWhere.submittedAt, lte: new Date(dateTo + 'T23:59:59') }
 
-        if (category && category !== 'all') {
+        if (category) {
           if (category === 'promoter')  responsesWhere.npsScore = { gte: 9,  lte: 10 }
           if (category === 'passive')   responsesWhere.npsScore = { gte: 7,  lte: 8  }
           if (category === 'detractor') responsesWhere.npsScore = { gte: 0,  lte: 6  }
