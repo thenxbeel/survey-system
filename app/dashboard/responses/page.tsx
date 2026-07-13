@@ -228,7 +228,7 @@ export default function ResponsesPage() {
     })
   }
 
-  function handleBulkExport() {
+  function handleExportFiltered() {
     const query = new URLSearchParams()
     query.set('format', 'csv')
     query.set('type', 'responses')
@@ -248,6 +248,11 @@ export default function ResponsesPage() {
     if (filters.assignedFilter && filters.assignedFilter !== 'all') query.set('assignedFilter', filters.assignedFilter)
 
     window.open(`/api/reports/export?${query.toString()}`, '_blank')
+    setSelectedIds(new Set())
+  }
+
+  function handleExportAll() {
+    window.open('/api/reports/export?format=csv&type=responses', '_blank')
     setSelectedIds(new Set())
   }
 
@@ -290,10 +295,16 @@ export default function ResponsesPage() {
             Review survey feedback, NPS scores, and response status across all surveys.
           </p>
         </div>
-        <Button variant="secondary" onClick={handleBulkExport}>
-          <Download size={13} />
-          Export All
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button variant="secondary" onClick={handleExportFiltered}>
+            <Download size={13} />
+            Export Filtered
+          </Button>
+          <Button variant="secondary" onClick={handleExportAll}>
+            <Download size={13} />
+            Export All
+          </Button>
+        </div>
       </div>
 
       {/* Stats */}
@@ -318,7 +329,7 @@ export default function ResponsesPage() {
         onPageChange={(p) => setPage(Math.min(Math.max(1, p), totalPages))}
         filters={filters}
         onFiltersChange={handleFiltersChange}
-        onBulkExport={handleBulkExport}
+        onBulkExport={handleExportFiltered}
         onBulkAssign={handleBulkAssign}
         onBulkDelete={handleBulkDelete}
       />
