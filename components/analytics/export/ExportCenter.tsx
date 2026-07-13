@@ -1,6 +1,7 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import {
   FileText, FileSpreadsheet, Image as ImageIcon, Mail, CheckCircle2, Loader2, X, Search,
 } from 'lucide-react'
@@ -21,9 +22,12 @@ export function ExportCenter() {
   const [status, setStatus] = useState<ExportStatus>('idle')
   const [format,  setFormat]  = useState<ExportFormat | null>(null)
   const [search,  setSearch]  = useState('')
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => setMounted(true), [])
 
   const open = state.modals.export
-  if (!open) return null
+  if (!open || !mounted) return null
 
   function close() {
     dispatch({ type: 'CLOSE_MODAL', modal: 'export' })
@@ -192,5 +196,5 @@ export function ExportCenter() {
         )}
       </div>
     </div>
-  )
+  , document.body)
 }

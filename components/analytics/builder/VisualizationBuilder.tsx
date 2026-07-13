@@ -1,6 +1,7 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import {
   BarChart3, LineChart as LineIcon, PieChart as PieIcon, ScatterChart as ScatterIcon,
   Grid3x3, Radar as RadarIcon, Check, X,
@@ -69,9 +70,12 @@ export function VisualizationBuilder() {
     chartType: 'line', metric: 'responses', groupBy: 'date', filter: 'all',
   })
   const [saved, setSaved] = useState(false)
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => setMounted(true), [])
 
   const open = state.modals.vizBuilder
-  if (!open) return null
+  if (!open || !mounted) return null
 
   function close() {
     dispatch({ type: 'CLOSE_MODAL', modal: 'vizBuilder' })
@@ -95,9 +99,9 @@ export function VisualizationBuilder() {
     setTimeout(close, 900)
   }
 
-  return (
+  return createPortal(
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm"
+      className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm"
       onClick={close}
     >
       <div
@@ -240,5 +244,5 @@ export function VisualizationBuilder() {
         </div>
       </div>
     </div>
-  )
+  , document.body)
 }
