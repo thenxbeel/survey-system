@@ -288,7 +288,7 @@ export default function ResponsesPage() {
   return (
     <div className="flex flex-col gap-6 p-7 animate-fade-up">
       {/* Page header */}
-      <div className="animate-fade-up flex items-start justify-between">
+      <div className="relative z-50 animate-fade-up flex items-start justify-between">
         <div>
           <h1 className="text-[20px] font-bold tracking-[-0.02em]" style={{ color: 'var(--text)' }}>
             Survey Responses
