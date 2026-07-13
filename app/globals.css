@@ -781,9 +781,25 @@ html, body {
   .desktop-sidebar-offset {
     padding-left: 0 !important;
   }
+
+  /* Fix layout truncation: force all scrolling containers to expand fully */
+  html, body, main, #__next, .h-screen, .max-h-screen, .overflow-hidden, .overflow-y-auto {
+    height: auto !important;
+    max-height: none !important;
+    overflow: visible !important;
+    position: static !important;
+  }
+
   body {
     background: white !important;
   }
+
+  /* Break pages reasonably so charts don't cut in half */
+  .grid > div {
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+
   /* Force background colors and images to print */
   * {
     -webkit-print-color-adjust: exact !important;
