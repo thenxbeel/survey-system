@@ -42,10 +42,11 @@ const groupByOptions: { value: GroupByType; label: string }[] = [
 ]
 
 const filterOptions: { value: FilterType; label: string }[] = [
-  { value: 'all',       label: 'All'         },
-  { value: 'active',    label: 'Abu Dhabi'   },
-  { value: 'completed', label: 'Dubai'       },
-  { value: 'draft',     label: 'Al Ain City' },
+  { value: 'all',          label: 'All'            },
+  { value: 'Abu Dhabi',    label: 'Abu Dhabi'      },
+  { value: 'Dubai',        label: 'Dubai'          },
+  { value: 'Al Ain City',  label: 'Al Ain City'    },
+  { value: 'Remote/Digital', label: 'Remote/Digital' },
 ]
 
 function renderPreview(chartType: ChartType, config: VisualizationConfig) {
@@ -179,16 +180,16 @@ export function VisualizationBuilder() {
             {/* Filter */}
             <div>
               <label className="mb-2 block text-[11px] font-semibold uppercase tracking-[0.06em] text-[#8A94A6]">Branch Filter</label>
-              <div className="grid grid-cols-4 gap-0.5 rounded-[7px] border border-[#E6EDF3] bg-[#F5F7FA] p-0.5">
+              <div className="flex flex-wrap gap-0.5 rounded-[7px] border border-[#E6EDF3] bg-[#F5F7FA] p-0.5">
                 {filterOptions.map(f => {
                   const active = config.filter === f.value
                   return (
                     <button
                       key={f.value}
                       onClick={() => setConfig(p => ({ ...p, filter: f.value as FilterType }))}
-                      className={`rounded-[5px] py-1.5 text-[11px] font-medium transition-all
+                      className={`flex-1 rounded-[5px] px-2 py-1.5 text-center text-[11px] font-medium transition-all whitespace-nowrap
                         ${active
-                          ? 'bg-[#F5F7FA] text-[#333333]'
+                          ? 'bg-[#FFFFFF] text-[#333333] shadow-sm'
                           : 'text-[#8A94A6] hover:text-[#333333]'
                         }`}
                     >

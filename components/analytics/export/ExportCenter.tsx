@@ -56,11 +56,21 @@ export function ExportCenter() {
       if (selectedFormat === 'png' || selectedFormat === 'all') {
         // Only close modal early if just PNG so it doesn't get captured in the screenshot
         if (selectedFormat === 'png') close()
-        await new Promise(r => setTimeout(r, 400)) // wait for modal to animate out
+        
+        // Wait for modal to animate out
+        await new Promise(r => setTimeout(r, 400))
+        
+        // Add class to expand layout to natural height
+        document.documentElement.classList.add('export-png-mode')
+        await new Promise(r => setTimeout(r, 100)) // Wait for repaint
         
         const html2canvas = (await import('html2canvas-pro')).default
         const target = document.querySelector('.desktop-sidebar-offset') || document.body
         const canvas = await html2canvas(target as HTMLElement, { useCORS: true, scale: 2 })
+        
+        // Remove layout expansion class
+        document.documentElement.classList.remove('export-png-mode')
+        
         const imgData = canvas.toDataURL('image/png')
         
         const link = document.createElement('a')
