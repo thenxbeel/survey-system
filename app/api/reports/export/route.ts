@@ -131,15 +131,15 @@ export async function GET(req: NextRequest) {
           }
         })
 
-        const npsScores = normalizedResponses.map(r => r.npsScore).filter((s): s is number => s !== null)
+        const npsScores = normalizedResponses.map(r => r.npsScore).filter(s => s !== null && s !== undefined && s !== '').map(Number).filter(s => !isNaN(s))
         const promoters = npsScores.filter(s => s >= 9).length
         const detractors = npsScores.filter(s => s <= 6).length
         const passives = npsScores.filter(s => s >= 7 && s <= 8).length
         const nps = npsScores.length > 0 ? Math.round(((promoters - detractors) / npsScores.length) * 100) : 0
 
-        const csatScores = normalizedResponses.map(r => r.csatScore).filter((s): s is number => s !== null)
+        const csatScores = normalizedResponses.map(r => r.csatScore).filter(s => s !== null && s !== undefined && s !== '').map(Number).filter(s => !isNaN(s))
         const avgCsat = csatScores.length > 0 ? (csatScores.reduce((a, b) => a + b, 0) / csatScores.length).toFixed(1) : '—'
-        const cesScores = normalizedResponses.map(r => r.cesScore).filter((s): s is number => s !== null)
+        const cesScores = normalizedResponses.map(r => r.cesScore).filter(s => s !== null && s !== undefined && s !== '').map(Number).filter(s => !isNaN(s))
         const avgCes = cesScores.length > 0 ? (cesScores.reduce((a, b) => a + b, 0) / cesScores.length).toFixed(1) : '—'
 
         filename = `executive-report-${new Date().toISOString().slice(0, 10)}`
@@ -153,7 +153,6 @@ export async function GET(req: NextRequest) {
           '',
           'Metric,Value',
           `Total Surveys,${surveys}`,
-          `Total Campaigns,${campaigns}`,
           `Total Responses,${normalizedResponses.length}`,
           `NPS Score,${nps}`,
           `Avg CSAT,${avgCsat}`,
@@ -195,7 +194,6 @@ export async function GET(req: NextRequest) {
       <th colspan="2">Metrics Summary</th>
     </tr>
     <tr><td>Total Surveys</td><td>${surveys}</td></tr>
-    <tr><td>Total Campaigns</td><td>${campaigns}</td></tr>
     <tr><td>Total Responses</td><td>${normalizedResponses.length}</td></tr>
     <tr><td>NPS Score</td><td>${nps}</td></tr>
     <tr><td>Avg CSAT</td><td>${avgCsat}</td></tr>
@@ -246,7 +244,7 @@ export async function GET(req: NextRequest) {
     body { font-family: system-ui, -apple-system, sans-serif; padding: 40px; color: #1f2937; max-width: 1100px; margin: 0 auto; background: #fff; }
     h1 { color: #0b4a8b; border-bottom: 2px solid #e5e7eb; padding-bottom: 12px; margin-bottom: 24px; font-size: 24px; }
     .meta { font-size: 13px; color: #4b5563; margin-bottom: 30px; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; border: 1px solid #e5e7eb; padding: 15px; border-radius: 8px; background: #f9fafb; }
-    .grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 15px; margin-bottom: 35px; }
+    .grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 15px; margin-bottom: 35px; }
     .card { background: #ffffff; border: 1px solid #e5e7eb; padding: 15px; border-radius: 10px; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
     .card h3 { font-size: 10px; text-transform: uppercase; color: #6b7280; margin: 0 0 6px 0; letter-spacing: 0.05em; }
     .card p { font-size: 24px; font-weight: 800; color: #0b4a8b; margin: 0; }
@@ -282,7 +280,6 @@ export async function GET(req: NextRequest) {
     <div class="card"><h3>NPS Score</h3><p>${nps}</p></div>
     <div class="card"><h3>Avg CSAT</h3><p>${avgCsat} <span style="font-size:12px;font-weight:normal;color:#6b7280;">/ 5</span></p></div>
     <div class="card"><h3>Avg CES</h3><p>${avgCes} <span style="font-size:12px;font-weight:normal;color:#6b7280;">/ 5</span></p></div>
-    <div class="card"><h3>Total Campaigns</h3><p>${campaigns}</p></div>
   </div>
   <h2>Response Details</h2>
   <table>
