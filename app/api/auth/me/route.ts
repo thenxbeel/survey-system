@@ -62,6 +62,8 @@ export async function GET(req: NextRequest) {
         allowedPages,
         visibleBranches: user.visibleBranches ? JSON.parse(user.visibleBranches) : null,
         visibleDepartments: user.visibleDepartments ? JSON.parse(user.visibleDepartments) : null,
+        accessBranches: user.accessBranches ? JSON.parse(user.accessBranches) : null,
+        accessDepartments: user.accessDepartments ? JSON.parse(user.accessDepartments) : null,
       },
     })
   } catch (error) {

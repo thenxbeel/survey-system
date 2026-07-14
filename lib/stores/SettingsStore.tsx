@@ -48,6 +48,10 @@ export interface UserProfile {
   /** ISO date string (User.createdAt) — drives the "Joined Date" field */
   joinedDate:     string
   allowedPages?:  string[]
+  visibleBranches?: string[] | null
+  visibleDepartments?: string[] | null
+  accessBranches?: string[] | null
+  accessDepartments?: string[] | null
 }
 
 export interface SettingsState {
@@ -252,6 +256,10 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
               avatarInitials: initials || '?',
               joinedDate: u.createdAt ?? '',
               allowedPages: u.allowedPages ?? [],
+              visibleBranches: u.visibleBranches ?? null,
+              visibleDepartments: u.visibleDepartments ?? null,
+              accessBranches: u.accessBranches ?? null,
+              accessDepartments: u.accessDepartments ?? null,
             }
           }
         })

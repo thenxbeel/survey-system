@@ -224,9 +224,25 @@ export async function POST(req: NextRequest) {
   const created = await prisma.survey.create({
     data: {
       ...surveyData,
-      // Admins can specify the department and branch. Non-admins are locked to their own.
-      department: user.role === 'Admin' ? (surveyData.department ?? user.department ?? null) : (user.department ?? null),
-      branch: user.role === 'Admin' ? (surveyData.branch ?? user.branch ?? null) : (user.branch ?? null),
+      // Admins can specify any department/branch. Non-admins can specify from their allowed action scopes.
+      department: user.role === 'Admin' 
+        ? (surveyData.department ?? user.department ?? null)
+        : (() => {
+            const allowedDepts = [user.department, ...(user.accessDepartments ?? [])].filter(Boolean) as string[]
+            if (surveyData.department && allowedDepts.includes(surveyData.department)) {
+              return surveyData.department
+            }
+            return user.department ?? null
+          })(),
+      branch: user.role === 'Admin' 
+        ? (surveyData.branch ?? user.branch ?? null)
+        : (() => {
+            const allowedBranches = [user.branch, ...(user.accessBranches ?? [])].filter(Boolean) as string[]
+            if (surveyData.branch && allowedBranches.includes(surveyData.branch)) {
+              return surveyData.branch
+            }
+            return user.branch ?? null
+          })(),
       status: publish ? 'PUBLISHED' : 'DRAFT',
       lifecycleStatus,
       visibility: surveyData.visibility as any,

@@ -24,6 +24,10 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
       role: u.role.name, roleId: u.roleId,
       department: u.department?.name ?? null, departmentId: u.departmentId,
       branch: u.branch?.name ?? null, branchId: u.branchId,
+      visibleBranches: u.visibleBranches ? JSON.parse(u.visibleBranches) : null,
+      visibleDepartments: u.visibleDepartments ? JSON.parse(u.visibleDepartments) : null,
+      accessBranches: u.accessBranches ? JSON.parse(u.accessBranches) : null,
+      accessDepartments: u.accessDepartments ? JSON.parse(u.accessDepartments) : null,
     },
   })
 }
@@ -101,6 +105,24 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
       }
     }
 
+    // Convert accessBranches string[] to JSON string
+    if (parsed.data.accessBranches !== undefined) {
+      if (parsed.data.accessBranches === null) {
+        updateData.accessBranches = null
+      } else {
+        updateData.accessBranches = JSON.stringify(parsed.data.accessBranches)
+      }
+    }
+
+    // Convert accessDepartments string[] to JSON string
+    if (parsed.data.accessDepartments !== undefined) {
+      if (parsed.data.accessDepartments === null) {
+        updateData.accessDepartments = null
+      } else {
+        updateData.accessDepartments = JSON.stringify(parsed.data.accessDepartments)
+      }
+    }
+
     // Resolve roleName to roleId
     if (parsed.data.roleName && isManagerOrAdmin) {
       const roleRecord = await prisma.role.findFirst({ where: { name: parsed.data.roleName } })
@@ -139,6 +161,8 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
         department: updated.department?.name ?? null, branch: updated.branch?.name ?? null,
         visibleBranches: updated.visibleBranches ? JSON.parse(updated.visibleBranches) : null,
         visibleDepartments: updated.visibleDepartments ? JSON.parse(updated.visibleDepartments) : null,
+        accessBranches: updated.accessBranches ? JSON.parse(updated.accessBranches) : null,
+        accessDepartments: updated.accessDepartments ? JSON.parse(updated.accessDepartments) : null,
       },
     })
   } catch (err: any) {

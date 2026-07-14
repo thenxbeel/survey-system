@@ -114,6 +114,10 @@ model User {
   visibleBranches     String?
   // Per-user department visibility scope (JSON array of department names). If null, defaults to their primary department.
   visibleDepartments  String?
+  // Per-user branch action access scope (JSON array of branch names). If null, defaults to their primary branch.
+  accessBranches      String?
+  // Per-user department action access scope (JSON array of department names). If null, defaults to their primary department.
+  accessDepartments   String?
   roleId              Int
   role          Role           @relation(fields: [roleId], references: [id])
   // onDelete: Restrict — deleting a Department/Branch that has Users is blocked.

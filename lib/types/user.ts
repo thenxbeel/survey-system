@@ -54,6 +54,8 @@ export interface AppUser {
   roleAllowedPages?: string[]
   visibleBranches?: string[] | null
   visibleDepartments?: string[] | null
+  accessBranches?: string[] | null
+  accessDepartments?: string[] | null
   activity: UserActivity[]
   recentLogins: RecentLogin[]
   surveysAssigned: number

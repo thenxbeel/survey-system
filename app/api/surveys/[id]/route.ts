@@ -49,10 +49,13 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
   })
   if (!survey) return NextResponse.json({ error: 'Survey not found' }, { status: 404 })
 
-  // ── Department access control ──────────────────────────────────────────
+  // ── Department & Branch visibility control ─────────────────────────────
   const isAdmin = user.role === 'Admin'
-  if (!isAdmin && survey.department && survey.department !== user.department) {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  if (!isAdmin) {
+    const allowedDepts = [user.department, ...(user.visibleDepartments ?? [])].filter(Boolean) as string[]
+    if (survey.department && !allowedDepts.includes(survey.department)) {
+      return NextResponse.json({ error: 'Forbidden — No visibility access to this department' }, { status: 403 })
+    }
   }
 
   const npsAgg = await prisma.response.aggregate({
@@ -154,17 +157,20 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
   // Fetch existing survey to check ownership and status changes
   const existingSurvey = await prisma.survey.findUnique({
     where: { id: numericId },
-    select: { id: true, title: true, createdById: true, status: true, department: true },
+    select: { id: true, title: true, createdById: true, status: true, department: true, branch: true },
   })
 
   if (!existingSurvey) {
     return NextResponse.json({ error: 'Survey not found' }, { status: 404 })
   }
 
-  // ── Department access control ──────────────────────────────────────────
+  // ── Department & Branch action access control ──────────────────────────
   const isAdminPut = user.role === 'Admin'
-  if (!isAdminPut && existingSurvey.department && existingSurvey.department !== user.department) {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  if (!isAdminPut) {
+    const allowedDepts = [user.department, ...(user.accessDepartments ?? [])].filter(Boolean) as string[]
+    if (existingSurvey.department && !allowedDepts.includes(existingSurvey.department)) {
+      return NextResponse.json({ error: 'Forbidden — No action access to this department' }, { status: 403 })
+    }
   }
 
   const {
@@ -181,11 +187,34 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
     ...updateData
   } = parsed.data
 
+  // Non-admins can only change department/branch to values in their allowed action scopes
+  let finalDept = existingSurvey.department
+  let finalBranch = existingSurvey.branch
+
+  if (isAdminPut) {
+    finalDept = updateData.department !== undefined ? updateData.department : existingSurvey.department
+    finalBranch = updateData.branch !== undefined ? updateData.branch : existingSurvey.branch
+  } else {
+    if (updateData.department !== undefined) {
+      const allowedDepts = [user.department, ...(user.accessDepartments ?? [])].filter(Boolean) as string[]
+      if (updateData.department === null || allowedDepts.includes(updateData.department)) {
+        finalDept = updateData.department
+      }
+    }
+    if (updateData.branch !== undefined) {
+      const allowedBranches = [user.branch, ...(user.accessBranches ?? [])].filter(Boolean) as string[]
+      if (updateData.branch === null || allowedBranches.includes(updateData.branch)) {
+        finalBranch = updateData.branch
+      }
+    }
+  }
+
   // Handle status changes (publish, archive)
-  // Non-admins cannot override department/branch — these are owned by the server
   const { department: _dept, branch: _branch, ...safeUpdateData } = updateData as any
   const data: any = { 
-    ...(isAdminPut ? updateData : safeUpdateData), 
+    ...safeUpdateData, 
+    department: finalDept,
+    branch: finalBranch,
     lastModifiedById: user.id 
   }
   if (expiryDate) data.expiryDate = new Date(expiryDate)

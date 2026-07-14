@@ -23,6 +23,16 @@ export default function SurveyInfoPanel({ draft, onChange }: Props) {
   const DEPARTMENTS = useDepartmentNames()
   const BRANCHES = useBranches()
 
+  const allowedDepts = Array.from(new Set([
+    profile?.department,
+    ...(profile?.accessDepartments || [])
+  ])).filter(Boolean) as string[]
+
+  const allowedBranches = Array.from(new Set([
+    profile?.branch,
+    ...(profile?.accessBranches || [])
+  ])).filter(Boolean) as string[]
+
   return (
     <div className="flex flex-col">
       {/* BASIC INFORMATION */}
@@ -71,10 +81,10 @@ export default function SurveyInfoPanel({ draft, onChange }: Props) {
           </select>
         </div>
 
-        {/* Department — editable for Admin, read-only for others */}
+        {/* Department */}
         <div>
           <label className={labelCls}>Department</label>
-          {profile.role === 'Admin' ? (
+          {profile?.role === 'Admin' ? (
             <>
               <select
                 className={inputBase + ' cursor-pointer'}
@@ -92,6 +102,23 @@ export default function SurveyInfoPanel({ draft, onChange }: Props) {
                 Admins can assign surveys to any department
               </p>
             </>
+          ) : allowedDepts.length > 1 ? (
+            <>
+              <select
+                className={inputBase + ' cursor-pointer'}
+                style={{ borderColor: 'var(--border)', color: 'var(--text)' }}
+                value={draft.department || ''}
+                onChange={(e) => onChange({ department: e.target.value })}
+              >
+                <option value="">Select department…</option>
+                {allowedDepts.map((d) => (
+                  <option key={d} value={d}>{d}</option>
+                ))}
+              </select>
+              <p className="mt-1 text-[10.5px]" style={{ color: 'var(--text-light)' }}>
+                Select from your authorized departments
+              </p>
+            </>
           ) : (
             <>
               <div
@@ -99,7 +126,7 @@ export default function SurveyInfoPanel({ draft, onChange }: Props) {
                 style={{ borderColor: 'var(--border)', color: 'var(--text)', background: 'var(--bg, #F5F7FA)', cursor: 'default' }}
                 title="Automatically assigned from your account"
               >
-                {profile.department || <span style={{ color: 'var(--text-light)' }}>No department assigned</span>}
+                {profile?.department || <span style={{ color: 'var(--text-light)' }}>No department assigned</span>}
               </div>
               <p className="mt-1 text-[10.5px]" style={{ color: 'var(--text-light)' }}>
                 Automatically assigned from your account
@@ -108,10 +135,10 @@ export default function SurveyInfoPanel({ draft, onChange }: Props) {
           )}
         </div>
 
-        {/* Branch — editable for Admin, read-only for others */}
+        {/* Branch */}
         <div>
           <label className={labelCls}>Branch</label>
-          {profile.role === 'Admin' ? (
+          {profile?.role === 'Admin' ? (
             <>
               <select
                 className={inputBase + ' cursor-pointer'}
@@ -128,6 +155,23 @@ export default function SurveyInfoPanel({ draft, onChange }: Props) {
                 Admins can assign surveys to any branch
               </p>
             </>
+          ) : allowedBranches.length > 1 ? (
+            <>
+              <select
+                className={inputBase + ' cursor-pointer'}
+                style={{ borderColor: 'var(--border)', color: 'var(--text)' }}
+                value={draft.branch || ''}
+                onChange={(e) => onChange({ branch: e.target.value })}
+              >
+                <option value="">Select branch…</option>
+                {allowedBranches.map((b) => (
+                  <option key={b} value={b}>{b}</option>
+                ))}
+              </select>
+              <p className="mt-1 text-[10.5px]" style={{ color: 'var(--text-light)' }}>
+                Select from your authorized branches
+              </p>
+            </>
           ) : (
             <>
               <div
@@ -135,7 +179,7 @@ export default function SurveyInfoPanel({ draft, onChange }: Props) {
                 style={{ borderColor: 'var(--border)', color: 'var(--text)', background: 'var(--bg, #F5F7FA)', cursor: 'default' }}
                 title="Automatically assigned from your account"
               >
-                {profile.branch || <span style={{ color: 'var(--text-light)' }}>No branch assigned</span>}
+                {profile?.branch || <span style={{ color: 'var(--text-light)' }}>No branch assigned</span>}
               </div>
               <p className="mt-1 text-[10.5px]" style={{ color: 'var(--text-light)' }}>
                 Automatically assigned from your account

@@ -189,6 +189,8 @@ export async function GET(req: NextRequest) {
         allowedPages: u.allowedPages ? JSON.parse(u.allowedPages) : null,
         visibleBranches: u.visibleBranches ? JSON.parse(u.visibleBranches) : null,
         visibleDepartments: u.visibleDepartments ? JSON.parse(u.visibleDepartments) : null,
+        accessBranches: u.accessBranches ? JSON.parse(u.accessBranches) : null,
+        accessDepartments: u.accessDepartments ? JSON.parse(u.accessDepartments) : null,
         department: u.department?.name ?? null, departmentId: u.departmentId,
         branch: u.branch?.name ?? null, branchId: u.branchId,
         // ── Survey counts (new) ──
@@ -227,6 +229,8 @@ export async function POST(req: NextRequest) {
       password: hashedPassword,
       visibleBranches: parsed.data.visibleBranches ? JSON.stringify(parsed.data.visibleBranches) : null,
       visibleDepartments: parsed.data.visibleDepartments ? JSON.stringify(parsed.data.visibleDepartments) : null,
+      accessBranches: parsed.data.accessBranches ? JSON.stringify(parsed.data.accessBranches) : null,
+      accessDepartments: parsed.data.accessDepartments ? JSON.stringify(parsed.data.accessDepartments) : null,
       allowedPages: parsed.data.allowedPages ? JSON.stringify(parsed.data.allowedPages) : null,
     },
     include: { role: true, department: true, branch: true },

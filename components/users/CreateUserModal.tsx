@@ -40,6 +40,8 @@ export function CreateUserModal({ open, onClose, onCreated }: Props) {
   const [selectedPages, setSelectedPages] = useState<string[]>([])
   const [selectedBranches, setSelectedBranches] = useState<string[]>([])
   const [selectedDepartments, setSelectedDepartments] = useState<string[]>([])
+  const [selectedAccessBranches, setSelectedAccessBranches] = useState<string[]>([])
+  const [selectedAccessDepartments, setSelectedAccessDepartments] = useState<string[]>([])
 
   const [form, setForm] = useState({
     employeeId: '',
@@ -96,6 +98,8 @@ export function CreateUserModal({ open, onClose, onCreated }: Props) {
     setSelectedPages([])
     setSelectedBranches([])
     setSelectedDepartments([])
+    setSelectedAccessBranches([])
+    setSelectedAccessDepartments([])
   }
 
   function handleClose() {
@@ -177,6 +181,8 @@ export function CreateUserModal({ open, onClose, onCreated }: Props) {
           isActive: true,
           visibleBranches: selectedBranches.length > 0 ? selectedBranches : null,
           visibleDepartments: selectedDepartments.length > 0 ? selectedDepartments : null,
+          accessBranches: selectedAccessBranches.length > 0 ? selectedAccessBranches : null,
+          accessDepartments: selectedAccessDepartments.length > 0 ? selectedAccessDepartments : null,
           allowedPages: allowedPagesOverride,
 
         }),
@@ -350,52 +356,92 @@ export function CreateUserModal({ open, onClose, onCreated }: Props) {
 
                   <div className="grid grid-cols-2 gap-3 mt-3">
                     <div>
-                      <label className={labelCls} style={{ color: 'var(--text-light)' }}>Visible Branches Override</label>
-                      <div className="flex flex-col gap-2 p-3 rounded-[9px] border bg-[var(--bg-subtle)] max-h-[140px] overflow-y-auto" style={{ borderColor: 'var(--border)' }}>
+                      <label className={labelCls} style={{ color: 'var(--text-light)' }}>Branches Scope Override</label>
+                      <div className="flex flex-col gap-2 p-2 rounded-[9px] border bg-[var(--bg-subtle)] max-h-[220px] overflow-y-auto" style={{ borderColor: 'var(--border)' }}>
                         {branches.map(b => {
-                          const isChecked = selectedBranches.includes(b.name)
+                          let currentVal = 'none'
+                          if (selectedBranches.includes(b.name)) {
+                            currentVal = selectedAccessBranches.includes(b.name) ? 'access' : 'view'
+                          }
+
+                          const handleSelectChange = (newVal: string) => {
+                            if (newVal === 'none') {
+                              setSelectedBranches(prev => prev.filter(n => n !== b.name))
+                              setSelectedAccessBranches(prev => prev.filter(n => n !== b.name))
+                            } else if (newVal === 'view') {
+                              if (!selectedBranches.includes(b.name)) {
+                                setSelectedBranches(prev => [...prev, b.name])
+                              }
+                              setSelectedAccessBranches(prev => prev.filter(n => n !== b.name))
+                            } else if (newVal === 'access') {
+                              if (!selectedBranches.includes(b.name)) {
+                                setSelectedBranches(prev => [...prev, b.name])
+                              }
+                              if (!selectedAccessBranches.includes(b.name)) {
+                                setSelectedAccessBranches(prev => [...prev, b.name])
+                              }
+                            }
+                          }
+
                           return (
-                            <label key={b.id} className="flex items-center gap-2 cursor-pointer text-[12px] font-medium text-[var(--text-secondary)] hover:text-[var(--text)]">
-                              <input
-                                type="checkbox"
-                                checked={isChecked}
-                                onChange={(e) => {
-                                  if (e.target.checked) {
-                                    setSelectedBranches(prev => [...prev, b.name])
-                                  } else {
-                                    setSelectedBranches(prev => prev.filter(n => n !== b.name))
-                                  }
-                                }}
-                                className="rounded border-[var(--border)] text-[var(--primary)] focus:ring-[var(--primary)] accent-[var(--primary)]"
-                              />
-                              <span>{b.name}</span>
-                            </label>
+                            <div key={b.id} className="flex items-center justify-between gap-1.5 py-1 border-b border-dashed border-[var(--border)]">
+                              <span className="text-[11.5px] font-semibold text-[var(--text-secondary)]">{b.name}</span>
+                              <select
+                                value={currentVal}
+                                onChange={e => handleSelectChange(e.target.value)}
+                                className="text-[10px] font-semibold border rounded-[6px] bg-white px-1 py-0.5 outline-none cursor-pointer border-[var(--border)] text-[var(--text-secondary)]"
+                              >
+                                <option value="none">None</option>
+                                <option value="view">Visibility Only</option>
+                                <option value="access">Visibility & Action</option>
+                              </select>
+                            </div>
                           )
                         })}
                       </div>
                     </div>
 
                     <div>
-                      <label className={labelCls} style={{ color: 'var(--text-light)' }}>Visible Depts Override</label>
-                      <div className="flex flex-col gap-2 p-3 rounded-[9px] border bg-[var(--bg-subtle)] max-h-[140px] overflow-y-auto" style={{ borderColor: 'var(--border)' }}>
+                      <label className={labelCls} style={{ color: 'var(--text-light)' }}>Departments Scope Override</label>
+                      <div className="flex flex-col gap-2 p-2 rounded-[9px] border bg-[var(--bg-subtle)] max-h-[220px] overflow-y-auto" style={{ borderColor: 'var(--border)' }}>
                         {departments.map(d => {
-                          const isChecked = selectedDepartments.includes(d.name)
+                          let currentVal = 'none'
+                          if (selectedDepartments.includes(d.name)) {
+                            currentVal = selectedAccessDepartments.includes(d.name) ? 'access' : 'view'
+                          }
+
+                          const handleSelectChange = (newVal: string) => {
+                            if (newVal === 'none') {
+                              setSelectedDepartments(prev => prev.filter(n => n !== d.name))
+                              setSelectedAccessDepartments(prev => prev.filter(n => n !== d.name))
+                            } else if (newVal === 'view') {
+                              if (!selectedDepartments.includes(d.name)) {
+                                setSelectedDepartments(prev => [...prev, d.name])
+                              }
+                              setSelectedAccessDepartments(prev => prev.filter(n => n !== d.name))
+                            } else if (newVal === 'access') {
+                              if (!selectedDepartments.includes(d.name)) {
+                                setSelectedDepartments(prev => [...prev, d.name])
+                              }
+                              if (!selectedAccessDepartments.includes(d.name)) {
+                                setSelectedAccessDepartments(prev => [...prev, d.name])
+                              }
+                            }
+                          }
+
                           return (
-                            <label key={d.id} className="flex items-center gap-2 cursor-pointer text-[12px] font-medium text-[var(--text-secondary)] hover:text-[var(--text)]">
-                              <input
-                                type="checkbox"
-                                checked={isChecked}
-                                onChange={(e) => {
-                                  if (e.target.checked) {
-                                    setSelectedDepartments(prev => [...prev, d.name])
-                                  } else {
-                                    setSelectedDepartments(prev => prev.filter(n => n !== d.name))
-                                  }
-                                }}
-                                className="rounded border-[var(--border)] text-[var(--primary)] focus:ring-[var(--primary)] accent-[var(--primary)]"
-                              />
-                              <span>{d.name}</span>
-                            </label>
+                            <div key={d.id} className="flex items-center justify-between gap-1.5 py-1 border-b border-dashed border-[var(--border)]">
+                              <span className="text-[11px] font-semibold text-[var(--text-secondary)] leading-tight">{d.name}</span>
+                              <select
+                                value={currentVal}
+                                onChange={e => handleSelectChange(e.target.value)}
+                                className="text-[10px] font-semibold border rounded-[6px] bg-white px-1 py-0.5 outline-none cursor-pointer border-[var(--border)] text-[var(--text-secondary)]"
+                              >
+                                <option value="none">None</option>
+                                <option value="view">Visibility Only</option>
+                                <option value="access">Visibility & Action</option>
+                              </select>
+                            </div>
                           )
                         })}
                       </div>

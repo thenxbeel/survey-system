@@ -74,6 +74,8 @@ export function UserDetailDrawer({ user: u, onClose, onUpdate, onDelete, onNotif
   const [newAllowedPages, setNewAllowedPages] = useState<string[] | null>(null)
   const [newVisibleBranches, setNewVisibleBranches] = useState<string[] | null>(null)
   const [newVisibleDepartments, setNewVisibleDepartments] = useState<string[] | null>(null)
+  const [newAccessBranches, setNewAccessBranches] = useState<string[] | null>(null)
+  const [newAccessDepartments, setNewAccessDepartments] = useState<string[] | null>(null)
   const [liveRoles, setLiveRoles] = useState<{ value: string; label: string }[]>([])
   const departmentOptions = useDepartmentOptions()
   const allBranches = useBranches().filter(b => b !== 'All Branches')
@@ -96,6 +98,8 @@ export function UserDetailDrawer({ user: u, onClose, onUpdate, onDelete, onNotif
     setNewAllowedPages(null)
     setNewVisibleBranches(null)
     setNewVisibleDepartments(null)
+    setNewAccessBranches(null)
+    setNewAccessDepartments(null)
   }, [u?.id])
 
   useEffect(() => {
@@ -148,20 +152,26 @@ export function UserDetailDrawer({ user: u, onClose, onUpdate, onDelete, onNotif
       ...u,
       visibleBranches: newVisibleBranches !== null ? newVisibleBranches : u.visibleBranches,
       visibleDepartments: newVisibleDepartments !== null ? newVisibleDepartments : u.visibleDepartments,
+      accessBranches: newAccessBranches !== null ? newAccessBranches : u.accessBranches,
+      accessDepartments: newAccessDepartments !== null ? newAccessDepartments : u.accessDepartments,
     }
     onUpdate?.(updated)
-    onNotify?.({ type: 'success', title: 'Visibility updated', message: `Data visibility scope updated for ${u.name}.` })
+    onNotify?.({ type: 'success', title: 'Scope updated', message: `Data visibility & access scope updated for ${u.name}.` })
     setNewVisibleBranches(null)
     setNewVisibleDepartments(null)
+    setNewAccessBranches(null)
+    setNewAccessDepartments(null)
   }
 
   function resetVisibility() {
     if (!u) return
-    const updated: AppUser = { ...u, visibleBranches: null, visibleDepartments: null }
+    const updated: AppUser = { ...u, visibleBranches: null, visibleDepartments: null, accessBranches: null, accessDepartments: null }
     setNewVisibleBranches(null)
     setNewVisibleDepartments(null)
+    setNewAccessBranches(null)
+    setNewAccessDepartments(null)
     onUpdate?.(updated)
-    onNotify?.({ type: 'info', title: 'Visibility reset', message: `Custom visibility scope removed. User now sees their default branch and department.` })
+    onNotify?.({ type: 'info', title: 'Scope reset', message: `Custom scope removed. User now sees their default branch and department.` })
   }
 
   function handleResetPassword() {
@@ -447,9 +457,10 @@ export function UserDetailDrawer({ user: u, onClose, onUpdate, onDelete, onNotif
               <div className="px-6 py-6" style={{ borderBottom: '1px solid var(--border)' }}>
                 <SectionHeader
                   icon={<Globe size={13} />}
-                  label="Data Visibility Scope"
+                  label="Data Visibility & Access Scope"
                   action={
-                    u.visibleBranches !== null || u.visibleDepartments !== null || newVisibleBranches !== null || newVisibleDepartments !== null ? (
+                    u.visibleBranches !== null || u.visibleDepartments !== null || u.accessBranches !== null || u.accessDepartments !== null ||
+                    newVisibleBranches !== null || newVisibleDepartments !== null || newAccessBranches !== null || newAccessDepartments !== null ? (
                       <button
                         onClick={resetVisibility}
                         className="text-[10px] font-semibold underline"
@@ -465,38 +476,59 @@ export function UserDetailDrawer({ user: u, onClose, onUpdate, onDelete, onNotif
                   }
                 />
                 <div className="mb-4 text-[11px]" style={{ color: 'var(--text-secondary)' }}>
-                  Grant data access to additional branches/departments. If left unchecked, the user only sees their own branch and department.
+                  Grant data visibility (view) or full action access (assign/solve) to additional branches/departments.
                 </div>
 
                 <div className="grid grid-cols-2 gap-6">
                   {/* Branches */}
                   <div>
                     <span className="mb-2 block text-[9.5px] font-bold uppercase tracking-[0.08em]" style={{ color: 'var(--text-light)' }}>
-                      Visible Branches
+                      Branches Scope
                     </span>
-                    <div className="flex flex-col gap-2.5 max-h-[160px] overflow-y-auto pr-1">
+                    <div className="flex flex-col gap-2 max-h-[300px] overflow-y-auto pr-1">
                       {allBranches.map(brName => {
-                        const currentList = newVisibleBranches !== null ? newVisibleBranches : (u.visibleBranches ?? [])
-                        const isChecked = currentList.includes(brName)
+                        const visibleList = newVisibleBranches !== null ? newVisibleBranches : (u.visibleBranches ?? [])
+                        const accessList = newAccessBranches !== null ? newAccessBranches : (u.accessBranches ?? [])
+
+                        let currentVal = 'none'
+                        if (visibleList.includes(brName)) {
+                          currentVal = accessList.includes(brName) ? 'access' : 'view'
+                        }
+
+                        const handleSelectChange = (newVal: string) => {
+                          const listV = newVisibleBranches ?? u.visibleBranches ?? []
+                          const listA = newAccessBranches ?? u.accessBranches ?? []
+                          let nextV = [...listV]
+                          let nextA = [...listA]
+
+                          if (newVal === 'none') {
+                            nextV = nextV.filter(b => b !== brName)
+                            nextA = nextA.filter(b => b !== brName)
+                          } else if (newVal === 'view') {
+                            if (!nextV.includes(brName)) nextV.push(brName)
+                            nextA = nextA.filter(b => b !== brName)
+                          } else if (newVal === 'access') {
+                            if (!nextV.includes(brName)) nextV.push(brName)
+                            if (!nextA.includes(brName)) nextA.push(brName)
+                          }
+
+                          setNewVisibleBranches(nextV)
+                          setNewAccessBranches(nextA)
+                        }
 
                         return (
-                          <label key={brName} className="flex items-center gap-2 cursor-pointer group">
-                            <input
-                              type="checkbox"
-                              checked={isChecked}
-                              onChange={(e) => {
-                                const list = newVisibleBranches ?? u.visibleBranches ?? []
-                                const updatedList = e.target.checked
-                                  ? [...list, brName]
-                                  : list.filter(b => b !== brName)
-                                setNewVisibleBranches(updatedList)
-                              }}
-                              className="h-3.5 w-3.5 rounded-[4px] border-[1.5px] border-[var(--border)] text-[var(--primary)] transition-colors focus:ring-0 focus:ring-offset-0 bg-transparent group-hover:border-[var(--primary)] cursor-pointer"
-                            />
-                            <span className="text-[11.5px] font-medium" style={{ color: 'var(--text)' }}>
-                              {brName}
-                            </span>
-                          </label>
+                          <div key={brName} className="flex items-center justify-between gap-1.5 py-1 border-b border-dashed border-[var(--border)]">
+                            <span className="text-[11.5px] font-semibold text-[var(--text-secondary)]">{brName}</span>
+                            <select
+                              value={currentVal}
+                              onChange={e => handleSelectChange(e.target.value)}
+                              className="text-[10px] font-semibold border rounded-[6px] bg-white px-1.5 py-0.5 outline-none cursor-pointer border-[var(--border)] text-[var(--text-secondary)]"
+                            >
+                              <option value="none">None</option>
+                              <option value="view">Visibility Only</option>
+                              <option value="access">Visibility & Action</option>
+                            </select>
+                          </div>
                         )
                       })}
                     </div>
@@ -505,44 +537,65 @@ export function UserDetailDrawer({ user: u, onClose, onUpdate, onDelete, onNotif
                   {/* Departments */}
                   <div>
                     <span className="mb-2 block text-[9.5px] font-bold uppercase tracking-[0.08em]" style={{ color: 'var(--text-light)' }}>
-                      Visible Departments
+                      Departments Scope
                     </span>
-                    <div className="flex flex-col gap-2.5 max-h-[160px] overflow-y-auto pr-1">
+                    <div className="flex flex-col gap-2 max-h-[300px] overflow-y-auto pr-1">
                       {allDepartments.map(deptName => {
-                        const currentList = newVisibleDepartments !== null ? newVisibleDepartments : (u.visibleDepartments ?? [])
-                        const isChecked = currentList.includes(deptName)
+                        const visibleList = newVisibleDepartments !== null ? newVisibleDepartments : (u.visibleDepartments ?? [])
+                        const accessList = newAccessDepartments !== null ? newAccessDepartments : (u.accessDepartments ?? [])
+
+                        let currentVal = 'none'
+                        if (visibleList.includes(deptName)) {
+                          currentVal = accessList.includes(deptName) ? 'access' : 'view'
+                        }
+
+                        const handleSelectChange = (newVal: string) => {
+                          const listV = newVisibleDepartments ?? u.visibleDepartments ?? []
+                          const listA = newAccessDepartments ?? u.accessDepartments ?? []
+                          let nextV = [...listV]
+                          let nextA = [...listA]
+
+                          if (newVal === 'none') {
+                            nextV = nextV.filter(d => d !== deptName)
+                            nextA = nextA.filter(d => d !== deptName)
+                          } else if (newVal === 'view') {
+                            if (!nextV.includes(deptName)) nextV.push(deptName)
+                            nextA = nextA.filter(d => d !== deptName)
+                          } else if (newVal === 'access') {
+                            if (!nextV.includes(deptName)) nextV.push(deptName)
+                            if (!nextA.includes(deptName)) nextA.push(deptName)
+                          }
+
+                          setNewVisibleDepartments(nextV)
+                          setNewAccessDepartments(nextA)
+                        }
 
                         return (
-                          <label key={deptName} className="flex items-center gap-2 cursor-pointer group">
-                            <input
-                              type="checkbox"
-                              checked={isChecked}
-                              onChange={(e) => {
-                                const list = newVisibleDepartments ?? u.visibleDepartments ?? []
-                                const updatedList = e.target.checked
-                                  ? [...list, deptName]
-                                  : list.filter(d => d !== deptName)
-                                setNewVisibleDepartments(updatedList)
-                              }}
-                              className="h-3.5 w-3.5 rounded-[4px] border-[1.5px] border-[var(--border)] text-[var(--primary)] transition-colors focus:ring-0 focus:ring-offset-0 bg-transparent group-hover:border-[var(--primary)] cursor-pointer"
-                            />
-                            <span className="text-[11.5px] font-medium" style={{ color: 'var(--text)' }}>
-                              {deptName}
-                            </span>
-                          </label>
+                          <div key={deptName} className="flex items-center justify-between gap-1.5 py-1 border-b border-dashed border-[var(--border)]">
+                            <span className="text-[11px] font-semibold text-[var(--text-secondary)] leading-tight">{deptName}</span>
+                            <select
+                              value={currentVal}
+                              onChange={e => handleSelectChange(e.target.value)}
+                              className="text-[10px] font-semibold border rounded-[6px] bg-white px-1.5 py-0.5 outline-none cursor-pointer border-[var(--border)] text-[var(--text-secondary)]"
+                            >
+                              <option value="none">None</option>
+                              <option value="view">Visibility Only</option>
+                              <option value="access">Visibility & Action</option>
+                            </select>
+                          </div>
                         )
                       })}
                     </div>
                   </div>
                 </div>
 
-                {(newVisibleBranches !== null || newVisibleDepartments !== null) && (
+                {(newVisibleBranches !== null || newVisibleDepartments !== null || newAccessBranches !== null || newAccessDepartments !== null) && (
                   <button
                     onClick={applyVisibility}
                     className="w-full flex items-center justify-center text-center rounded-[8px] py-2 text-[11px] font-semibold text-white transition-all hover:opacity-90 mt-4"
                     style={{ background: 'var(--primary)' }}
                   >
-                    Save Visibility Scope
+                    Save Custom Scope
                   </button>
                 )}
               </div>

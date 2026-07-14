@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { getCurrentUser } from '@/lib/auth/session'
+import { getCurrentUser, hasActionAccess } from '@/lib/auth/session'
 
 /**
  * PATCH /api/responses/[id]/assign
@@ -34,13 +34,13 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   // Verify the response exists
   const response = await prisma.response.findUnique({
     where: { id: numericId },
-    select: { id: true, surveyId: true, status: true, survey: { select: { department: true } } },
+    select: { id: true, surveyId: true, status: true, survey: { select: { department: true, branch: true } } },
   })
   if (!response) return NextResponse.json({ error: 'Response not found' }, { status: 404 })
 
-  // ── Department access control ──────────────────────────────────────────
-  if (currentUser.role !== 'Admin' && response.survey?.department && response.survey.department !== currentUser.department) {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  // ── Department & Branch access control ──────────────────────────────────
+  if (!hasActionAccess(currentUser, response.survey?.department ?? null, response.survey?.branch ?? null)) {
+    return NextResponse.json({ error: 'Forbidden — You do not have action access to this department/branch' }, { status: 403 })
   }
 
   // Verify the target user exists and is active

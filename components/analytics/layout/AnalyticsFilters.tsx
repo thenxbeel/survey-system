@@ -120,7 +120,6 @@ export function AnalyticsFilters() {
   const filterDefs: FilterDef[] = useMemo(() => [
     { key: 'branch',      label: 'Branch',      options: branchOpts },
     { key: 'period',      label: 'Period',      options: STATIC_OPTIONS.periods },
-    { key: 'product',     label: 'Product',     options: STATIC_OPTIONS.products },
     { key: 'department',  label: 'Department',  options: deptOpts },
     { key: 'touchpoint',  label: 'Touchpoint',  options: tpOpts },
     { key: 'npsCategory', label: 'NPS Category',options: STATIC_OPTIONS.npsCategories },

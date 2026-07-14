@@ -21,6 +21,8 @@ export interface AuthUser {
   allowedPages?: string | null
   visibleBranches?: string[] | null
   visibleDepartments?: string[] | null
+  accessBranches?: string[] | null
+  accessDepartments?: string[] | null
 }
 
 export async function getCurrentUser(
@@ -78,6 +80,8 @@ export async function getCurrentUser(
       allowedPages: user.allowedPages ? user.allowedPages : user.role.allowedPages,
       visibleBranches: user.visibleBranches ? JSON.parse(user.visibleBranches) : null,
       visibleDepartments: user.visibleDepartments ? JSON.parse(user.visibleDepartments) : null,
+      accessBranches: user.accessBranches ? JSON.parse(user.accessBranches) : null,
+      accessDepartments: user.accessDepartments ? JSON.parse(user.accessDepartments) : null,
     }
   } catch (error) {
     console.error('Session error:', error)
@@ -158,4 +162,26 @@ export function getScopeFilters(user: AuthUser) {
   }
 
   return filters
+}
+
+export function hasActionAccess(user: AuthUser, department: string | null, branch: string | null): boolean {
+  if (user.role === 'Admin') return true
+
+  // Check department access
+  if (department && department !== user.department) {
+    const allowedDepts = user.accessDepartments ?? []
+    if (!allowedDepts.includes(department)) {
+      return false
+    }
+  }
+
+  // Check branch access
+  if (branch && branch !== user.branch) {
+    const allowedBranches = user.accessBranches ?? []
+    if (!allowedBranches.includes(branch)) {
+      return false
+    }
+  }
+
+  return true
 }

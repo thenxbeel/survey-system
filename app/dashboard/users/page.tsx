@@ -112,6 +112,8 @@ function mapApiUser(u: any): AppUser {
     roleAllowedPages: u.roleAllowedPages ?? [],
     visibleBranches: u.visibleBranches ?? null,
     visibleDepartments: u.visibleDepartments ?? null,
+    accessBranches: u.accessBranches ?? null,
+    accessDepartments: u.accessDepartments ?? null,
     activity: [],
     recentLogins: [],
     surveysAssigned: surveyCounts.total,
@@ -221,6 +223,8 @@ export default function UsersPage() {
         allowedPages: updated.allowedPages,
         visibleBranches: updated.visibleBranches,
         visibleDepartments: updated.visibleDepartments,
+        accessBranches: updated.accessBranches,
+        accessDepartments: updated.accessDepartments,
       }),
     }).catch(() => { /* non-fatal */ })
   }
