@@ -33,10 +33,61 @@ async function main() {
   const ho  = await prisma.branch.upsert({ where: { name: "Head Office" }, update: {}, create: { name: "Head Office", location: "Abu Dhabi HQ" } });
 
   // ─── Departments ─────────────────────────────────────────────────
-  const it    = await prisma.department.upsert({ where: { name: "Information Technology" }, update: {}, create: { name: "Information Technology", description: "IT Department", branchId: ho.id } });
-  const cx    = await prisma.department.upsert({ where: { name: "Customer Experience" }, update: {}, create: { name: "Customer Experience", description: "CX Team", branchId: ho.id } });
-  const claims = await prisma.department.upsert({ where: { name: "Claims" }, update: {}, create: { name: "Claims", description: "Claims Handling", branchId: auh.id } });
-  const sales = await prisma.department.upsert({ where: { name: "Sales" }, update: {}, create: { name: "Sales", description: "Sales & Distribution", branchId: dxb.id } });
+  const it = await prisma.department.upsert({
+    where: { name: "Information Technology (IT)" },
+    update: {},
+    create: { name: "Information Technology (IT)", description: "IT Department", branchId: ho.id }
+  });
+  const claims = await prisma.department.upsert({
+    where: { name: "Claims" },
+    update: {},
+    create: { name: "Claims", description: "Claims Handling", branchId: auh.id }
+  });
+  const customerService = await prisma.department.upsert({
+    where: { name: "Customer Service" },
+    update: {},
+    create: { name: "Customer Service", description: "Customer Support & Service", branchId: ho.id }
+  });
+  const operations = await prisma.department.upsert({
+    where: { name: "Operations" },
+    update: {},
+    create: { name: "Operations", description: "Operations & Daily Production", branchId: ho.id }
+  });
+  const finance = await prisma.department.upsert({
+    where: { name: "Finance & Accounting" },
+    update: {},
+    create: { name: "Finance & Accounting", description: "Budgeting & Financial Reporting", branchId: ho.id }
+  });
+  const legal = await prisma.department.upsert({
+    where: { name: "Legal & Compliance" },
+    update: {},
+    create: { name: "Legal & Compliance", description: "Legal, Contracts & Compliance", branchId: ho.id }
+  });
+  const risk = await prisma.department.upsert({
+    where: { name: "Risk Management" },
+    update: {},
+    create: { name: "Risk Management", description: "Financial & Operational Risk", branchId: ho.id }
+  });
+  const hr = await prisma.department.upsert({
+    where: { name: "Human Resources (HR)" },
+    update: {},
+    create: { name: "Human Resources (HR)", description: "Hiring, Training & workplace culture", branchId: ho.id }
+  });
+  const sales = await prisma.department.upsert({
+    where: { name: "Sales" },
+    update: {},
+    create: { name: "Sales", description: "Sales & Distribution", branchId: dxb.id }
+  });
+  const marketing = await prisma.department.upsert({
+    where: { name: "Marketing" },
+    update: {},
+    create: { name: "Marketing", description: "Brand & Market Research", branchId: ho.id }
+  });
+  const procurement = await prisma.department.upsert({
+    where: { name: "Procurement" },
+    update: {},
+    create: { name: "Procurement", description: "Supply & Equipment Purchasing", branchId: ho.id }
+  });
 
   // ─── Users ───────────────────────────────────────────────────────
   const pwd = await bcrypt.hash("Admin@123", 10);
@@ -50,7 +101,7 @@ async function main() {
   const sara = await prisma.user.upsert({
     where: { email: "sara.almansoori@adntc.ae" },
     update: {},
-    create: { employeeId: "EMP002", name: "Sara Al Mansoori", email: "sara.almansoori@adntc.ae", password: pwd, roleId: managerRole.id, departmentId: cx.id, branchId: auh.id, isActive: true },
+    create: { employeeId: "EMP002", name: "Sara Al Mansoori", email: "sara.almansoori@adntc.ae", password: pwd, roleId: managerRole.id, departmentId: customerService.id, branchId: auh.id, isActive: true },
   });
 
   const omar = await prisma.user.upsert({

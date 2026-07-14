@@ -18,6 +18,22 @@ export default function TemplatesModal({
 }: TemplatesModalProps) {
   const [selectedCategory, setSelectedCategory] = useState<'Survey' | 'Invitation' | 'Registration'>('Survey')
   const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(null)
+  const [selectedDepartment, setSelectedDepartment] = useState<string>('All')
+
+  const DEPARTMENTS = [
+    'All',
+    'Information Technology (IT)',
+    'Claims',
+    'Customer Service',
+    'Operations',
+    'Finance & Accounting',
+    'Legal & Compliance',
+    'Risk Management',
+    'Human Resources (HR)',
+    'Sales',
+    'Marketing',
+    'Procurement'
+  ]
 
   // Use local state for smooth mount/unmount animation
   const [isMounted, setIsMounted] = useState(isOpen)
@@ -25,22 +41,36 @@ export default function TemplatesModal({
 
   useEffect(() => {
     if (isOpen) {
-      setIsMounted(true)
+      const t1 = setTimeout(() => {
+        setIsMounted(true)
+      }, 0)
       // Slight delay to allow DOM to render and paint before starting animation
       const t = setTimeout(() => {
         setIsAnimating(true)
       }, 50)
-      return () => clearTimeout(t)
+      return () => {
+        clearTimeout(t1)
+        clearTimeout(t)
+      }
     } else {
-      setIsAnimating(false)
+      const t2 = setTimeout(() => {
+        setIsAnimating(false)
+      }, 0)
       const timeout = setTimeout(() => setIsMounted(false), 300) // Match transition duration
-      return () => clearTimeout(timeout)
+      return () => {
+        clearTimeout(t2)
+        clearTimeout(timeout)
+      }
     }
   }, [isOpen])
 
   if (!isMounted) return null
 
-  const filteredTemplates = FEATURED_TEMPLATES.filter((t) => t.category === selectedCategory)
+  const filteredTemplates = FEATURED_TEMPLATES.filter((t) => {
+    const categoryMatch = t.category === selectedCategory;
+    const deptMatch = selectedDepartment === 'All' || t.department === selectedDepartment;
+    return categoryMatch && deptMatch;
+  })
 
   const handleTemplateClick = (template: SurveyTemplate) => {
     setSelectedTemplateId(template.id)
@@ -82,24 +112,49 @@ export default function TemplatesModal({
           </button>
         </div>
 
-        <div className="mb-6 flex gap-2 border-b pb-4" style={{ borderColor: 'var(--border)' }}>
-          {(['Survey', 'Invitation', 'Registration'] as const).map((category) => {
-            const isActive = selectedCategory === category
-            return (
-              <button
-                key={category}
-                onClick={() => setSelectedCategory(category)}
-                className="rounded-full border px-4 py-1.5 text-[12px] font-semibold transition-all"
-                style={{
-                  background: isActive ? 'var(--primary)' : 'transparent',
-                  color: isActive ? '#fff' : 'var(--text-secondary)',
-                  borderColor: isActive ? 'var(--primary)' : 'var(--border)',
-                }}
-              >
-                {category}
-              </button>
-            )
-          })}
+        <div className="mb-6 flex flex-wrap gap-4 border-b pb-4 items-center justify-between" style={{ borderColor: 'var(--border)' }}>
+          <div className="flex gap-2">
+            {(['Survey', 'Invitation', 'Registration'] as const).map((category) => {
+              const isActive = selectedCategory === category
+              return (
+                <button
+                  key={category}
+                  onClick={() => setSelectedCategory(category)}
+                  className="rounded-full border px-4 py-1.5 text-[12px] font-semibold transition-all"
+                  style={{
+                    background: isActive ? 'var(--primary)' : 'transparent',
+                    color: isActive ? '#fff' : 'var(--text-secondary)',
+                    borderColor: isActive ? 'var(--primary)' : 'var(--border)',
+                  }}
+                >
+                  {category}
+                </button>
+              )
+            })}
+          </div>
+          
+          <div className="flex items-center gap-2">
+            <label htmlFor="dept-filter" className="text-[12px] font-semibold" style={{ color: 'var(--text-secondary)' }}>
+              Department:
+            </label>
+            <select
+              id="dept-filter"
+              value={selectedDepartment}
+              onChange={(e) => setSelectedDepartment(e.target.value)}
+              className="rounded-md border px-2 py-1 text-[12px] focus:outline-none"
+              style={{
+                background: 'var(--bg-subtle)',
+                color: 'var(--text)',
+                borderColor: 'var(--border)',
+              }}
+            >
+              {DEPARTMENTS.map((dept) => (
+                <option key={dept} value={dept}>
+                  {dept}
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
 
         <div className="flex-1 overflow-y-auto pr-1">
@@ -183,6 +238,18 @@ export default function TemplatesModal({
 }
 
 function getTemplateEmoji(id: string): string {
+  if (id.startsWith('it-') || id === 'hackathon-registration') return '💻'
+  if (id.startsWith('claims-') || id === 'employee-satisfaction' || id === 'customer-satisfaction') return '📋'
+  if (id.startsWith('customer-') || id === 'customer-expectations' || id === 'webinar-registration') return '🤝'
+  if (id.startsWith('operations-') || id === 'manager-feedback') return '⚙️'
+  if (id.startsWith('finance-') || id === 'product-pricing') return '💰'
+  if (id.startsWith('compliance-') || id === 'course-evaluation' || id === 'annual-general-meeting' || id === 'executive-summit-registration') return '⚖️'
+  if (id.startsWith('risk-') || id === 'corporate-seminar-invite' || id === 'workshop-registration') return '🛡️'
+  if (id.startsWith('hr-') || id === 'team-retreat-invite') return '👥'
+  if (id.startsWith('sales-') || id === 'product-launch-invite') return '📈'
+  if (id.startsWith('marketing-') || id === 'market-research' || id === 'post-event-feedback' || id === 'vip-event-invitation' || id === 'conference-registration') return '🎯'
+  if (id.startsWith('procurement-')) return '📦'
+
   switch (id) {
     case 'employee-satisfaction': return '👥'
     case 'course-evaluation': return '🎓'
