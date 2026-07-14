@@ -42,7 +42,13 @@ export async function GET(req: NextRequest) {
   const format = req.nextUrl.searchParams.get('format') ?? 'csv'
   const requestedType = req.nextUrl.searchParams.get('type') ?? 'executive'
   const branch = req.nextUrl.searchParams.get('branch')
-  const department = req.nextUrl.searchParams.get('department')
+  const requestedDepartment = req.nextUrl.searchParams.get('department')
+
+  // ── Department access control ──────────────────────────────────────────
+  const isAdminReport = user.role === 'Admin'
+  // Non-admins are locked to their own department
+  const department = isAdminReport ? requestedDepartment : (user.department ?? null)
+
   const period = req.nextUrl.searchParams.get('period')
 
   let type = requestedType

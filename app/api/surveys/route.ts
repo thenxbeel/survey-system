@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { getCurrentUser } from '@/lib/auth/session'
+import { getCurrentUser, getScopeFilters } from '@/lib/auth/session'
 import { CreateSurveySchema, parsePagination } from '@/lib/validation'
 import { deriveLifecycleStatus, computeRemainingMs } from '@/lib/survey-url'
 import { generateSurveyUrlBundle } from '@/lib/survey-qr'
@@ -25,7 +25,12 @@ export async function GET(req: NextRequest) {
   const lifecycle  = req.nextUrl.searchParams.get('lifecycle') // new lifecycle filter
   const campaignId = req.nextUrl.searchParams.get('campaignId')
 
-  const where: any = {}
+  const isAdmin = user.role === 'Admin'
+
+  const where: any = {
+    ...getScopeFilters(user)
+  }
+
   if (params.search) {
     where.OR = [
       { title: { contains: params.search } },
@@ -37,10 +42,21 @@ export async function GET(req: NextRequest) {
   if (status && status !== 'all') where.status = status.toUpperCase()
   if (lifecycle && lifecycle !== 'all') where.lifecycleStatus = lifecycle.toUpperCase()
   if (touchpoint && touchpoint !== 'all') where.touchpoint = touchpoint
-  if (branch && branch !== 'all' && branch !== 'All Branches') where.branch = branch
+  if (branch && branch !== 'all' && branch !== 'All Branches') {
+    if (where.branch) {
+      const allowed = where.branch.in
+      if (allowed.includes(branch)) {
+        where.branch = branch
+      } else {
+        where.branch = 'UNAUTHORIZED_BRANCH_ACCESS'
+      }
+    } else {
+      where.branch = branch
+    }
+  }
   if (campaignId) where.campaignId = parseInt(campaignId)
-  // Non-admins can only see their own surveys (unless explicitly viewing all)
-  if (createdBy) where.createdById = parseInt(createdBy)
+  // Admin-only filter: filter by specific user
+  if (isAdmin && createdBy) where.createdById = parseInt(createdBy)
 
   const orderBy: any = {}
   if (params.sort === 'title') orderBy.title = params.sortDir
@@ -208,8 +224,9 @@ export async function POST(req: NextRequest) {
   const created = await prisma.survey.create({
     data: {
       ...surveyData,
-      department: surveyData.department ?? null,
-      branch: surveyData.branch ?? null,
+      // Admins can specify the department and branch. Non-admins are locked to their own.
+      department: user.role === 'Admin' ? (surveyData.department ?? user.department ?? null) : (user.department ?? null),
+      branch: user.role === 'Admin' ? (surveyData.branch ?? user.branch ?? null) : (user.branch ?? null),
       status: publish ? 'PUBLISHED' : 'DRAFT',
       lifecycleStatus,
       visibility: surveyData.visibility as any,

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { getCurrentUser } from '@/lib/auth/session'
+import { getCurrentUser, getScopeFilters } from '@/lib/auth/session'
 
 export async function GET(req: NextRequest) {
   const user = await getCurrentUser(req)
@@ -16,10 +16,24 @@ export async function GET(req: NextRequest) {
   const department = req.nextUrl.searchParams.get('department') ?? 'all'
   const touchpoint = req.nextUrl.searchParams.get('touchpoint') ?? 'all'
   
-  const surveyWhere: any = {}
+  const surveyWhere: any = {
+    ...getScopeFilters(user)
+  }
+  const isAdminHeatmap = user.role === 'Admin'
   if (touchpoint !== 'all') surveyWhere.touchpoint = touchpoint
-  if (department !== 'all') surveyWhere.department = department
-  if (branch !== 'all') surveyWhere.branch = branch
+  if (isAdminHeatmap && department !== 'all') surveyWhere.department = department
+  if (branch !== 'all') {
+    if (surveyWhere.branch) {
+      const allowed = surveyWhere.branch.in
+      if (allowed.includes(branch)) {
+        surveyWhere.branch = branch
+      } else {
+        surveyWhere.branch = 'UNAUTHORIZED_BRANCH_ACCESS'
+      }
+    } else {
+      surveyWhere.branch = branch
+    }
+  }
 
   const where: any = { submittedAt: { gte: since } }
   if (Object.keys(surveyWhere).length > 0) where.survey = surveyWhere

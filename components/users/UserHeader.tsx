@@ -1,7 +1,7 @@
 'use client'
 
 import { motion } from 'framer-motion'
-import { UserCog, Download, UserPlus, RefreshCw } from 'lucide-react'
+import { UserCog, UserPlus, RefreshCw } from 'lucide-react'
 
 interface Props {
   totalUsers: number
@@ -13,7 +13,7 @@ interface Props {
 /**
  * UserHeader — premium hero banner matching the enterprise design system.
  */
-export function UserHeader({ totalUsers, activeCount, onExport, onNew }: Props) {
+export function UserHeader({ totalUsers, activeCount, onNew }: Omit<Props, 'onExport'>) {
   return (
     <motion.div
       initial={{ opacity: 0, y: -8 }}
@@ -105,15 +105,6 @@ export function UserHeader({ totalUsers, activeCount, onExport, onNew }: Props) 
           </div>
         </div>
 
-        {/* Export */}
-        <button
-          onClick={onExport}
-          className="flex items-center gap-2 rounded-[10px] px-6 py-3 text-[12px] font-semibold text-white transition-all hover:opacity-90 items-center justify-center text-center"
-          style={{ background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.15)' }}
-        >
-          <Download size={13} />
-          <span className="hidden md:inline">Export</span>
-        </button>
 
         {/* Add User */}
         <button

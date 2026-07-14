@@ -18,9 +18,14 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   // Verify the response exists
   const response = await prisma.response.findUnique({
     where: { id: numericId },
-    select: { id: true, status: true },
+    select: { id: true, status: true, survey: { select: { department: true } } },
   })
   if (!response) return NextResponse.json({ error: 'Response not found' }, { status: 404 })
+
+  // ── Department access control ──────────────────────────────────────────
+  if (currentUser.role !== 'Admin' && response.survey?.department && response.survey.department !== currentUser.department) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  }
 
   // Update the response status to archived
   const updated = await prisma.response.update({

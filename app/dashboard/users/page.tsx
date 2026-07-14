@@ -97,14 +97,21 @@ function mapApiUser(u: any): AppUser {
     email: u.email,
     phone: u.phone ?? undefined,
     role,
+    roleId: u.roleId,
     department: u.department ?? '—',
+    departmentId: u.departmentId ?? null,
     branch: u.branch ?? '—',
+    branchId: u.branchId ?? null,
     status: status as any,
     avatarColor: pickAvatarColor(u.name),
     lastLogin: u.lastLogin ?? null,
     lastLoginIp: null,
     createdAt: u.createdAt,
     permissions: [],
+    allowedPages: u.allowedPages ?? null,
+    roleAllowedPages: u.roleAllowedPages ?? [],
+    visibleBranches: u.visibleBranches ?? null,
+    visibleDepartments: u.visibleDepartments ?? null,
     activity: [],
     recentLogins: [],
     surveysAssigned: surveyCounts.total,
@@ -202,12 +209,19 @@ export default function UsersPage() {
   function handleUserUpdate(updated: AppUser) {
     setUsers(prev => prev.map(u => u.id === updated.id ? updated : u))
     setActiveUser(updated)
-    // Persist the status change to the API
+    // Persist the status/role/dept/access changes to the API
     const numericId = updated.id
     fetch(`/api/users/${numericId}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ isActive: updated.status === 'active' }),
+      body: JSON.stringify({
+        isActive: updated.status === 'active',
+        roleName: updated.role,
+        departmentName: updated.department,
+        allowedPages: updated.allowedPages,
+        visibleBranches: updated.visibleBranches,
+        visibleDepartments: updated.visibleDepartments,
+      }),
     }).catch(() => { /* non-fatal */ })
   }
   function handleResetPassword(u: AppUser) { pushToast('info', 'Password reset', `Reset link sent to ${u.email}.`) }
@@ -241,7 +255,6 @@ export default function UsersPage() {
       <UserHeader
         totalUsers={stats.total}
         activeCount={stats.active}
-        onExport={() => pushToast('success', 'Export queued', `${stats.total} users queued for CSV export.`)}
         onNew={() => setCreateModalOpen(true)}
       />
 

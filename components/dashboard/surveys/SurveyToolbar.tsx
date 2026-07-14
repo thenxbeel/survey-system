@@ -126,7 +126,7 @@ export default function SurveyToolbar({
         <FilterSelect
           value={filters.branch}
           onChange={(v) => set('branch', v)}
-          options={[{ value: 'all', label: 'All Branches' }, ...BRANCHES.map((b) => ({ value: b, label: b }))]}
+          options={BRANCHES.map((b) => ({ value: b === 'All Branches' ? 'all' : b, label: b }))}
         />
       </div>
 

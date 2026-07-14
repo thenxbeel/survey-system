@@ -10,6 +10,7 @@ import QuestionList from '@/components/builder/QuestionList'
 import PreviewPanel from '@/components/builder/PreviewPanel'
 import TemplatesModal from '@/components/builder/TemplatesModal'
 import type { SurveyTemplate } from '@/lib/survey-templates'
+import { useSettings } from '@/lib/stores/SettingsStore'
 
 // Extended draft that carries the new availability + anonymity options
 interface ExtendedDraft extends SurveyDraft {
@@ -69,8 +70,17 @@ export default function SurveyBuilderPage() {
 function SurveyBuilderContent() {
   const searchParams = useSearchParams()
   const editId = searchParams.get('edit')
+  const { state: settingsState } = useSettings()
+  const profile = settingsState.profile
 
-  const [draft, setDraft] = useState<ExtendedDraft>({ ...EMPTY_DRAFT, isAnonymous: false, availabilityMode: 'always' })
+  const [draft, setDraft] = useState<ExtendedDraft>({
+    ...EMPTY_DRAFT,
+    isAnonymous: false,
+    availabilityMode: 'always',
+    // Pre-populate from user profile; backend enforces these regardless
+    department: profile.department || '',
+    branch: profile.branch || '',
+  })
   const [showPreview, setShowPreview] = useState(true)
   const [activeTab, setActiveTab] = useState<'info' | 'questions' | 'availability'>('info')
   const [loadedSurveyId, setLoadedSurveyId] = useState<number | null>(null)
@@ -83,8 +93,8 @@ function SurveyBuilderContent() {
       title: template.title,
       description: template.description,
       touchpoint: '',
-      department: '',
-      branch: '',
+      department: profile.department || '',
+      branch: profile.branch || '',
       visibility: 'public',
       expiryDate: '',
       requireContactInfo: false,
@@ -105,7 +115,22 @@ function SurveyBuilderContent() {
     setTemplatesModalOpen(false)
     // Switch to questions tab to showcase the populated questions
     setActiveTab('questions')
-  }, [])
+  }, [profile.department, profile.branch])
+
+  // ── Sync dept/branch from profile whenever it loads ───────────────────
+  // Profile loads async; this ensures the draft reflects the user's dept/branch
+  // even if the initial useState ran before the profile was fetched.
+  // Skip when editing an existing survey (dept/branch come from the survey).
+  useEffect(() => {
+    if (editId) return
+    if (profile.department || profile.branch) {
+      setDraft((prev) => ({
+        ...prev,
+        department: profile.department || prev.department,
+        branch: profile.branch || prev.branch,
+      }))
+    }
+  }, [profile.department, profile.branch, editId])
 
   // ── Load existing survey when ?edit=<id> is present ──
   useEffect(() => {
@@ -150,8 +175,6 @@ function SurveyBuilderContent() {
   const handleSaveDraft = useCallback(async (): Promise<string | null> => {
     if (!draft.title.trim()) return 'Please enter a survey title.'
     if (!draft.touchpoint) return 'Please select a touchpoint.'
-    if (!draft.department) return 'Please select a department.'
-    if (!draft.branch) return 'Please select a branch.'
     if (draft.questions.length === 0) return 'Please add at least one question.'
 
     const payload = buildPayload(draft, false)
@@ -195,8 +218,6 @@ function SurveyBuilderContent() {
   const handlePublish = useCallback(async (): Promise<string | number | null> => {
     if (!draft.title.trim()) return 'Please enter a survey title.'
     if (!draft.touchpoint) return 'Please select a touchpoint.'
-    if (!draft.department) return 'Please select a department.'
-    if (!draft.branch) return 'Please select a branch.'
     if (draft.questions.length === 0) return 'Please add at least one question.'
 
     const payload = buildPayload(draft, true)
@@ -339,7 +360,7 @@ function SurveyBuilderContent() {
             <div className="flex flex-col gap-2.5">
               {[
                 { label: 'Title set',          done: Boolean(draft.title.trim()) },
-                { label: 'Targeting chosen',  done: Boolean(draft.touchpoint && draft.department && draft.branch) },
+                { label: 'Targeting chosen',  done: Boolean(draft.touchpoint) },
                 { label: 'Has questions',      done: draft.questions.length > 0 },
                 { label: 'All questions titled',done: draft.questions.length > 0 && draft.questions.every((q) => q.title.trim()) },
               ].map(({ label, done }) => (

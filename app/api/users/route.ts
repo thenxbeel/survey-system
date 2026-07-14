@@ -186,6 +186,9 @@ export async function GET(req: NextRequest) {
         phone: u.phone, isActive: u.isActive, lastLogin: u.lastLogin, createdAt: u.createdAt,
         role: u.role.name, roleId: u.roleId,
         roleAllowedPages: allowedPages,
+        allowedPages: u.allowedPages ? JSON.parse(u.allowedPages) : null,
+        visibleBranches: u.visibleBranches ? JSON.parse(u.visibleBranches) : null,
+        visibleDepartments: u.visibleDepartments ? JSON.parse(u.visibleDepartments) : null,
         department: u.department?.name ?? null, departmentId: u.departmentId,
         branch: u.branch?.name ?? null, branchId: u.branchId,
         // ── Survey counts (new) ──
@@ -222,6 +225,9 @@ export async function POST(req: NextRequest) {
     data: {
       ...parsed.data,
       password: hashedPassword,
+      visibleBranches: parsed.data.visibleBranches ? JSON.stringify(parsed.data.visibleBranches) : null,
+      visibleDepartments: parsed.data.visibleDepartments ? JSON.stringify(parsed.data.visibleDepartments) : null,
+      allowedPages: parsed.data.allowedPages ? JSON.stringify(parsed.data.allowedPages) : null,
     },
     include: { role: true, department: true, branch: true },
   })

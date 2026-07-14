@@ -31,6 +31,9 @@ export const CreateUserSchema = z.object({
   departmentId:z.number().int().positive().optional(),
   branchId:    z.number().int().positive().optional(),
   isActive:    z.boolean().default(true),
+  visibleBranches: z.array(z.string()).optional().nullable(),
+  visibleDepartments: z.array(z.string()).optional().nullable(),
+  allowedPages: z.array(z.string()).optional().nullable(),
 })
 
 export const UpdateUserSchema = z.object({
@@ -40,7 +43,12 @@ export const UpdateUserSchema = z.object({
   roleId:      z.number().int().positive().optional(),
   departmentId:z.number().int().positive().optional().nullable(),
   branchId:    z.number().int().positive().optional().nullable(),
+  roleName:    z.string().optional(),
+  departmentName: z.string().optional(),
   isActive:    z.boolean().optional(),
+  allowedPages:z.array(z.string()).optional().nullable(),
+  visibleBranches: z.array(z.string()).optional().nullable(),
+  visibleDepartments: z.array(z.string()).optional().nullable(),
 })
 
 export const PaginationSchema = z.object({

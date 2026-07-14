@@ -67,9 +67,12 @@ export async function GET(req: NextRequest) {
     { description: { contains: q } },
   ]
 
+  const isAdminSearch = user.role === 'Admin'
+  const deptFilter = !isAdminSearch && user.department ? { department: user.department } : {}
+
   const [surveys, responses, users, campaigns] = await Promise.all([
     prisma.survey.findMany({
-      where: { OR: surveyOr },
+      where: { ...deptFilter, OR: surveyOr },
       select: {
         id: true, title: true, touchpoint: true, status: true, lifecycleStatus: true,
         surveyCode: true, slug: true, createdAt: true,
@@ -81,7 +84,7 @@ export async function GET(req: NextRequest) {
     }),
 
     prisma.response.findMany({
-      where: { OR: responseOr },
+      where: { OR: responseOr, ...(deptFilter.department ? { survey: { department: deptFilter.department } } : {}) },
       select: {
         id: true, respondentName: true, respondentEmail: true,
         npsScore: true, submittedAt: true, status: true,

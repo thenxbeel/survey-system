@@ -49,6 +49,12 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
   })
   if (!survey) return NextResponse.json({ error: 'Survey not found' }, { status: 404 })
 
+  // ── Department access control ──────────────────────────────────────────
+  const isAdmin = user.role === 'Admin'
+  if (!isAdmin && survey.department && survey.department !== user.department) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  }
+
   const npsAgg = await prisma.response.aggregate({
     where: { surveyId: numericId, npsScore: { not: null } },
     _count: { npsScore: true },
@@ -148,11 +154,17 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
   // Fetch existing survey to check ownership and status changes
   const existingSurvey = await prisma.survey.findUnique({
     where: { id: numericId },
-    select: { id: true, title: true, createdById: true, status: true },
+    select: { id: true, title: true, createdById: true, status: true, department: true },
   })
 
   if (!existingSurvey) {
     return NextResponse.json({ error: 'Survey not found' }, { status: 404 })
+  }
+
+  // ── Department access control ──────────────────────────────────────────
+  const isAdminPut = user.role === 'Admin'
+  if (!isAdminPut && existingSurvey.department && existingSurvey.department !== user.department) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
 
   const {
@@ -170,7 +182,12 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
   } = parsed.data
 
   // Handle status changes (publish, archive)
-  const data: any = { ...updateData, lastModifiedById: user.id }
+  // Non-admins cannot override department/branch — these are owned by the server
+  const { department: _dept, branch: _branch, ...safeUpdateData } = updateData as any
+  const data: any = { 
+    ...(isAdminPut ? updateData : safeUpdateData), 
+    lastModifiedById: user.id 
+  }
   if (expiryDate) data.expiryDate = new Date(expiryDate)
   if (expirationDate) data.expirationDate = new Date(expirationDate)
   if (activationDate) data.activationDate = new Date(activationDate)
@@ -246,8 +263,14 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
   if (isNaN(numericId)) return NextResponse.json({ error: 'Invalid survey ID' }, { status: 400 })
 
   // Check if survey exists
-  const survey = await prisma.survey.findUnique({ where: { id: numericId }, select: { id: true, title: true } })
+  const survey = await prisma.survey.findUnique({ where: { id: numericId }, select: { id: true, title: true, department: true } })
   if (!survey) return NextResponse.json({ error: 'Survey not found' }, { status: 404 })
+
+  // ── Department access control ──────────────────────────────────────────
+  const isAdminDel = user.role === 'Admin'
+  if (!isAdminDel && survey.department && survey.department !== user.department) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  }
 
   const force = req.nextUrl.searchParams.get('force') === 'true'
 
@@ -307,9 +330,15 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   const survey = await prisma.survey.findUnique({
     where: { id: numericId },
     select: { id: true, title: true, slug: true, publicUrl: true, qrCode: true, surveyCode: true,
-              lifecycleStatus: true, activationDate: true, expirationDate: true, closedAt: true },
+              lifecycleStatus: true, activationDate: true, expirationDate: true, closedAt: true, department: true },
   })
   if (!survey) return NextResponse.json({ error: 'Survey not found' }, { status: 404 })
+
+  // ── Department access control ──────────────────────────────────────────
+  const isAdminPatch = user.role === 'Admin'
+  if (!isAdminPatch && survey.department && survey.department !== user.department) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  }
 
   const body = await req.json().catch(() => ({}))
 

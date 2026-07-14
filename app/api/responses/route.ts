@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { getCurrentUser } from '@/lib/auth/session'
+import { getCurrentUser, getScopeFilters } from '@/lib/auth/session'
 import { CreateResponseSchema, parsePagination } from '@/lib/validation'
 import { extractSlugFromInput } from '@/lib/survey-search'
 
@@ -121,16 +121,29 @@ export async function GET(req: NextRequest) {
   }
 
   // Build survey filter — touchpoint, branch, and department all filter
-  // through the Survey's relations (Survey.touchpoint, Survey.createdBy.branch,
-  // Survey.createdBy.department)
-  const surveyWhere: any = {}
+  // through the Survey's relations (Survey.touchpoint, Survey.branch, Survey.department)
+  const surveyWhere: any = {
+    ...getScopeFilters(user)
+  }
+
+  const isAdminResp = user.role === 'Admin'
+
   if (touchpoint && touchpoint.toLowerCase() !== 'all') {
     surveyWhere.touchpoint = touchpoint
   }
   if (branch && branch.toLowerCase() !== 'all' && branch !== 'All Branches') {
-    surveyWhere.branch = branch
+    if (surveyWhere.branch) {
+      const allowed = surveyWhere.branch.in
+      if (allowed.includes(branch)) {
+        surveyWhere.branch = branch
+      } else {
+        surveyWhere.branch = 'UNAUTHORIZED_BRANCH_ACCESS'
+      }
+    } else {
+      surveyWhere.branch = branch
+    }
   }
-  if (department && department.toLowerCase() !== 'all' && department !== 'All Departments') {
+  if (isAdminResp && department && department.toLowerCase() !== 'all' && department !== 'All Departments') {
     surveyWhere.department = department
   }
   if (Object.keys(surveyWhere).length > 0) {

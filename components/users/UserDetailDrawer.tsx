@@ -7,7 +7,9 @@ import {
   Briefcase, Activity, Smartphone, Globe, ChevronDown, type LucideIcon,
 } from 'lucide-react'
 import type { AppUser } from '@/lib/types/user'
-import { ROLES, ROLE_META, DEPARTMENTS, type UserRole } from '@/lib/types/user'
+import { ROLES, ROLE_META, type UserRole } from '@/lib/types/user'
+import { useDepartmentOptions, useDepartmentNames } from '@/lib/hooks/useDepartments'
+import { useBranches } from '@/lib/hooks/useBranches'
 import { RoleBadge, UserStatusBadge } from './UserBadges'
 import { PermissionMatrix } from './PermissionMatrix'
 
@@ -67,8 +69,34 @@ interface Props {
 
 export function UserDetailDrawer({ user: u, onClose, onUpdate, onDelete, onNotify }: Props) {
   const drawerRef = useRef<HTMLDivElement>(null)
-  const [newRole, setNewRole] = useState<UserRole | null>(null)
+  const [newRole, setNewRole] = useState<string | null>(null)
   const [newDept, setNewDept] = useState<string | null>(null)
+  const [newAllowedPages, setNewAllowedPages] = useState<string[] | null>(null)
+  const [newVisibleBranches, setNewVisibleBranches] = useState<string[] | null>(null)
+  const [newVisibleDepartments, setNewVisibleDepartments] = useState<string[] | null>(null)
+  const [liveRoles, setLiveRoles] = useState<{ value: string; label: string }[]>([])
+  const departmentOptions = useDepartmentOptions()
+  const allBranches = useBranches().filter(b => b !== 'All Branches')
+  const allDepartments = useDepartmentNames()
+
+  useEffect(() => {
+    fetch('/api/roles', { cache: 'no-store' })
+      .then(r => r.ok ? r.json() : null)
+      .then(json => {
+        if (json?.data) {
+          setLiveRoles(json.data.map((r: { id: number; name: string }) => ({ value: r.name, label: r.name })))
+        }
+      })
+      .catch(() => {})
+  }, [])
+
+  useEffect(() => {
+    setNewRole(null)
+    setNewDept(null)
+    setNewAllowedPages(null)
+    setNewVisibleBranches(null)
+    setNewVisibleDepartments(null)
+  }, [u?.id])
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) { if (e.key === 'Escape') onClose() }
@@ -85,7 +113,7 @@ export function UserDetailDrawer({ user: u, onClose, onUpdate, onDelete, onNotif
 
   function applyRole() {
     if (!u || !newRole || newRole === u.role) return
-    const updated: AppUser = { ...u, role: newRole, permissions: ROLE_META[newRole] ? u.permissions : u.permissions }
+    const updated: AppUser = { ...u, role: newRole as UserRole }
     onUpdate?.(updated)
     onNotify?.({ type: 'success', title: 'Role updated', message: `${u.name} is now ${newRole}.` })
     setNewRole(null)
@@ -97,6 +125,43 @@ export function UserDetailDrawer({ user: u, onClose, onUpdate, onDelete, onNotif
     onUpdate?.(updated)
     onNotify?.({ type: 'info', title: 'Department changed', message: `${u.name} moved to ${dept}.` })
     setNewDept(null)
+  }
+
+  function applyPages() {
+    if (!u || !newAllowedPages) return
+    const updated: AppUser = { ...u, allowedPages: newAllowedPages }
+    onUpdate?.(updated)
+    onNotify?.({ type: 'success', title: 'Access updated', message: `Custom page access saved for ${u.name}.` })
+  }
+
+  function resetPages() {
+    if (!u) return
+    const updated: AppUser = { ...u, allowedPages: null }
+    setNewAllowedPages(null)
+    onUpdate?.(updated)
+    onNotify?.({ type: 'info', title: 'Access reset', message: `Custom page access removed. Using defaults.` })
+  }
+
+  function applyVisibility() {
+    if (!u) return
+    const updated: AppUser = {
+      ...u,
+      visibleBranches: newVisibleBranches !== null ? newVisibleBranches : u.visibleBranches,
+      visibleDepartments: newVisibleDepartments !== null ? newVisibleDepartments : u.visibleDepartments,
+    }
+    onUpdate?.(updated)
+    onNotify?.({ type: 'success', title: 'Visibility updated', message: `Data visibility scope updated for ${u.name}.` })
+    setNewVisibleBranches(null)
+    setNewVisibleDepartments(null)
+  }
+
+  function resetVisibility() {
+    if (!u) return
+    const updated: AppUser = { ...u, visibleBranches: null, visibleDepartments: null }
+    setNewVisibleBranches(null)
+    setNewVisibleDepartments(null)
+    onUpdate?.(updated)
+    onNotify?.({ type: 'info', title: 'Visibility reset', message: `Custom visibility scope removed. User now sees their default branch and department.` })
   }
 
   function handleResetPassword() {
@@ -267,8 +332,8 @@ export function UserDetailDrawer({ user: u, onClose, onUpdate, onDelete, onNotif
                     <div className="flex gap-2">
                       <NativeSelect
                         value={newRole ?? u.role}
-                        onChange={v => setNewRole(v as UserRole)}
-                        options={ROLES.map(r => ({ value: r, label: r }))}
+                        onChange={v => setNewRole(v)}
+                        options={liveRoles.length > 0 ? liveRoles : [{ value: u.role, label: u.role }]}
                       />
                       {newRole && newRole !== u.role && (
                         <button
@@ -280,7 +345,7 @@ export function UserDetailDrawer({ user: u, onClose, onUpdate, onDelete, onNotif
                         </button>
                       )}
                     </div>
-                    <p className="mt-1.5 text-[10px]" style={{ color: 'var(--text-light)' }}>{(ROLE_META[u.role] || { description: 'Custom role with custom page permissions.' }).description}</p>
+                    <p className="mt-1.5 text-[10px]" style={{ color: 'var(--text-light)' }}>{(ROLE_META[u.role as UserRole] || { description: 'Custom role with custom page permissions.' }).description}</p>
                   </div>
                   <div>
                     <label className="mb-1.5 block text-[9.5px] font-bold uppercase tracking-[0.08em]" style={{ color: 'var(--text-light)' }}>
@@ -288,9 +353,15 @@ export function UserDetailDrawer({ user: u, onClose, onUpdate, onDelete, onNotif
                     </label>
                     <div className="flex gap-2">
                       <NativeSelect
-                        value={newDept ?? u.department}
+                        value={newDept ?? u.department ?? ''}
                         onChange={v => setNewDept(v)}
-                        options={DEPARTMENTS.map(d => ({ value: d, label: d }))}
+                        options={[
+                          // Ensure the user's current department always appears
+                          ...(u.department && !departmentOptions.some(d => d.value === u.department)
+                            ? [{ value: u.department, label: u.department }]
+                            : []),
+                          ...departmentOptions,
+                        ]}
                       />
                       {newDept && newDept !== u.department && (
                         <button
@@ -307,14 +378,173 @@ export function UserDetailDrawer({ user: u, onClose, onUpdate, onDelete, onNotif
                 </div>
               </div>
 
-              {/* Permission matrix */}
+              {/* Page Access Override */}
               <div className="px-6 py-6" style={{ borderBottom: '1px solid var(--border)' }}>
                 <SectionHeader
                   icon={<ShieldCheck size={13} />}
-                  label="Permission Matrix"
-                  action={<span className="text-[10px] font-semibold" style={{ color: 'var(--text-muted)' }}>{u.role} role highlighted</span>}
+                  label="Page Access"
+                  action={
+                    newAllowedPages !== null || u.allowedPages !== null ? (
+                      <button
+                        onClick={resetPages}
+                        className="text-[10px] font-semibold underline"
+                        style={{ color: 'var(--text-muted)' }}
+                      >
+                        Reset to Default
+                      </button>
+                    ) : (
+                      <span className="text-[10px] font-semibold" style={{ color: 'var(--text-muted)' }}>
+                        Default {u.role} access
+                      </span>
+                    )
+                  }
                 />
-                <PermissionMatrix activeRole={u.role} />
+                <div className="mb-3 text-[11px]" style={{ color: 'var(--text-secondary)' }}>
+                  Check or uncheck pages to override this user's default role permissions.
+                </div>
+                <div className="grid grid-cols-2 gap-3 mb-4">
+                  {[
+                    'dashboard', 'surveys', 'survey-builder', 'responses', 'analytics', 'assignments',
+                    'reports', 'users', 'branches', 'employee-surveys', 'audit-log', 'settings'
+                  ].map(page => {
+                    // Check against custom if editing or if they have a custom override, otherwise default role
+                    const currentList = newAllowedPages !== null ? newAllowedPages : (u.allowedPages ?? u.roleAllowedPages ?? [])
+                    const isAllowed = currentList.includes(page)
+
+                    return (
+                      <label key={page} className="flex items-center gap-2 cursor-pointer group">
+                        <input
+                          type="checkbox"
+                          checked={isAllowed}
+                          onChange={(e) => {
+                            const list = newAllowedPages ?? u.allowedPages ?? u.roleAllowedPages ?? []
+                            const updatedList = e.target.checked
+                              ? [...list, page]
+                              : list.filter(p => p !== page)
+                            setNewAllowedPages(updatedList)
+                          }}
+                          className="h-3.5 w-3.5 rounded-[4px] border-[1.5px] border-[var(--border)] text-[var(--primary)] transition-colors focus:ring-0 focus:ring-offset-0 bg-transparent group-hover:border-[var(--primary)] cursor-pointer"
+                        />
+                        <span className="text-[11.5px] font-medium" style={{ color: 'var(--text)' }}>
+                          {page.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')}
+                        </span>
+                      </label>
+                    )
+                  })}
+                </div>
+                {newAllowedPages !== null && (
+                  <button
+                    onClick={applyPages}
+                    className="w-full flex items-center justify-center text-center rounded-[8px] py-2 text-[11px] font-semibold text-white transition-all hover:opacity-90 mt-2"
+                    style={{ background: 'var(--primary)' }}
+                  >
+                    Save Custom Access
+                  </button>
+                )}
+              </div>
+
+              {/* Data Visibility Override */}
+              <div className="px-6 py-6" style={{ borderBottom: '1px solid var(--border)' }}>
+                <SectionHeader
+                  icon={<Globe size={13} />}
+                  label="Data Visibility Scope"
+                  action={
+                    u.visibleBranches !== null || u.visibleDepartments !== null || newVisibleBranches !== null || newVisibleDepartments !== null ? (
+                      <button
+                        onClick={resetVisibility}
+                        className="text-[10px] font-semibold underline"
+                        style={{ color: 'var(--text-muted)' }}
+                      >
+                        Reset to Default
+                      </button>
+                    ) : (
+                      <span className="text-[10px] font-semibold" style={{ color: 'var(--text-muted)' }}>
+                        Default (Primary only)
+                      </span>
+                    )
+                  }
+                />
+                <div className="mb-4 text-[11px]" style={{ color: 'var(--text-secondary)' }}>
+                  Grant data access to additional branches/departments. If left unchecked, the user only sees their own branch and department.
+                </div>
+
+                <div className="grid grid-cols-2 gap-6">
+                  {/* Branches */}
+                  <div>
+                    <span className="mb-2 block text-[9.5px] font-bold uppercase tracking-[0.08em]" style={{ color: 'var(--text-light)' }}>
+                      Visible Branches
+                    </span>
+                    <div className="flex flex-col gap-2.5 max-h-[160px] overflow-y-auto pr-1">
+                      {allBranches.map(brName => {
+                        const currentList = newVisibleBranches !== null ? newVisibleBranches : (u.visibleBranches ?? [])
+                        const isChecked = currentList.includes(brName)
+
+                        return (
+                          <label key={brName} className="flex items-center gap-2 cursor-pointer group">
+                            <input
+                              type="checkbox"
+                              checked={isChecked}
+                              onChange={(e) => {
+                                const list = newVisibleBranches ?? u.visibleBranches ?? []
+                                const updatedList = e.target.checked
+                                  ? [...list, brName]
+                                  : list.filter(b => b !== brName)
+                                setNewVisibleBranches(updatedList)
+                              }}
+                              className="h-3.5 w-3.5 rounded-[4px] border-[1.5px] border-[var(--border)] text-[var(--primary)] transition-colors focus:ring-0 focus:ring-offset-0 bg-transparent group-hover:border-[var(--primary)] cursor-pointer"
+                            />
+                            <span className="text-[11.5px] font-medium" style={{ color: 'var(--text)' }}>
+                              {brName}
+                            </span>
+                          </label>
+                        )
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Departments */}
+                  <div>
+                    <span className="mb-2 block text-[9.5px] font-bold uppercase tracking-[0.08em]" style={{ color: 'var(--text-light)' }}>
+                      Visible Departments
+                    </span>
+                    <div className="flex flex-col gap-2.5 max-h-[160px] overflow-y-auto pr-1">
+                      {allDepartments.map(deptName => {
+                        const currentList = newVisibleDepartments !== null ? newVisibleDepartments : (u.visibleDepartments ?? [])
+                        const isChecked = currentList.includes(deptName)
+
+                        return (
+                          <label key={deptName} className="flex items-center gap-2 cursor-pointer group">
+                            <input
+                              type="checkbox"
+                              checked={isChecked}
+                              onChange={(e) => {
+                                const list = newVisibleDepartments ?? u.visibleDepartments ?? []
+                                const updatedList = e.target.checked
+                                  ? [...list, deptName]
+                                  : list.filter(d => d !== deptName)
+                                setNewVisibleDepartments(updatedList)
+                              }}
+                              className="h-3.5 w-3.5 rounded-[4px] border-[1.5px] border-[var(--border)] text-[var(--primary)] transition-colors focus:ring-0 focus:ring-offset-0 bg-transparent group-hover:border-[var(--primary)] cursor-pointer"
+                            />
+                            <span className="text-[11.5px] font-medium" style={{ color: 'var(--text)' }}>
+                              {deptName}
+                            </span>
+                          </label>
+                        )
+                      })}
+                    </div>
+                  </div>
+                </div>
+
+                {(newVisibleBranches !== null || newVisibleDepartments !== null) && (
+                  <button
+                    onClick={applyVisibility}
+                    className="w-full flex items-center justify-center text-center rounded-[8px] py-2 text-[11px] font-semibold text-white transition-all hover:opacity-90 mt-4"
+                    style={{ background: 'var(--primary)' }}
+                  >
+                    Save Visibility Scope
+                  </button>
+                )}
               </div>
 
 

@@ -7,7 +7,20 @@ export async function GET(req: NextRequest) {
   const user = await getCurrentUser(req)
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
+  const where: any = {}
+  if (user.role !== 'Admin') {
+    const allowedDepts = user.visibleDepartments && user.visibleDepartments.length > 0
+      ? user.visibleDepartments
+      : (user.department ? [user.department] : [])
+    if (allowedDepts.length > 0) {
+      where.name = { in: allowedDepts }
+    } else {
+      return NextResponse.json({ data: [] })
+    }
+  }
+
   const departments = await prisma.department.findMany({
+    where,
     include: { branch: true, _count: { select: { users: true } } },
     orderBy: { name: 'asc' },
   })

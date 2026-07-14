@@ -39,14 +39,21 @@ export interface AppUser {
   email: string
   phone?: string
   role: UserRole
+  roleId?: number
   department: string
+  departmentId?: number | null
   branch: string
+  branchId?: number | null
   status: UserStatus
   avatarColor: string
   lastLogin: string | null
   lastLoginIp: string | null
   createdAt: string
   permissions: Permission[]
+  allowedPages?: string[] | null
+  roleAllowedPages?: string[]
+  visibleBranches?: string[] | null
+  visibleDepartments?: string[] | null
   activity: UserActivity[]
   recentLogins: RecentLogin[]
   surveysAssigned: number

@@ -26,6 +26,12 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
   })
   if (!r) return NextResponse.json({ error: 'Response not found' }, { status: 404 })
 
+  // ── Department access control ──────────────────────────────────────────
+  const isAdminRespDetail = user.role === 'Admin'
+  if (!isAdminRespDetail && r.survey.department && r.survey.department !== user.department) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  }
+
   const score = r.npsScore
   const category = score != null ? (score >= 9 ? 'promoter' : score >= 7 ? 'passive' : 'detractor') : null
 

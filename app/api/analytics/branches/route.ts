@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { getCurrentUser } from '@/lib/auth/session'
+import { getCurrentUser, getScopeFilters } from '@/lib/auth/session'
 
 /**
  * GET /api/analytics/branches
@@ -38,9 +38,12 @@ export async function GET(req: NextRequest) {
   }
 
   // Filters that live on the Survey relation
-  const surveyWhere: any = {}
+  const surveyWhere: any = {
+    ...getScopeFilters(user)
+  }
+  const isAdminBranches = user.role === 'Admin'
   if (touchpoint !== 'all') surveyWhere.touchpoint = touchpoint
-  if (department !== 'all') surveyWhere.department = department
+  if (isAdminBranches && department !== 'all') surveyWhere.department = department
 
   // Response-level where (date + survey filters)
   const where: any = { submittedAt: { gte: since } }
@@ -52,9 +55,28 @@ export async function GET(req: NextRequest) {
     if (npsCategory === 'detractor') where.npsScore = { gte: 0, lte: 6 }
   }
 
+  const allowedBranches = !isAdminBranches && user.visibleBranches && user.visibleBranches.length > 0
+    ? user.visibleBranches
+    : null
+
+  let branchWhere: any = undefined
+  if (branch !== 'all') {
+    if (allowedBranches) {
+      if (allowedBranches.includes(branch)) {
+        branchWhere = { name: branch }
+      } else {
+        branchWhere = { name: 'UNAUTHORIZED_BRANCH_ACCESS' }
+      }
+    } else {
+      branchWhere = { name: branch }
+    }
+  } else if (allowedBranches) {
+    branchWhere = { name: { in: allowedBranches } }
+  }
+
   // Load every Branch with its users → surveys → filtered responses.
   const branches = await prisma.branch.findMany({
-    where: branch !== 'all' ? { name: branch } : undefined,
+    where: branchWhere,
     include: {
       users: {
         include: {

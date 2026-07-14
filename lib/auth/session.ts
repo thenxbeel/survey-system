@@ -19,6 +19,8 @@ export interface AuthUser {
   branchId: number | null
   isActive: boolean
   allowedPages?: string | null
+  visibleBranches?: string[] | null
+  visibleDepartments?: string[] | null
 }
 
 export async function getCurrentUser(
@@ -73,7 +75,9 @@ export async function getCurrentUser(
       departmentId: user.departmentId,
       branchId: user.branchId,
       isActive: user.isActive,
-      allowedPages: user.role.allowedPages,
+      allowedPages: user.allowedPages ? user.allowedPages : user.role.allowedPages,
+      visibleBranches: user.visibleBranches ? JSON.parse(user.visibleBranches) : null,
+      visibleDepartments: user.visibleDepartments ? JSON.parse(user.visibleDepartments) : null,
     }
   } catch (error) {
     console.error('Session error:', error)
@@ -127,4 +131,31 @@ export function hasPermission(
     default:
       return false
   }
+}
+
+export function getScopeFilters(user: AuthUser) {
+  const isAdmin = user.role === 'Admin'
+  const filters: any = {}
+
+  if (!isAdmin) {
+    // Department filtering:
+    // If customized (visibleDepartments), filter by those + 'All Departments'.
+    // Otherwise fallback to their primary department + 'All Departments'.
+    if (user.visibleDepartments && user.visibleDepartments.length > 0) {
+      filters.department = { in: [...user.visibleDepartments, 'All Departments'] }
+    } else if (user.department) {
+      filters.department = { in: [user.department, 'All Departments'] }
+    } else {
+      filters.department = 'All Departments'
+    }
+
+    // Branch filtering:
+    // Only apply if visibleBranches is customized (non-empty).
+    // If not customized, they can see all branches (backward-compatible).
+    if (user.visibleBranches && user.visibleBranches.length > 0) {
+      filters.branch = { in: [...user.visibleBranches, 'All Branches'] }
+    }
+  }
+
+  return filters
 }

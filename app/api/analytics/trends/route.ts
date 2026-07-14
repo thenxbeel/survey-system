@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { getCurrentUser } from '@/lib/auth/session'
+import { getCurrentUser, getScopeFilters } from '@/lib/auth/session'
 
 // GET /api/analytics/trends — monthly NPS + response volume trends
 export async function GET(req: NextRequest) {
@@ -14,17 +14,31 @@ export async function GET(req: NextRequest) {
   const npsCategory = req.nextUrl.searchParams.get('npsCategory') ?? 'all'
 
 
-  const surveyWhere: any = {}
-  
+  const surveyWhere: any = {
+    ...getScopeFilters(user)
+  }
+
+  // ── Department access control ──────────────────────────────────────────
+  const isAdminTrends = user.role === 'Admin'
+
   // Apply filters
   if (touchpoint !== 'all') {
     surveyWhere.touchpoint = touchpoint
   }
-  if (department !== 'all') {
+  if (isAdminTrends && department !== 'all') {
     surveyWhere.department = department
   }
   if (branch !== 'all') {
-    surveyWhere.branch = branch
+    if (surveyWhere.branch) {
+      const allowed = surveyWhere.branch.in
+      if (allowed.includes(branch)) {
+        surveyWhere.branch = branch
+      } else {
+        surveyWhere.branch = 'UNAUTHORIZED_BRANCH_ACCESS'
+      }
+    } else {
+      surveyWhere.branch = branch
+    }
   }
 
   const where: any = {}

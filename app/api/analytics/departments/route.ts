@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { getCurrentUser } from '@/lib/auth/session'
+import { getCurrentUser, getScopeFilters } from '@/lib/auth/session'
 
 /**
  * GET /api/analytics/departments
@@ -37,9 +37,23 @@ export async function GET(req: NextRequest) {
   }
 
   // Survey-level filters
-  const surveyWhere: any = {}
+  const surveyWhere: any = {
+    ...getScopeFilters(user)
+  }
+  const isAdminDepts = user.role === 'Admin'
   if (touchpoint !== 'all') surveyWhere.touchpoint = touchpoint
-  if (branch !== 'all') surveyWhere.branch = branch
+  if (branch !== 'all') {
+    if (surveyWhere.branch) {
+      const allowed = surveyWhere.branch.in
+      if (allowed.includes(branch)) {
+        surveyWhere.branch = branch
+      } else {
+        surveyWhere.branch = 'UNAUTHORIZED_BRANCH_ACCESS'
+      }
+    } else {
+      surveyWhere.branch = branch
+    }
+  }
 
   // Response-level where
   const where: any = { submittedAt: { gte: since } }
@@ -51,9 +65,17 @@ export async function GET(req: NextRequest) {
     if (npsCategory === 'detractor') where.npsScore = { gte: 0, lte: 6 }
   }
 
-  // Group by Department via its Users' surveys.
+  // Group by Department — non-admins only see their own department (or visible departments)
+  const allowedDepts = !isAdminDepts && user.visibleDepartments && user.visibleDepartments.length > 0
+    ? user.visibleDepartments
+    : (user.department ? [user.department] : [])
+
+  const deptNameFilter = isAdminDepts
+    ? (department !== 'all' ? { name: department } : undefined)
+    : (allowedDepts.length > 0 ? { name: { in: allowedDepts } } : { name: '__none__' })
+
   const departments = await prisma.department.findMany({
-    where: department !== 'all' ? { name: department } : undefined,
+    where: deptNameFilter,
     include: {
       users: {
         include: {

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { X, UserPlus, Loader2 } from 'lucide-react'
+import { X, UserPlus, Loader2, Trash2 } from 'lucide-react'
 import { useToast } from '@/lib/stores/ToastStore'
 
 interface Props {
@@ -38,6 +38,8 @@ export function CreateUserModal({ open, onClose, onCreated }: Props) {
   const [customRole, setCustomRole] = useState(false)
   const [customRoleName, setCustomRoleName] = useState('')
   const [selectedPages, setSelectedPages] = useState<string[]>([])
+  const [selectedBranches, setSelectedBranches] = useState<string[]>([])
+  const [selectedDepartments, setSelectedDepartments] = useState<string[]>([])
 
   const [form, setForm] = useState({
     employeeId: '',
@@ -72,12 +74,18 @@ export function CreateUserModal({ open, onClose, onCreated }: Props) {
       const roleObj = roles.find(r => String(r.id) === form.roleId)
       if (roleObj) {
         try {
-          const pages = roleObj.allowedPages ? JSON.parse(roleObj.allowedPages) : []
+          // If the role has explicitly defined pages, use them.
+          // If null (no restriction set in DB), show all pages selected so admin can uncheck what they want.
+          const pages = roleObj.allowedPages
+            ? JSON.parse(roleObj.allowedPages)
+            : AVAILABLE_PAGES.map(p => p.key)
           setSelectedPages(pages)
         } catch {
-          setSelectedPages([])
+          setSelectedPages(AVAILABLE_PAGES.map(p => p.key))
         }
       }
+    } else {
+      setSelectedPages([])
     }
   }, [form.roleId, customRole, roles])
 
@@ -86,11 +94,30 @@ export function CreateUserModal({ open, onClose, onCreated }: Props) {
     setCustomRole(false)
     setCustomRoleName('')
     setSelectedPages([])
+    setSelectedBranches([])
+    setSelectedDepartments([])
   }
 
   function handleClose() {
     reset()
     onClose()
+  }
+
+  async function deleteRole(id: string) {
+    if (!confirm('Are you sure you want to delete this custom role?')) return
+    try {
+      const res = await fetch(`/api/roles?id=${id}`, { method: 'DELETE' })
+      if (!res.ok) {
+        const js = await res.json()
+        toast.error('Error', js.error || 'Failed to delete role')
+        return
+      }
+      toast.success('Deleted', 'Role removed successfully')
+      setForm(p => ({ ...p, roleId: '' }))
+      setRoles(prev => prev.filter(r => String(r.id) !== id))
+    } catch {
+      toast.error('Error', 'Network error while deleting role')
+    }
   }
 
   async function handleSubmit() {
@@ -122,18 +149,16 @@ export function CreateUserModal({ open, onClose, onCreated }: Props) {
           return
         }
         finalRoleId = String(roleJson.data.id)
-      } else {
-        // If existing role is checked, update its permissions in db based on admin selection
-        const selectedRoleObj = roles.find(r => String(r.id) === form.roleId)
-        if (selectedRoleObj) {
-          await fetch('/api/roles', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              name: selectedRoleObj.name,
-              allowedPages: selectedPages,
-            })
-          })
+      }
+
+      let allowedPagesOverride: string[] | null = null
+
+      if (!customRole) {
+        const selectedRoleObj = roles.find(r => String(r.id) === finalRoleId)
+        const defaultPages = selectedRoleObj?.allowedPages ? JSON.parse(selectedRoleObj.allowedPages) : []
+        const isModified = JSON.stringify([...selectedPages].sort()) !== JSON.stringify([...defaultPages].sort())
+        if (isModified) {
+          allowedPagesOverride = selectedPages
         }
       }
 
@@ -150,6 +175,10 @@ export function CreateUserModal({ open, onClose, onCreated }: Props) {
           departmentId: form.departmentId ? parseInt(form.departmentId) : undefined,
           branchId: form.branchId ? parseInt(form.branchId) : undefined,
           isActive: true,
+          visibleBranches: selectedBranches.length > 0 ? selectedBranches : null,
+          visibleDepartments: selectedDepartments.length > 0 ? selectedDepartments : null,
+          allowedPages: allowedPagesOverride,
+
         }),
       })
       const json = await res.json()
@@ -268,16 +297,33 @@ export function CreateUserModal({ open, onClose, onCreated }: Props) {
                       <input className={inputBase} style={inputStyle} placeholder="e.g. Customer Service" value={customRoleName} onChange={e => setCustomRoleName(e.target.value)} />
                     </div>
                   ) : (
-                    <div>
+                    <div className="flex gap-2">
                       <select className={`${inputBase} cursor-pointer`} style={inputStyle} value={form.roleId} onChange={e => setForm(p => ({ ...p, roleId: e.target.value }))}>
                         <option value="">Select Existing…</option>
                         {roles.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}
                       </select>
+                      {form.roleId && !['Admin', 'Manager', 'Viewer'].includes(roles.find(r => String(r.id) === form.roleId)?.name || '') && (
+                        <button
+                          onClick={() => deleteRole(form.roleId)}
+                          className="flex h-[38px] w-[38px] flex-shrink-0 items-center justify-center rounded-[9px] border bg-white transition-all hover:bg-red-50 hover:text-red-500 hover:border-red-200"
+                          style={{ borderColor: 'var(--border)', color: 'var(--text-light)' }}
+                          title="Delete custom role"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      )}
                     </div>
                   )}
 
                   <div className="mt-3">
-                    <label className={labelCls} style={{ color: 'var(--text-light)' }}>Page Module Access Control</label>
+                    <div className="flex items-center justify-between mb-1.5">
+                      <label className={labelCls} style={{ color: 'var(--text-light)' }}>Page Module Access Control</label>
+                      {!customRole && form.roleId && (
+                        <span className="text-[10px] font-medium" style={{ color: 'var(--text-muted)' }}>
+                          Pre-filled from role · editable
+                        </span>
+                      )}
+                    </div>
                     <div className="grid grid-cols-2 gap-2 p-3 rounded-[9px] border bg-[var(--bg-subtle)]" style={{ borderColor: 'var(--border)' }}>
                       {AVAILABLE_PAGES.map(pg => {
                         const isChecked = selectedPages.includes(pg.key)
@@ -293,12 +339,66 @@ export function CreateUserModal({ open, onClose, onCreated }: Props) {
                                   setSelectedPages(prev => prev.filter(k => k !== pg.key))
                                 }
                               }}
-                              className="rounded border-[var(--border)] text-[var(--primary)] focus:ring-[var(--primary)] accent-[var(--primary)]"
+                              className="rounded border-[var(--border)] text-[var(--primary)] focus:ring-[var(--primary)] accent-[var(--primary)] cursor-pointer"
                             />
                             <span>{pg.label}</span>
                           </label>
                         )
                       })}
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3 mt-3">
+                    <div>
+                      <label className={labelCls} style={{ color: 'var(--text-light)' }}>Visible Branches Override</label>
+                      <div className="flex flex-col gap-2 p-3 rounded-[9px] border bg-[var(--bg-subtle)] max-h-[140px] overflow-y-auto" style={{ borderColor: 'var(--border)' }}>
+                        {branches.map(b => {
+                          const isChecked = selectedBranches.includes(b.name)
+                          return (
+                            <label key={b.id} className="flex items-center gap-2 cursor-pointer text-[12px] font-medium text-[var(--text-secondary)] hover:text-[var(--text)]">
+                              <input
+                                type="checkbox"
+                                checked={isChecked}
+                                onChange={(e) => {
+                                  if (e.target.checked) {
+                                    setSelectedBranches(prev => [...prev, b.name])
+                                  } else {
+                                    setSelectedBranches(prev => prev.filter(n => n !== b.name))
+                                  }
+                                }}
+                                className="rounded border-[var(--border)] text-[var(--primary)] focus:ring-[var(--primary)] accent-[var(--primary)]"
+                              />
+                              <span>{b.name}</span>
+                            </label>
+                          )
+                        })}
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className={labelCls} style={{ color: 'var(--text-light)' }}>Visible Depts Override</label>
+                      <div className="flex flex-col gap-2 p-3 rounded-[9px] border bg-[var(--bg-subtle)] max-h-[140px] overflow-y-auto" style={{ borderColor: 'var(--border)' }}>
+                        {departments.map(d => {
+                          const isChecked = selectedDepartments.includes(d.name)
+                          return (
+                            <label key={d.id} className="flex items-center gap-2 cursor-pointer text-[12px] font-medium text-[var(--text-secondary)] hover:text-[var(--text)]">
+                              <input
+                                type="checkbox"
+                                checked={isChecked}
+                                onChange={(e) => {
+                                  if (e.target.checked) {
+                                    setSelectedDepartments(prev => [...prev, d.name])
+                                  } else {
+                                    setSelectedDepartments(prev => prev.filter(n => n !== d.name))
+                                  }
+                                }}
+                                className="rounded border-[var(--border)] text-[var(--primary)] focus:ring-[var(--primary)] accent-[var(--primary)]"
+                              />
+                              <span>{d.name}</span>
+                            </label>
+                          )
+                        })}
+                      </div>
                     </div>
                   </div>
                 </div>

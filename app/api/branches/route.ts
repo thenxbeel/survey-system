@@ -7,7 +7,20 @@ export async function GET(req: NextRequest) {
   const user = await getCurrentUser(req)
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
+  const where: any = {}
+  if (user.role !== 'Admin') {
+    const allowedBranches = user.visibleBranches && user.visibleBranches.length > 0
+      ? user.visibleBranches
+      : (user.branch ? [user.branch] : [])
+    if (allowedBranches.length > 0) {
+      where.name = { in: allowedBranches }
+    } else {
+      return NextResponse.json({ data: [] })
+    }
+  }
+
   const branches = await prisma.branch.findMany({
+    where,
     include: { _count: { select: { users: true, departments: true } } },
     orderBy: { name: 'asc' },
   })

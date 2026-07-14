@@ -70,9 +70,60 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
   }
 
   try {
+    const updateData: any = { ...parsed.data }
+    delete updateData.roleName
+    delete updateData.departmentName
+
+    // Convert allowedPages string[] to JSON string
+    if (parsed.data.allowedPages !== undefined) {
+      if (parsed.data.allowedPages === null) {
+        updateData.allowedPages = null
+      } else {
+        updateData.allowedPages = JSON.stringify(parsed.data.allowedPages)
+      }
+    }
+
+    // Convert visibleBranches string[] to JSON string
+    if (parsed.data.visibleBranches !== undefined) {
+      if (parsed.data.visibleBranches === null) {
+        updateData.visibleBranches = null
+      } else {
+        updateData.visibleBranches = JSON.stringify(parsed.data.visibleBranches)
+      }
+    }
+
+    // Convert visibleDepartments string[] to JSON string
+    if (parsed.data.visibleDepartments !== undefined) {
+      if (parsed.data.visibleDepartments === null) {
+        updateData.visibleDepartments = null
+      } else {
+        updateData.visibleDepartments = JSON.stringify(parsed.data.visibleDepartments)
+      }
+    }
+
+    // Resolve roleName to roleId
+    if (parsed.data.roleName && isManagerOrAdmin) {
+      const roleRecord = await prisma.role.findFirst({ where: { name: parsed.data.roleName } })
+      if (roleRecord) {
+        updateData.roleId = roleRecord.id
+      }
+    }
+
+    // Resolve departmentName to departmentId
+    if (parsed.data.departmentName && isManagerOrAdmin) {
+      if (parsed.data.departmentName === 'None') {
+        updateData.departmentId = null
+      } else {
+        const deptRecord = await prisma.department.findFirst({ where: { name: parsed.data.departmentName } })
+        if (deptRecord) {
+          updateData.departmentId = deptRecord.id
+        }
+      }
+    }
+
     const updated = await prisma.user.update({
       where: { id: targetId },
-      data: parsed.data,
+      data: updateData,
       include: { role: true, department: true, branch: true },
     })
 
@@ -86,6 +137,8 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
         phone: updated.phone, isActive: updated.isActive,
         role: updated.role.name, roleId: updated.roleId,
         department: updated.department?.name ?? null, branch: updated.branch?.name ?? null,
+        visibleBranches: updated.visibleBranches ? JSON.parse(updated.visibleBranches) : null,
+        visibleDepartments: updated.visibleDepartments ? JSON.parse(updated.visibleDepartments) : null,
       },
     })
   } catch (err: any) {

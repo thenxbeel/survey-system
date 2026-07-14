@@ -1,9 +1,11 @@
 'use client'
 
 import type { SurveyDraft } from '@/lib/builderTypes'
-import { useBranches } from '@/lib/hooks/useBranches'
-import { useDepartmentNames } from '@/lib/hooks/useDepartments'
+
+import { useSettings } from '@/lib/stores/SettingsStore'
 import { useTouchpointNames } from '@/lib/hooks/useTouchpoints'
+import { useDepartmentNames } from '@/lib/hooks/useDepartments'
+import { useBranches } from '@/lib/hooks/useBranches'
 
 interface Props {
   draft: SurveyDraft
@@ -15,9 +17,12 @@ const labelCls = 'block text-[11px] font-bold text-[#333333] mb-1.5'
 const inputBase = 'w-full rounded-[8px] border bg-white px-3 py-2 text-[12.5px] font-medium outline-none transition-all focus:ring-2'
 
 export default function SurveyInfoPanel({ draft, onChange }: Props) {
-  const BRANCHES = useBranches()
-  const DEPARTMENTS = useDepartmentNames()
+  const { state } = useSettings()
+  const profile = state.profile
   const TOUCHPOINTS = useTouchpointNames()
+  const DEPARTMENTS = useDepartmentNames()
+  const BRANCHES = useBranches()
+
   return (
     <div className="flex flex-col">
       {/* BASIC INFORMATION */}
@@ -66,36 +71,77 @@ export default function SurveyInfoPanel({ draft, onChange }: Props) {
           </select>
         </div>
 
-        {/* Department */}
+        {/* Department — editable for Admin, read-only for others */}
         <div>
-          <label className={labelCls}>Department <span className="text-red-500">*</span></label>
-          <select
-            className={inputBase + ' cursor-pointer'}
-            style={{ borderColor: 'var(--border)', color: 'var(--text)' }}
-            value={draft.department}
-            onChange={(e) => onChange({ department: e.target.value })}
-          >
-            <option value="">Select department…</option>
-            {DEPARTMENTS.map((d) => (
-              <option key={d} value={d}>{d}</option>
-            ))}
-          </select>
+          <label className={labelCls}>Department</label>
+          {profile.role === 'Admin' ? (
+            <>
+              <select
+                className={inputBase + ' cursor-pointer'}
+                style={{ borderColor: 'var(--border)', color: 'var(--text)' }}
+                value={draft.department || ''}
+                onChange={(e) => onChange({ department: e.target.value })}
+              >
+                <option value="">No department assigned</option>
+                <option value="All Departments">All Departments</option>
+                {DEPARTMENTS.map((d) => (
+                  <option key={d} value={d}>{d}</option>
+                ))}
+              </select>
+              <p className="mt-1 text-[10.5px]" style={{ color: 'var(--text-light)' }}>
+                Admins can assign surveys to any department
+              </p>
+            </>
+          ) : (
+            <>
+              <div
+                className="w-full rounded-[8px] border px-3 py-2 text-[12.5px] font-medium"
+                style={{ borderColor: 'var(--border)', color: 'var(--text)', background: 'var(--bg, #F5F7FA)', cursor: 'default' }}
+                title="Automatically assigned from your account"
+              >
+                {profile.department || <span style={{ color: 'var(--text-light)' }}>No department assigned</span>}
+              </div>
+              <p className="mt-1 text-[10.5px]" style={{ color: 'var(--text-light)' }}>
+                Automatically assigned from your account
+              </p>
+            </>
+          )}
         </div>
 
-        {/* Branch */}
+        {/* Branch — editable for Admin, read-only for others */}
         <div>
-          <label className={labelCls}>Branch <span className="text-red-500">*</span></label>
-          <select
-            className={inputBase + ' cursor-pointer'}
-            style={{ borderColor: 'var(--border)', color: 'var(--text)' }}
-            value={draft.branch}
-            onChange={(e) => onChange({ branch: e.target.value })}
-          >
-            <option value="">Select branch…</option>
-            {BRANCHES.map((b) => (
-              <option key={b} value={b}>{b}</option>
-            ))}
-          </select>
+          <label className={labelCls}>Branch</label>
+          {profile.role === 'Admin' ? (
+            <>
+              <select
+                className={inputBase + ' cursor-pointer'}
+                style={{ borderColor: 'var(--border)', color: 'var(--text)' }}
+                value={draft.branch || ''}
+                onChange={(e) => onChange({ branch: e.target.value })}
+              >
+                <option value="">No branch assigned</option>
+                {BRANCHES.map((b) => (
+                  <option key={b} value={b}>{b}</option>
+                ))}
+              </select>
+              <p className="mt-1 text-[10.5px]" style={{ color: 'var(--text-light)' }}>
+                Admins can assign surveys to any branch
+              </p>
+            </>
+          ) : (
+            <>
+              <div
+                className="w-full rounded-[8px] border px-3 py-2 text-[12.5px] font-medium"
+                style={{ borderColor: 'var(--border)', color: 'var(--text)', background: 'var(--bg, #F5F7FA)', cursor: 'default' }}
+                title="Automatically assigned from your account"
+              >
+                {profile.branch || <span style={{ color: 'var(--text-light)' }}>No branch assigned</span>}
+              </div>
+              <p className="mt-1 text-[10.5px]" style={{ color: 'var(--text-light)' }}>
+                Automatically assigned from your account
+              </p>
+            </>
+          )}
         </div>
 
         {/* Visibility */}
@@ -140,9 +186,6 @@ export default function SurveyInfoPanel({ draft, onChange }: Props) {
         </div>
       </div>
 
-
-      
-      {/* Spacer to push completion list down if needed */}
       <div className="mt-8"></div>
     </div>
   )

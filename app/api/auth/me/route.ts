@@ -40,7 +40,9 @@ export async function GET(req: NextRequest) {
 
     const allowedPages = user.role.name === 'Admin'
       ? ['dashboard', 'surveys', 'survey-builder', 'responses', 'analytics', 'assignments', 'reports', 'users', 'branches', 'employee-surveys', 'audit-log', 'settings']
-      : (user.role.allowedPages ? JSON.parse(user.role.allowedPages) : [])
+      : (user.allowedPages 
+          ? JSON.parse(user.allowedPages) 
+          : (user.role.allowedPages ? JSON.parse(user.role.allowedPages) : []))
 
     return NextResponse.json({
       success: true,
@@ -58,6 +60,8 @@ export async function GET(req: NextRequest) {
         branchId: user.branchId,
         createdAt: user.createdAt.toISOString(),
         allowedPages,
+        visibleBranches: user.visibleBranches ? JSON.parse(user.visibleBranches) : null,
+        visibleDepartments: user.visibleDepartments ? JSON.parse(user.visibleDepartments) : null,
       },
     })
   } catch (error) {

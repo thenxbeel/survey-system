@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { getCurrentUser } from '@/lib/auth/session'
+import { getCurrentUser, getScopeFilters } from '@/lib/auth/session'
 
 /**
  * GET /api/analytics/nps
@@ -39,10 +39,24 @@ export async function GET(req: NextRequest) {
   }
 
   // Survey-level filters
-  const surveyWhere: any = {}
+  const surveyWhere: any = {
+    ...getScopeFilters(user)
+  }
+  const isAdminNps = user.role === 'Admin'
   if (touchpoint !== 'all') surveyWhere.touchpoint = touchpoint
-  if (department !== 'all') surveyWhere.department = department
-  if (branch !== 'all') surveyWhere.branch = branch
+  if (isAdminNps && department !== 'all') surveyWhere.department = department
+  if (branch !== 'all') {
+    if (surveyWhere.branch) {
+      const allowed = surveyWhere.branch.in
+      if (allowed.includes(branch)) {
+        surveyWhere.branch = branch
+      } else {
+        surveyWhere.branch = 'UNAUTHORIZED_BRANCH_ACCESS'
+      }
+    } else {
+      surveyWhere.branch = branch
+    }
+  }
 
   // Response-level where — only scored responses count toward the distribution
   const where: any = {

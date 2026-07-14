@@ -108,7 +108,13 @@ model User {
   // and the application falls back to defaults when null. Works on SQLite
   // (stored as TEXT) and MySQL (native JSON).
   preferences   Json?
-  roleId        Int
+  // Per-user page access override (JSON array). If null, defaults to Role.allowedPages.
+  allowedPages        String?
+  // Per-user branch visibility scope (JSON array of branch names). If null, defaults to their primary branch.
+  visibleBranches     String?
+  // Per-user department visibility scope (JSON array of department names). If null, defaults to their primary department.
+  visibleDepartments  String?
+  roleId              Int
   role          Role           @relation(fields: [roleId], references: [id])
   // onDelete: Restrict — deleting a Department/Branch that has Users is blocked.
   // The API layer performs an explicit dependency check and returns a 409 with

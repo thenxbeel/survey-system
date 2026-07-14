@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { getCurrentUser } from '@/lib/auth/session'
+import { getCurrentUser, getScopeFilters } from '@/lib/auth/session'
 
 /**
  * GET /api/analytics/overview
@@ -37,17 +37,29 @@ export async function GET(req: NextRequest) {
     case 'all': since = new Date(0); break
   }
 
-  const surveyWhere: any = {}
-  
-  // Apply filters
+  const surveyWhere: any = {
+    ...getScopeFilters(user)
+  }
+
+  // Apply filters (admin only for department override)
+  const isAdminAnalytics = user.role === 'Admin'
   if (touchpoint !== 'all') {
     surveyWhere.touchpoint = touchpoint
   }
-  if (department !== 'all') {
+  if (isAdminAnalytics && department !== 'all') {
     surveyWhere.department = department
   }
   if (branch !== 'all') {
-    surveyWhere.branch = branch
+    if (surveyWhere.branch) {
+      const allowed = surveyWhere.branch.in
+      if (allowed.includes(branch)) {
+        surveyWhere.branch = branch
+      } else {
+        surveyWhere.branch = 'UNAUTHORIZED_BRANCH_ACCESS'
+      }
+    } else {
+      surveyWhere.branch = branch
+    }
   }
 
   const where: any = { submittedAt: { gte: since } }
