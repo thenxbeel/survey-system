@@ -143,8 +143,17 @@ export async function GET(req: NextRequest) {
       surveyWhere.branch = branch
     }
   }
-  if (isAdminResp && department && department.toLowerCase() !== 'all' && department !== 'All Departments') {
-    surveyWhere.department = department
+  if (department && department.toLowerCase() !== 'all' && department !== 'All Departments') {
+    if (surveyWhere.department) {
+      const allowed = surveyWhere.department.in
+      if (allowed.includes(department)) {
+        surveyWhere.department = department
+      } else {
+        surveyWhere.department = 'UNAUTHORIZED_DEPARTMENT_ACCESS'
+      }
+    } else {
+      surveyWhere.department = department
+    }
   }
   if (Object.keys(surveyWhere).length > 0) {
     where.survey = { ...where.survey, ...surveyWhere }

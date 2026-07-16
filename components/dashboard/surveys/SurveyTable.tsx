@@ -69,7 +69,7 @@ export default function SurveyTable({
                   style={{ accentColor: 'var(--primary)' }}
                 />
               </th>
-              {COL_HEADERS.slice(1).map((h) => (
+              {COL_HEADERS.map((h) => (
                 <th
                   key={h}
                   className="sticky top-0 z-10 whitespace-nowrap border-b px-5 py-3.5 text-left text-[11px] font-semibold uppercase tracking-[0.06em]"

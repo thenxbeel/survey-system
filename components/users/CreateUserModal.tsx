@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { X, UserPlus, Loader2, Trash2 } from 'lucide-react'
+import { X, UserPlus, Loader2, Trash2, Eye, EyeOff } from 'lucide-react'
 import { useToast } from '@/lib/stores/ToastStore'
 
 interface Props {
@@ -42,6 +42,9 @@ export function CreateUserModal({ open, onClose, onCreated }: Props) {
   const [selectedDepartments, setSelectedDepartments] = useState<string[]>([])
   const [selectedAccessBranches, setSelectedAccessBranches] = useState<string[]>([])
   const [selectedAccessDepartments, setSelectedAccessDepartments] = useState<string[]>([])
+  const [confirmPassword, setConfirmPassword] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
 
   const [form, setForm] = useState({
     employeeId: '',
@@ -100,6 +103,9 @@ export function CreateUserModal({ open, onClose, onCreated }: Props) {
     setSelectedDepartments([])
     setSelectedAccessBranches([])
     setSelectedAccessDepartments([])
+    setConfirmPassword('')
+    setShowPassword(false)
+    setShowConfirmPassword(false)
   }
 
   function handleClose() {
@@ -129,6 +135,7 @@ export function CreateUserModal({ open, onClose, onCreated }: Props) {
     if (!form.name.trim()) { toast.error('Validation', 'Name is required.'); return }
     if (!form.email.trim()) { toast.error('Validation', 'Email is required.'); return }
     if (form.password.length < 8) { toast.error('Validation', 'Password must be at least 8 characters.'); return }
+    if (form.password !== confirmPassword) { toast.error('Validation', 'Passwords do not match.'); return }
     if (!customRole && !form.roleId) { toast.error('Validation', 'Role is required.'); return }
     if (customRole && !customRoleName.trim()) { toast.error('Validation', 'Custom role name is required.'); return }
 
@@ -259,13 +266,58 @@ export function CreateUserModal({ open, onClose, onCreated }: Props) {
                   <label className={labelCls} style={{ color: 'var(--text-light)' }}>Full Name *</label>
                   <input className={inputBase} style={inputStyle} placeholder="Ahmed Al Rashid" value={form.name} onChange={e => setForm(p => ({ ...p, name: e.target.value }))} />
                 </div>
+                {/* Dummy inputs to prevent browser autofill */}
+                <input type="text" name="dummy-username" className="hidden" style={{ display: 'none' }} autoComplete="off" />
+                <input type="password" name="dummy-password" className="hidden" style={{ display: 'none' }} autoComplete="off" />
+
                 <div>
                   <label className={labelCls} style={{ color: 'var(--text-light)' }}>Email *</label>
-                  <input type="email" className={inputBase} style={inputStyle} placeholder="ahmed@adntc.ae" value={form.email} onChange={e => setForm(p => ({ ...p, email: e.target.value }))} />
+                  <input type="email" className={inputBase} style={inputStyle} placeholder="ahmed@adntc.ae" value={form.email} onChange={e => setForm(p => ({ ...p, email: e.target.value }))} autoComplete="new-email" />
                 </div>
-                <div>
-                  <label className={labelCls} style={{ color: 'var(--text-light)' }}>Password *</label>
-                  <input type="password" className={inputBase} style={inputStyle} placeholder="Min 8 characters" value={form.password} onChange={e => setForm(p => ({ ...p, password: e.target.value }))} />
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className={labelCls} style={{ color: 'var(--text-light)' }}>Password *</label>
+                    <div className="relative">
+                      <input
+                        type={showPassword ? "text" : "password"}
+                        className={inputBase + " pr-9"}
+                        style={inputStyle}
+                        placeholder="Min 8 characters"
+                        value={form.password}
+                        onChange={e => setForm(p => ({ ...p, password: e.target.value }))}
+                        autoComplete="new-password"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(p => !p)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 opacity-50 hover:opacity-85 text-[var(--text-secondary)]"
+                      >
+                        {showPassword ? <EyeOff size={14} /> : <Eye size={14} />}
+                      </button>
+                    </div>
+                  </div>
+                  <div>
+                    <label className={labelCls} style={{ color: 'var(--text-light)' }}>Confirm Password *</label>
+                    <div className="relative">
+                      <input
+                        type={showConfirmPassword ? "text" : "password"}
+                        className={inputBase + " pr-9"}
+                        style={inputStyle}
+                        placeholder="Confirm password"
+                        value={confirmPassword}
+                        onChange={e => setConfirmPassword(e.target.value)}
+                        autoComplete="new-password"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowConfirmPassword(p => !p)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 opacity-50 hover:opacity-85 text-[var(--text-secondary)]"
+                      >
+                        {showConfirmPassword ? <EyeOff size={14} /> : <Eye size={14} />}
+                      </button>
+                    </div>
+                  </div>
                 </div>
 
                 <div className="grid grid-cols-2 gap-3">

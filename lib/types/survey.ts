@@ -17,6 +17,7 @@ export interface SurveyRecord {
   visibility: SurveyVisibility
   isAnonymous?: boolean
   branch: string
+  department?: string | null
   questionCount: number
   responseCount: number
   responseRate: number

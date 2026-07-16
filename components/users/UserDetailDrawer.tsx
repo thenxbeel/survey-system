@@ -78,7 +78,7 @@ export function UserDetailDrawer({ user: u, onClose, onUpdate, onDelete, onNotif
   const [newAccessDepartments, setNewAccessDepartments] = useState<string[] | null>(null)
   const [liveRoles, setLiveRoles] = useState<{ value: string; label: string }[]>([])
   const departmentOptions = useDepartmentOptions()
-  const allBranches = useBranches().filter(b => b !== 'All Branches')
+  const allBranches = useBranches()
   const allDepartments = useDepartmentNames()
 
   useEffect(() => {

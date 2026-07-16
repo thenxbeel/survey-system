@@ -7,6 +7,7 @@ import SearchInput from './SearchInput'
 import type { SurveyStatus } from '@/lib/types/survey'
 import { useBranches } from '@/lib/hooks/useBranches'
 import { useTouchpointNames } from '@/lib/hooks/useTouchpoints'
+import { useDepartmentNames } from '@/lib/hooks/useDepartments'
 
 export type SortKey = 'updatedAt' | 'createdAt' | 'responseCount' | 'npsScore' | 'title'
 
@@ -15,6 +16,7 @@ export interface SurveyFilters {
   status: SurveyStatus | 'all'
   touchpoint: string | 'all'
   branch: string | 'all'
+  department: string | 'all'
   sort: SortKey
 }
 
@@ -75,6 +77,7 @@ export default function SurveyToolbar({
   const BRANCHES = useBranches()
   // Live touchpoints from the database — no hardcoded array.
   const TOUCHPOINTS = useTouchpointNames()
+  const DEPARTMENTS = useDepartmentNames()
 
   function set<K extends keyof SurveyFilters>(key: K, value: SurveyFilters[K]) {
     onFiltersChange({ ...filters, [key]: value })
@@ -122,6 +125,11 @@ export default function SurveyToolbar({
           value={filters.touchpoint}
           onChange={(v) => set('touchpoint', v)}
           options={[{ value: 'all', label: 'All Touchpoints' }, ...TOUCHPOINTS.map((t) => ({ value: t, label: t }))]}
+        />
+        <FilterSelect
+          value={filters.department}
+          onChange={(v) => set('department', v)}
+          options={[{ value: 'all', label: 'All Departments' }, ...DEPARTMENTS.map((d) => ({ value: d, label: d }))]}
         />
         <FilterSelect
           value={filters.branch}

@@ -20,6 +20,7 @@ const DEFAULT_FILTERS: SurveyFilters = {
   status: 'all',
   touchpoint: 'all',
   branch: 'all',
+  department: 'all',
   sort: 'updatedAt',
 }
 
@@ -66,6 +67,7 @@ export default function SurveysPage() {
         }
       }
       if (filters.touchpoint !== 'all' && (s.touchpoint || '').toLowerCase() !== filters.touchpoint.toLowerCase()) return false
+      if (filters.department !== 'all' && (s.department || '').toLowerCase() !== filters.department.toLowerCase()) return false
       if (filters.branch !== 'all' && (s.branch || '').toLowerCase() !== filters.branch.toLowerCase()) return false
       return true
     })
@@ -91,7 +93,7 @@ export default function SurveysPage() {
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE))
   const pageItems = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
   const hasActiveFilters = Boolean(
-    filters.search || filters.status !== 'all' || filters.touchpoint !== 'all' || filters.branch !== 'all'
+    filters.search || filters.status !== 'all' || filters.touchpoint !== 'all' || filters.branch !== 'all' || filters.department !== 'all'
   )
 
   function handleFiltersChange(next: SurveyFilters) {

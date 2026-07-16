@@ -295,10 +295,13 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
   const survey = await prisma.survey.findUnique({ where: { id: numericId }, select: { id: true, title: true, department: true } })
   if (!survey) return NextResponse.json({ error: 'Survey not found' }, { status: 404 })
 
-  // ── Department access control ──────────────────────────────────────────
+  // ── Department & Branch action access control ──────────────────────────
   const isAdminDel = user.role === 'Admin'
-  if (!isAdminDel && survey.department && survey.department !== user.department) {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  if (!isAdminDel) {
+    const allowedDepts = [user.department, ...(user.accessDepartments ?? [])].filter(Boolean) as string[]
+    if (survey.department && !allowedDepts.includes(survey.department)) {
+      return NextResponse.json({ error: 'Forbidden — No action access to this department' }, { status: 403 })
+    }
   }
 
   const force = req.nextUrl.searchParams.get('force') === 'true'
@@ -363,10 +366,13 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   })
   if (!survey) return NextResponse.json({ error: 'Survey not found' }, { status: 404 })
 
-  // ── Department access control ──────────────────────────────────────────
+  // ── Department & Branch action access control ──────────────────────────
   const isAdminPatch = user.role === 'Admin'
-  if (!isAdminPatch && survey.department && survey.department !== user.department) {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  if (!isAdminPatch) {
+    const allowedDepts = [user.department, ...(user.accessDepartments ?? [])].filter(Boolean) as string[]
+    if (survey.department && !allowedDepts.includes(survey.department)) {
+      return NextResponse.json({ error: 'Forbidden — No action access to this department' }, { status: 403 })
+    }
   }
 
   const body = await req.json().catch(() => ({}))
