@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from 'react'
 import { createPortal } from 'react-dom'
-import { X, Search, Building2, UserPlus } from 'lucide-react'
+import { X, Search, Building2, UserPlus, Briefcase } from 'lucide-react'
 import { useBranchOptions } from '@/lib/hooks/useBranches'
 
 interface User {
@@ -24,9 +24,11 @@ interface AssignResponseModalProps {
 
 export function AssignResponseModal({ isOpen, onClose, onAssign, responseId }: AssignResponseModalProps) {
   const [users, setUsers] = useState<User[]>([])
+  const [departments, setDepartments] = useState<string[]>([])
   const [loading, setLoading] = useState(false)
   const [search, setSearch] = useState('')
   const [branchFilter, setBranchFilter] = useState('all')
+  const [deptFilter, setDeptFilter] = useState('all')
   const [selectedUserId, setSelectedUserId] = useState<number | null>(null)
   const [mounted, setMounted] = useState(false)
   
@@ -40,11 +42,14 @@ export function AssignResponseModal({ isOpen, onClose, onAssign, responseId }: A
       setSelectedUserId(null)
       setSearch('')
       setBranchFilter('all')
-      fetch('/api/users?pageSize=100&isActive=true', { cache: 'no-store' })
-        .then(r => r.ok ? r.json() : null)
-        .then(json => {
-          if (json?.data) {
-            setUsers(json.data.map((u: any) => ({
+      setDeptFilter('all')
+      Promise.all([
+        fetch('/api/users?pageSize=100&isActive=true', { cache: 'no-store' }).then(r => r.ok ? r.json() : null),
+        fetch('/api/departments', { cache: 'no-store' }).then(r => r.ok ? r.json() : null),
+      ])
+        .then(([usersJson, deptsJson]) => {
+          if (usersJson?.data) {
+            setUsers(usersJson.data.map((u: any) => ({
               id: u.id,
               employeeId: u.employeeId || 'N/A',
               name: u.name,
@@ -53,6 +58,9 @@ export function AssignResponseModal({ isOpen, onClose, onAssign, responseId }: A
               branchId: u.branchId || null,
               branchName: u.branch || null,
             })))
+          }
+          if (deptsJson?.data) {
+            setDepartments(deptsJson.data.map((d: any) => d.name))
           }
         })
         .finally(() => setLoading(false))
@@ -64,9 +72,10 @@ export function AssignResponseModal({ isOpen, onClose, onAssign, responseId }: A
       const matchesSearch = u.name.toLowerCase().includes(search.toLowerCase()) || 
                             u.employeeId.toLowerCase().includes(search.toLowerCase())
       const matchesBranch = branchFilter === 'all' || u.branchName === branchFilter
-      return matchesSearch && matchesBranch
+      const matchesDept = deptFilter === 'all' || u.department === deptFilter
+      return matchesSearch && matchesBranch && matchesDept
     })
-  }, [users, search, branchFilter])
+  }, [users, search, branchFilter, deptFilter])
 
   useEffect(() => {
     if (isOpen) {
@@ -107,27 +116,45 @@ export function AssignResponseModal({ isOpen, onClose, onAssign, responseId }: A
 
         {/* Filters */}
         <div className="px-6 pt-5 pb-2">
+          {/* Search input (full width) */}
+          <div className="relative w-full mb-3">
+            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+            <input 
+              type="text" 
+              placeholder="Search user name..." 
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              className="w-full rounded-[10px] border border-gray-200 bg-gray-50 py-2.5 pl-9 pr-4 text-[13px] font-medium outline-none focus:border-[var(--primary)] focus:bg-white transition-all"
+            />
+          </div>
+
           <div className="flex gap-3 mb-4">
+            {/* Branch filter select */}
             <div className="relative flex-1">
-              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-              <input 
-                type="text" 
-                placeholder="Search user name..." 
-                value={search}
-                onChange={e => setSearch(e.target.value)}
-                className="w-full rounded-[10px] border border-gray-200 bg-gray-50 py-2.5 pl-9 pr-4 text-[13px] font-medium outline-none focus:border-[var(--primary)] focus:bg-white transition-all"
-              />
-            </div>
-            <div className="relative w-40">
-              <Building2 size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+              <Building2 size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
               <select
                 value={branchFilter}
                 onChange={e => setBranchFilter(e.target.value)}
-                className="w-full appearance-none rounded-[10px] border border-gray-200 bg-gray-50 py-2.5 pl-9 pr-8 text-[13px] font-medium outline-none focus:border-[var(--primary)] focus:bg-white transition-all"
+                className="w-full appearance-none rounded-[10px] border border-gray-200 bg-gray-50 py-2.5 pl-9 pr-8 text-[13px] font-medium outline-none focus:border-[var(--primary)] focus:bg-white transition-all cursor-pointer"
               >
                 <option value="all">All Branches</option>
                 {branchOptions.filter(b => b.value !== 'all').map(o => (
                   <option key={o.value} value={o.value}>{o.label}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* Department filter select */}
+            <div className="relative flex-1">
+              <Briefcase size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+              <select
+                value={deptFilter}
+                onChange={e => setDeptFilter(e.target.value)}
+                className="w-full appearance-none rounded-[10px] border border-gray-200 bg-gray-50 py-2.5 pl-9 pr-8 text-[13px] font-medium outline-none focus:border-[var(--primary)] focus:bg-white transition-all cursor-pointer"
+              >
+                <option value="all">All Departments</option>
+                {departments.map(name => (
+                  <option key={name} value={name}>{name}</option>
                 ))}
               </select>
             </div>

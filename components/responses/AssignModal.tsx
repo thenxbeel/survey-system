@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { X, UserPlus, Loader2, Search, Building2 } from 'lucide-react'
+import { X, UserPlus, Loader2, Search, Building2, Briefcase } from 'lucide-react'
 import { useToast } from '@/lib/stores/ToastStore'
 
 interface Props {
@@ -34,6 +34,7 @@ export function AssignModal({ open, onClose, responseId, onAssigned }: Props) {
   const toast = useToast()
   const [users, setUsers] = useState<UserOption[]>([])
   const [branches, setBranches] = useState<BranchOption[]>([])
+  const [departments, setDepartments] = useState<string[]>([])
   const [loading, setLoading] = useState(false)
   const [selectedUserId, setSelectedUserId] = useState<string>('')
   const [mounted, setMounted] = useState(false)
@@ -42,9 +43,10 @@ export function AssignModal({ open, onClose, responseId, onAssigned }: Props) {
     setMounted(true)
   }, [])
 
-  // Search + branch filter states
+  // Search + branch/dept filter states
   const [search, setSearch] = useState('')
   const [branchFilter, setBranchFilter] = useState<string>('all')
+  const [deptFilter, setDeptFilter] = useState<string>('all')
 
   useEffect(() => {
     if (!open) return
@@ -76,12 +78,21 @@ export function AssignModal({ open, onClose, responseId, onAssigned }: Props) {
         if (json?.data) setBranches(json.data)
       })
       .catch(() => { /* ignore */ })
+
+    // Fetch departments for filter
+    fetch('/api/departments', { cache: 'no-store' })
+      .then(r => r.ok ? r.json() : null)
+      .then(json => {
+        if (json?.data) setDepartments(json.data.map((d: any) => d.name))
+      })
+      .catch(() => { /* ignore */ })
   }, [open])
 
   function handleClose() {
     setSelectedUserId('')
     setSearch('')
     setBranchFilter('all')
+    setDeptFilter('all')
     onClose()
   }
 
@@ -111,11 +122,14 @@ export function AssignModal({ open, onClose, responseId, onAssigned }: Props) {
     }
   }
 
-  // Filter users by search query and branch
+  // Filter users by search query, branch, and department
   const filteredUsers = useMemo(() => {
     let result = users
     if (branchFilter !== 'all') {
       result = result.filter(u => String(u.branchId) === branchFilter)
+    }
+    if (deptFilter !== 'all') {
+      result = result.filter(u => u.department === deptFilter)
     }
     if (search.trim()) {
       const q = search.trim().toLowerCase()
@@ -127,7 +141,7 @@ export function AssignModal({ open, onClose, responseId, onAssigned }: Props) {
       )
     }
     return result
-  }, [users, search, branchFilter])
+  }, [users, search, branchFilter, deptFilter])
 
   const labelCls = 'block text-[10.5px] font-bold uppercase tracking-[0.08em] mb-1.5'
 
@@ -169,11 +183,11 @@ export function AssignModal({ open, onClose, responseId, onAssigned }: Props) {
               </button>
             </div>
 
-            {/* Search + Branch filter bar */}
-            <div className="flex items-center gap-2 px-5 pt-4 pb-2">
+            {/* Search + Filters layout */}
+            <div className="px-5 pt-4 pb-2">
               {/* Search input */}
               <div
-                className="flex flex-1 items-center gap-2 rounded-[9px] border px-3 py-2 transition-all focus-within:ring-2"
+                className="flex items-center gap-2 rounded-[9px] border px-3 py-2 transition-all focus-within:ring-2 mb-2"
                 style={{
                   borderColor: 'var(--border)',
                   background: 'var(--bg-subtle)',
@@ -198,24 +212,46 @@ export function AssignModal({ open, onClose, responseId, onAssigned }: Props) {
                 )}
               </div>
 
-              {/* Branch filter */}
-              <div className="relative flex items-center">
-                <Building2 size={13} className="pointer-events-none absolute left-2.5" style={{ color: 'var(--text-muted)' }} />
-                <select
-                  value={branchFilter}
-                  onChange={e => setBranchFilter(e.target.value)}
-                  className="h-[36px] appearance-none rounded-[9px] border pl-7 pr-3 text-[11.5px] font-medium outline-none transition-all cursor-pointer"
-                  style={{
-                    borderColor: 'var(--border)',
-                    background: 'var(--bg-subtle)',
-                    color: 'var(--text)',
-                  }}
-                >
-                  <option value="all">All Branches</option>
-                  {branches.map(b => (
-                    <option key={b.id} value={String(b.id)}>{b.name}</option>
-                  ))}
-                </select>
+              <div className="flex gap-2">
+                {/* Branch filter */}
+                <div className="relative flex flex-1 items-center">
+                  <Building2 size={13} className="pointer-events-none absolute left-2.5" style={{ color: 'var(--text-muted)' }} />
+                  <select
+                    value={branchFilter}
+                    onChange={e => setBranchFilter(e.target.value)}
+                    className="h-[36px] w-full appearance-none rounded-[9px] border pl-7 pr-3 text-[11.5px] font-medium outline-none transition-all cursor-pointer"
+                    style={{
+                      borderColor: 'var(--border)',
+                      background: 'var(--bg-subtle)',
+                      color: 'var(--text)',
+                    }}
+                  >
+                    <option value="all">All Branches</option>
+                    {branches.map(b => (
+                      <option key={b.id} value={String(b.id)}>{b.name}</option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Department filter */}
+                <div className="relative flex flex-1 items-center">
+                  <Briefcase size={13} className="pointer-events-none absolute left-2.5" style={{ color: 'var(--text-muted)' }} />
+                  <select
+                    value={deptFilter}
+                    onChange={e => setDeptFilter(e.target.value)}
+                    className="h-[36px] w-full appearance-none rounded-[9px] border pl-7 pr-3 text-[11.5px] font-medium outline-none transition-all cursor-pointer"
+                    style={{
+                      borderColor: 'var(--border)',
+                      background: 'var(--bg-subtle)',
+                      color: 'var(--text)',
+                    }}
+                  >
+                    <option value="all">All Departments</option>
+                    {departments.map(name => (
+                      <option key={name} value={name}>{name}</option>
+                    ))}
+                  </select>
+                </div>
               </div>
             </div>
 
